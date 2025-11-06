@@ -54,7 +54,94 @@ const CLASSES = {
     }
 };
 
-// Mob types
+// Game Locations
+const LOCATIONS = {
+    village1: {
+        name: '1. Köy',
+        icon: '🏘️',
+        level: 1,
+        bgColor: '#2d5016',
+        gridColor: 'rgba(100, 200, 100, 0.1)',
+        terrain: '🌾',
+        mobs: [
+            { name: 'Kurt', icon: '🐺', hp: 50, damage: 8, xp: 25, gold: 10, speed: 1.5 },
+            { name: 'Yaban Domuzu', icon: '🐗', hp: 40, damage: 6, xp: 20, gold: 8, speed: 1.3 }
+        ],
+        description: 'Yeni başlayanlar için güvenli bir bölge'
+    },
+    village2: {
+        name: '2. Köy',
+        icon: '🏡',
+        level: 5,
+        bgColor: '#1a3a1a',
+        gridColor: 'rgba(120, 220, 120, 0.1)',
+        terrain: '🌳',
+        mobs: [
+            { name: 'Goblin', icon: '👹', hp: 70, damage: 12, xp: 35, gold: 18, speed: 1.4 },
+            { name: 'Goblin Savaşçısı', icon: '⚔️', hp: 90, damage: 15, xp: 45, gold: 22, speed: 1.2 },
+            { name: 'Kızıl Kurt', icon: '🦊', hp: 80, damage: 14, xp: 40, gold: 20, speed: 1.6 }
+        ],
+        description: 'Daha güçlü düşmanlar sizi bekliyor'
+    },
+    valley: {
+        name: 'Vadi',
+        icon: '⛰️',
+        level: 10,
+        bgColor: '#1a2a3a',
+        gridColor: 'rgba(100, 150, 200, 0.1)',
+        terrain: '🌿',
+        mobs: [
+            { name: 'Ork', icon: '👾', hp: 120, damage: 18, xp: 55, gold: 30, speed: 1.1 },
+            { name: 'Ork Şefi', icon: '👹', hp: 150, damage: 22, xp: 70, gold: 40, speed: 1.0 },
+            { name: 'Dağ Kurdu', icon: '🐺', hp: 100, damage: 16, xp: 50, gold: 25, speed: 1.5 }
+        ],
+        description: 'Derin vadide tehlikeler çok'
+    },
+    desert: {
+        name: 'Çöl',
+        icon: '🏜️',
+        level: 15,
+        bgColor: '#3a2a1a',
+        gridColor: 'rgba(255, 200, 100, 0.1)',
+        terrain: '🌵',
+        mobs: [
+            { name: 'Çöl Yılanı', icon: '🐍', hp: 140, damage: 20, xp: 65, gold: 35, speed: 1.3 },
+            { name: 'Akrep', icon: '🦂', hp: 130, damage: 24, xp: 70, gold: 38, speed: 1.2 },
+            { name: 'Kum Canavarı', icon: '👾', hp: 180, damage: 26, xp: 85, gold: 50, speed: 0.9 }
+        ],
+        description: 'Kavurucu sıcakta hayatta kalın'
+    },
+    sohanMount: {
+        name: 'Sohan Dağı',
+        icon: '🏔️',
+        level: 20,
+        bgColor: '#1a1a2a',
+        gridColor: 'rgba(200, 200, 255, 0.1)',
+        terrain: '❄️',
+        mobs: [
+            { name: 'Buz Cücesi', icon: '🧊', hp: 200, damage: 28, xp: 95, gold: 55, speed: 1.0 },
+            { name: 'Kar Trolü', icon: '🧟', hp: 250, damage: 32, xp: 110, gold: 65, speed: 0.8 },
+            { name: 'Buzul Devası', icon: '⛄', hp: 300, damage: 35, xp: 130, gold: 80, speed: 0.7 }
+        ],
+        description: 'Dondurucu soğuk ve güçlü düşmanlar'
+    },
+    devilTower: {
+        name: 'Şeytan Kulesi',
+        icon: '🗼',
+        level: 30,
+        bgColor: '#2a0a0a',
+        gridColor: 'rgba(255, 50, 50, 0.1)',
+        terrain: '🔥',
+        mobs: [
+            { name: 'Şeytan', icon: '😈', hp: 350, damage: 40, xp: 150, gold: 90, speed: 1.2 },
+            { name: 'Ateş İblisi', icon: '👿', hp: 400, damage: 45, xp: 170, gold: 100, speed: 1.1 },
+            { name: 'Kara Ejderha', icon: '🐉', hp: 500, damage: 55, xp: 200, gold: 150, speed: 0.9 }
+        ],
+        description: 'En güçlü düşmanların yeri'
+    }
+};
+
+// Mob types (legacy - now replaced by location-specific mobs)
 const MOB_TYPES = [
     { name: 'Kurt', icon: '🐺', hp: 50, damage: 8, xp: 25, gold: 10, speed: 1.5 },
     { name: 'Goblin', icon: '👹', hp: 60, damage: 10, xp: 30, gold: 15, speed: 1.2 },
@@ -81,6 +168,7 @@ class Game {
         window.addEventListener('resize', () => this.resizeCanvas());
 
         this.player = null;
+        this.currentLocation = null;
         this.mobs = [];
         this.projectiles = [];
         this.drops = [];
@@ -135,8 +223,65 @@ class Game {
         document.getElementById('charSelect').classList.add('hidden');
         document.getElementById('gameScreen').classList.add('active');
 
-        this.spawnMobs();
+        // Start at first village
+        this.changeLocation('village1');
+
         this.gameLoop();
+    }
+
+    changeLocation(locationKey) {
+        this.currentLocation = LOCATIONS[locationKey];
+        this.mobs = [];
+        this.drops = [];
+
+        // Reset player position to center
+        this.player.x = this.canvas.width / 2;
+        this.player.y = this.canvas.height / 2;
+
+        this.spawnMobs();
+        this.showNotification(`📍 ${this.currentLocation.name} - ${this.currentLocation.description}`);
+        this.updateLocationUI();
+    }
+
+    updateLocationUI() {
+        const grid = document.getElementById('locationGrid');
+        if (!grid) return;
+
+        grid.innerHTML = '';
+
+        Object.entries(LOCATIONS).forEach(([key, loc]) => {
+            const card = document.createElement('div');
+            card.className = 'location-card';
+
+            // Check if location is accessible
+            const isLocked = this.player.level < loc.level;
+            const isCurrent = this.currentLocation && this.currentLocation.name === loc.name;
+
+            if (isLocked) {
+                card.classList.add('locked');
+            }
+            if (isCurrent) {
+                card.classList.add('current');
+            }
+
+            card.innerHTML = `
+                <div class="location-icon">${loc.icon}</div>
+                <div class="location-name">${loc.name}</div>
+                <div class="location-level">Gerekli Seviye: ${loc.level}</div>
+                <div class="location-desc">${loc.description}</div>
+                ${isCurrent ? '<div style="color: #4ade80; margin-top: 5px;">✓ Şu anda burdasınız</div>' : ''}
+                ${isLocked ? '<div style="color: #ff4444; margin-top: 5px;">🔒 Kilitli</div>' : ''}
+            `;
+
+            if (!isLocked && !isCurrent) {
+                card.onclick = () => {
+                    this.changeLocation(key);
+                    toggleLocationMenu();
+                };
+            }
+
+            grid.appendChild(card);
+        });
     }
 
     createSkillButtons() {
@@ -224,6 +369,8 @@ class Game {
     }
 
     spawnMobs() {
+        if (!this.currentLocation) return;
+
         const mobCount = 5 + Math.floor(this.player.level / 2);
 
         for (let i = 0; i < mobCount; i++) {
@@ -232,11 +379,11 @@ class Game {
     }
 
     spawnMob() {
-        const typeIndex = Math.min(
-            Math.floor(this.player.level / 3),
-            MOB_TYPES.length - 1
-        );
-        const type = MOB_TYPES[Math.floor(Math.random() * (typeIndex + 1))];
+        if (!this.currentLocation) return;
+
+        // Get random mob from current location
+        const locationMobs = this.currentLocation.mobs;
+        const type = locationMobs[Math.floor(Math.random() * locationMobs.length)];
 
         const margin = 100;
         const x = Math.random() < 0.5
@@ -537,11 +684,20 @@ class Game {
     }
 
     draw() {
-        this.ctx.fillStyle = '#1a1a2e';
+        // Background based on current location
+        if (this.currentLocation) {
+            this.ctx.fillStyle = this.currentLocation.bgColor;
+        } else {
+            this.ctx.fillStyle = '#1a1a2e';
+        }
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Grid
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        // Grid with location-specific color
+        if (this.currentLocation) {
+            this.ctx.strokeStyle = this.currentLocation.gridColor;
+        } else {
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        }
         this.ctx.lineWidth = 1;
         for (let x = 0; x < this.canvas.width; x += 50) {
             this.ctx.beginPath();
@@ -554,6 +710,20 @@ class Game {
             this.ctx.moveTo(0, y);
             this.ctx.lineTo(this.canvas.width, y);
             this.ctx.stroke();
+        }
+
+        // Terrain decorations
+        if (this.currentLocation && this.currentLocation.terrain) {
+            this.ctx.font = '20px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            for (let x = 50; x < this.canvas.width; x += 150) {
+                for (let y = 50; y < this.canvas.height; y += 150) {
+                    this.ctx.globalAlpha = 0.3;
+                    this.ctx.fillText(this.currentLocation.terrain, x, y);
+                    this.ctx.globalAlpha = 1.0;
+                }
+            }
         }
 
         // Drops
@@ -650,4 +820,14 @@ const game = new Game();
 
 function selectCharacter(className) {
     game.selectCharacter(className);
+}
+
+function toggleLocationMenu() {
+    const menu = document.getElementById('locationMenu');
+    if (menu.classList.contains('active')) {
+        menu.classList.remove('active');
+    } else {
+        menu.classList.add('active');
+        game.updateLocationUI();
+    }
 }
