@@ -561,26 +561,27 @@ class Game {
             const group = this.mobGroups.find(g => g.id === mob.groupId);
 
             if (group && group.aggro) {
-                // Aggressive group - chase player
-                if (dist < 400) {
-                    const angle = Math.atan2(this.player.y - mob.y, this.player.x - mob.x);
-                    mob.x += Math.cos(angle) * mob.speed;
-                    mob.y += Math.sin(angle) * mob.speed;
+                // Aggressive group - chase player aggressively (no distance limit)
+                const angle = Math.atan2(this.player.y - mob.y, this.player.x - mob.x);
 
-                    // Attack player
-                    if (dist < 50) {
-                        if (mob.targetCooldown <= 0) {
-                            const damage = Math.max(1, mob.damage - this.player.defense);
-                            this.player.hp -= damage;
-                            this.showDamage(this.player.x, this.player.y - 40, damage);
-                            mob.targetCooldown = 1000;
+                // Run faster when aggressive (2x speed)
+                const chaseSpeed = mob.speed * 2;
+                mob.x += Math.cos(angle) * chaseSpeed;
+                mob.y += Math.sin(angle) * chaseSpeed;
 
-                            if (this.player.hp <= 0) {
-                                this.gameOver();
-                            }
+                // Attack player when close
+                if (dist < 50) {
+                    if (mob.targetCooldown <= 0) {
+                        const damage = Math.max(1, mob.damage - this.player.defense);
+                        this.player.hp -= damage;
+                        this.showDamage(this.player.x, this.player.y - 40, damage);
+                        mob.targetCooldown = 1000;
 
-                            this.updateHUD();
+                        if (this.player.hp <= 0) {
+                            this.gameOver();
                         }
+
+                        this.updateHUD();
                     }
                 }
             } else if (group) {
@@ -679,6 +680,26 @@ class Game {
         this.mobs.forEach(mob => {
             const group = this.mobGroups.find(g => g.id === mob.groupId);
 
+            // Running effect for aggressive mobs (motion lines)
+            if (group && group.aggro) {
+                const dist = this.getDistance(this.player, mob);
+                if (dist > 50) { // Only show when running
+                    const angle = Math.atan2(this.player.y - mob.y, this.player.x - mob.x);
+
+                    // Draw motion lines behind the mob
+                    for (let i = 1; i <= 3; i++) {
+                        const lineX = mob.x - Math.cos(angle) * i * 15;
+                        const lineY = mob.y - Math.sin(angle) * i * 15;
+                        const opacity = 0.3 - (i * 0.08);
+
+                        this.ctx.fillStyle = `rgba(255, 0, 0, ${opacity})`;
+                        this.ctx.beginPath();
+                        this.ctx.arc(lineX, lineY, mob.size / 4, 0, Math.PI * 2);
+                        this.ctx.fill();
+                    }
+                }
+            }
+
             // Shadow
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
             this.ctx.beginPath();
@@ -697,11 +718,19 @@ class Game {
                 this.ctx.shadowBlur = 0;
             }
 
-            // Mob icon
+            // Mob icon with running animation (slight bounce)
+            let yOffset = 0;
+            if (group && group.aggro) {
+                const dist = this.getDistance(this.player, mob);
+                if (dist > 50) {
+                    yOffset = Math.sin(Date.now() / 100) * 3; // Bounce effect
+                }
+            }
+
             this.ctx.font = mob.size + 'px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(mob.icon, mob.x, mob.y);
+            this.ctx.fillText(mob.icon, mob.x, mob.y + yOffset);
 
             // HP bar
             const barWidth = 40;
