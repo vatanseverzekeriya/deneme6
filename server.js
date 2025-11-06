@@ -72,6 +72,7 @@ app.get('/', (req, res) => {
 
 app.get('/dashboard', (req, res) => {
     const gameUrl = `http://${localIP}:${PORT}/game.html`;
+    const rpgUrl = `http://${localIP}:${PORT}/metin2-style.html`;
 
     res.send(`
 <!DOCTYPE html>
@@ -269,6 +270,57 @@ app.get('/dashboard', (req, res) => {
             border-radius: 20px;
             margin-top: 20px;
         }
+
+        .game-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .game-option {
+            background: rgba(102, 126, 234, 0.1);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .game-option:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .game-option.active {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.3);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .game-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .game-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .game-desc {
+            font-size: 12px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .game-selector {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
@@ -289,12 +341,26 @@ app.get('/dashboard', (req, res) => {
 
         <div class="content">
             <div class="card">
+                <h2>🎮 Oyun Seç</h2>
+                <div class="game-selector">
+                    <div class="game-option active" onclick="selectGame('game')">
+                        <div class="game-icon">🎯</div>
+                        <div class="game-title">Basit Oyun</div>
+                        <div class="game-desc">Engellerden kaçma oyunu</div>
+                    </div>
+                    <div class="game-option" onclick="selectGame('rpg')">
+                        <div class="game-icon">⚔️</div>
+                        <div class="game-title">RPG Oyunu</div>
+                        <div class="game-desc">Metin2-style RPG</div>
+                    </div>
+                </div>
+
                 <h2>📱 QR Kod ile Bağlan</h2>
                 <div id="qrcode"></div>
 
                 <div class="info-item">
                     <div class="info-label">📍 Oyun URL'si:</div>
-                    <div class="info-value">${gameUrl}</div>
+                    <div class="info-value" id="gameUrlText">${gameUrl}</div>
                 </div>
 
                 <button class="btn" onclick="copyUrl()">📋 URL'yi Kopyala</button>
@@ -320,9 +386,9 @@ app.get('/dashboard', (req, res) => {
             <div class="card">
                 <h2>🖥️ PC Önizleme</h2>
                 <div class="device-frame">
-                    <iframe src="/game.html" class="preview-frame"></iframe>
+                    <iframe src="/game.html" class="preview-frame" id="previewFrame"></iframe>
                 </div>
-                <button class="btn" onclick="window.open('/game.html', '_blank')">
+                <button class="btn" onclick="openInNewTab()">
                     🚀 Yeni Sekmede Aç
                 </button>
             </div>
@@ -330,18 +396,59 @@ app.get('/dashboard', (req, res) => {
     </div>
 
     <script>
-        // Generate QR Code
-        const gameUrl = '${gameUrl}';
-        QRCode.toCanvas(gameUrl, { width: 250, margin: 2 }, (error, canvas) => {
-            if (error) console.error(error);
-            document.getElementById('qrcode').appendChild(canvas);
-        });
+        // Game URLs
+        const games = {
+            game: '${gameUrl}',
+            rpg: '${rpgUrl}'
+        };
 
-        // Copy URL function
+        let currentGame = 'game';
+        let qrCanvas = null;
+
+        // Initialize with default game
+        updateQRCode(games.game);
+
+        function updateQRCode(url) {
+            const qrcodeDiv = document.getElementById('qrcode');
+            qrcodeDiv.innerHTML = '';
+
+            QRCode.toCanvas(url, { width: 250, margin: 2 }, (error, canvas) => {
+                if (error) console.error(error);
+                qrcodeDiv.appendChild(canvas);
+                qrCanvas = canvas;
+            });
+        }
+
+        function selectGame(gameType) {
+            currentGame = gameType;
+            const url = games[gameType];
+
+            // Update active state
+            document.querySelectorAll('.game-option').forEach(opt => {
+                opt.classList.remove('active');
+            });
+            event.target.closest('.game-option').classList.add('active');
+
+            // Update URL display
+            document.getElementById('gameUrlText').textContent = url;
+
+            // Update QR code
+            updateQRCode(url);
+
+            // Update preview
+            document.getElementById('previewFrame').src = url.replace('http://${localIP}:${PORT}', '');
+        }
+
         function copyUrl() {
-            navigator.clipboard.writeText(gameUrl).then(() => {
+            const url = games[currentGame];
+            navigator.clipboard.writeText(url).then(() => {
                 alert('✅ URL kopyalandı!');
             });
+        }
+
+        function openInNewTab() {
+            const url = games[currentGame];
+            window.open(url.replace('http://${localIP}:${PORT}', ''), '_blank');
         }
 
         // WebSocket connection counter
