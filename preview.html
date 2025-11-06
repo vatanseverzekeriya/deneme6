@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metin2 RPG - Ön İzleme</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #0a0e27;
+            color: white;
+            overflow: hidden;
+        }
+
+        #controls {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #ffd700;
+            z-index: 1000;
+        }
+
+        h1 {
+            font-size: 20px;
+            color: #ffd700;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .indicator.online {
+            background: #4ade80;
+            color: #000;
+        }
+
+        .indicator.offline {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #4ade80;
+            color: #000;
+        }
+
+        .btn-success:hover {
+            background: #3bc96b;
+        }
+
+        #gameFrame {
+            position: fixed;
+            top: 65px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: calc(100vh - 65px);
+            border: none;
+            background: #1a1a2e;
+        }
+
+        #loadingOverlay {
+            position: fixed;
+            top: 65px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(255, 215, 0, 0.3);
+            border-top-color: #ffd700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        #errorMessage {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(239, 68, 68, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 500px;
+            z-index: 1001;
+        }
+
+        #errorMessage.show {
+            display: block;
+        }
+
+        .error-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .alternative-links {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .alternative-links a {
+            display: block;
+            color: #ffd700;
+            text-decoration: none;
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .alternative-links a:hover {
+            background: rgba(255, 215, 0, 0.3);
+            transform: translateX(5px);
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <h1>🎮 Metin2-Style RPG - Ön İzleme</h1>
+        <div class="status">
+            <div class="indicator online" id="serverStatus">
+                <span>●</span>
+                <span id="statusText">Sunucu Kontrol Ediliyor...</span>
+            </div>
+            <button class="btn btn-primary" onclick="reloadGame()">🔄 Yenile</button>
+            <button class="btn btn-success" onclick="openInNewTab()">🚀 Yeni Sekmede Aç</button>
+        </div>
+    </div>
+
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <h2>Oyun Yükleniyor...</h2>
+        <p style="margin-top: 10px; opacity: 0.7;">Lütfen bekleyin</p>
+    </div>
+
+    <iframe id="gameFrame" style="display: none;"></iframe>
+
+    <div id="errorMessage">
+        <div class="error-icon">⚠️</div>
+        <h2>Bağlantı Hatası</h2>
+        <p style="margin-top: 10px;">Oyun sunucusuna bağlanılamadı.</p>
+        <div class="alternative-links">
+            <p style="margin-bottom: 10px;"><strong>Alternatif Bağlantı Yöntemleri:</strong></p>
+            <a href="http://localhost:3000/metin2-style.html" target="_blank">
+                🔗 localhost:3000/metin2-style.html
+            </a>
+            <a href="http://127.0.0.1:3000/metin2-style.html" target="_blank">
+                🔗 127.0.0.1:3000/metin2-style.html
+            </a>
+            <a href="http://[::1]:3000/metin2-style.html" target="_blank">
+                🔗 [::1]:3000/metin2-style.html (IPv6)
+            </a>
+        </div>
+        <button class="btn btn-primary" onclick="hideError()" style="margin-top: 20px;">
+            Tekrar Dene
+        </button>
+    </div>
+
+    <script>
+        const GAME_URL = 'http://localhost:3000/metin2-style.html';
+        const CHECK_INTERVAL = 5000; // 5 seconds
+        let checkTimer;
+
+        function checkServerStatus() {
+            fetch('http://localhost:3000/')
+                .then(response => {
+                    if (response.ok || response.status === 302) {
+                        updateStatus(true, 'Sunucu Çalışıyor');
+                        return true;
+                    }
+                    throw new Error('Server not ready');
+                })
+                .catch(() => {
+                    updateStatus(false, 'Sunucu Çevrimdışı');
+                    return false;
+                });
+        }
+
+        function updateStatus(online, text) {
+            const indicator = document.getElementById('serverStatus');
+            const statusText = document.getElementById('statusText');
+
+            if (online) {
+                indicator.className = 'indicator online';
+                statusText.textContent = text;
+            } else {
+                indicator.className = 'indicator offline';
+                statusText.textContent = text;
+            }
+        }
+
+        function loadGame() {
+            const frame = document.getElementById('gameFrame');
+            const loading = document.getElementById('loadingOverlay');
+
+            frame.src = GAME_URL;
+
+            frame.onload = function() {
+                setTimeout(() => {
+                    loading.style.display = 'none';
+                    frame.style.display = 'block';
+                    updateStatus(true, 'Oyun Yüklendi');
+                }, 500);
+            };
+
+            frame.onerror = function() {
+                loading.style.display = 'none';
+                showError();
+            };
+
+            // Timeout fallback
+            setTimeout(() => {
+                if (loading.style.display !== 'none') {
+                    // Check if iframe actually loaded
+                    try {
+                        if (frame.contentWindow.location.href) {
+                            loading.style.display = 'none';
+                            frame.style.display = 'block';
+                            updateStatus(true, 'Oyun Yüklendi');
+                        }
+                    } catch (e) {
+                        // Cross-origin, but that's ok - means it loaded
+                        loading.style.display = 'none';
+                        frame.style.display = 'block';
+                        updateStatus(true, 'Oyun Yüklendi');
+                    }
+                }
+            }, 3000);
+        }
+
+        function reloadGame() {
+            const frame = document.getElementById('gameFrame');
+            const loading = document.getElementById('loadingOverlay');
+
+            loading.style.display = 'flex';
+            frame.style.display = 'none';
+            document.getElementById('errorMessage').classList.remove('show');
+
+            setTimeout(loadGame, 500);
+        }
+
+        function openInNewTab() {
+            window.open(GAME_URL, '_blank');
+        }
+
+        function showError() {
+            document.getElementById('errorMessage').classList.add('show');
+            updateStatus(false, 'Bağlantı Hatası');
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.remove('show');
+            reloadGame();
+        }
+
+        // Start periodic server check
+        checkTimer = setInterval(checkServerStatus, CHECK_INTERVAL);
+
+        // Initial load
+        window.addEventListener('load', () => {
+            setTimeout(loadGame, 500);
+        });
+
+        // Cleanup on unload
+        window.addEventListener('beforeunload', () => {
+            clearInterval(checkTimer);
+        });
+    </script>
+</body>
+</html>
