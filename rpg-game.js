@@ -9,7 +9,7 @@ const CLASSES = {
         baseDefense: 10,
         skills: [
             { name: 'Güçlü Vuruş', icon: '⚔️', damage: 30, mpCost: 15, cooldown: 3000, key: 'Q' },
-            { name: 'Kalkan', icon: '🛡️', defense: 20, mpCost: 20, cooldown: 5000, key: 'W' },
+            { name: 'Kalkan', icon: '🛡️', defense: 20, mpCost: 20, cooldown: 5000, key: 'R' },
             { name: 'Savaş Çığlığı', icon: '💥', damage: 50, mpCost: 30, cooldown: 8000, key: 'E' }
         ]
     },
@@ -22,7 +22,7 @@ const CLASSES = {
         baseDefense: 5,
         skills: [
             { name: 'Hızlı Saldırı', icon: '⚡', damage: 20, mpCost: 10, cooldown: 2000, key: 'Q' },
-            { name: 'Gölge Adımı', icon: '💨', dodge: true, mpCost: 15, cooldown: 4000, key: 'W' },
+            { name: 'Gölge Adımı', icon: '💨', dodge: true, mpCost: 15, cooldown: 4000, key: 'R' },
             { name: 'Kritik Vuruş', icon: '🗡️', damage: 60, mpCost: 25, cooldown: 6000, key: 'E' }
         ]
     },
@@ -35,7 +35,7 @@ const CLASSES = {
         baseDefense: 7,
         skills: [
             { name: 'Işın', icon: '✨', damage: 25, mpCost: 12, cooldown: 2500, key: 'Q' },
-            { name: 'İyileştirme', icon: '💚', heal: 40, mpCost: 20, cooldown: 5000, key: 'W' },
+            { name: 'İyileştirme', icon: '💚', heal: 40, mpCost: 20, cooldown: 5000, key: 'R' },
             { name: 'Yıldırım', icon: '⚡', damage: 45, mpCost: 28, cooldown: 7000, key: 'E' }
         ]
     },
@@ -48,7 +48,7 @@ const CLASSES = {
         baseDefense: 8,
         skills: [
             { name: 'Karanlık Kılıç', icon: '🌑', damage: 28, mpCost: 14, cooldown: 2500, key: 'Q' },
-            { name: 'Ruh Emme', icon: '👻', damage: 20, lifesteal: 0.5, mpCost: 18, cooldown: 4500, key: 'W' },
+            { name: 'Ruh Emme', icon: '👻', damage: 20, lifesteal: 0.5, mpCost: 18, cooldown: 4500, key: 'R' },
             { name: 'Kara Büyü', icon: '💀', damage: 55, mpCost: 32, cooldown: 8000, key: 'E' }
         ]
     }
@@ -202,7 +202,7 @@ class Game {
             defense: classData.baseDefense,
 
             speed: 3,
-            skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
+            skills: classData.skills.map(s => ({...s, cooldownRemaining: 0, uiInterval: null})),
 
             gold: 0,
             attackCooldown: 0
@@ -256,9 +256,9 @@ class Game {
         document.addEventListener('keydown', (e) => {
             this.keys[e.key.toLowerCase()] = true;
 
-            // Skills
+            // Skills (using different keys to avoid conflict with WASD)
             if (e.key.toLowerCase() === 'q') this.useSkill(0);
-            if (e.key.toLowerCase() === 'w') this.useSkill(1);
+            if (e.key.toLowerCase() === 'r') this.useSkill(1);  // Changed from W to R
             if (e.key.toLowerCase() === 'e') this.useSkill(2);
 
             // Use potion
@@ -395,21 +395,32 @@ class Game {
         const btn = document.getElementById(`skill${index}`);
         const skill = this.player.skills[index];
 
+        // Clear any existing interval
+        if (skill.uiInterval) {
+            clearInterval(skill.uiInterval);
+            skill.uiInterval = null;
+        }
+
         btn.classList.add('cooldown');
+
+        // Remove old overlay if exists
+        const oldOverlay = btn.querySelector('.cooldown-overlay');
+        if (oldOverlay) oldOverlay.remove();
 
         const overlay = document.createElement('div');
         overlay.className = 'cooldown-overlay';
         overlay.textContent = Math.ceil(skill.cooldownRemaining / 1000);
         btn.appendChild(overlay);
 
-        const interval = setInterval(() => {
+        skill.uiInterval = setInterval(() => {
             const remaining = Math.ceil(skill.cooldownRemaining / 1000);
             overlay.textContent = remaining;
 
             if (remaining <= 0) {
                 btn.classList.remove('cooldown');
                 overlay.remove();
-                clearInterval(interval);
+                clearInterval(skill.uiInterval);
+                skill.uiInterval = null;
             }
         }, 100);
     }
