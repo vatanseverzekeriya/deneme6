@@ -1,4 +1,4 @@
-// Character Classes
+// Character Classes - Metin2 Style
 const CLASSES = {
     warrior: {
         name: 'Savaşçı',
@@ -7,6 +7,12 @@ const CLASSES = {
         baseMP: 50,
         baseDamage: 15,
         baseDefense: 10,
+        // Visual design
+        primaryColor: '#4a90e2',     // Blue
+        secondaryColor: '#c0c0c0',   // Silver
+        glowColor: '#87ceeb',        // Light blue
+        bodyColor: '#2c5aa0',
+        armorColor: '#b8b8b8',
         skills: [
             { name: 'Güçlü Vuruş', icon: '⚔️', damage: 30, mpCost: 15, cooldown: 3000, key: 'Q' },
             { name: 'Kalkan', icon: '🛡️', defense: 20, mpCost: 20, cooldown: 5000, key: 'W' },
@@ -20,6 +26,12 @@ const CLASSES = {
         baseMP: 80,
         baseDamage: 25,
         baseDefense: 5,
+        // Visual design
+        primaryColor: '#dc143c',     // Crimson
+        secondaryColor: '#1a1a1a',   // Black
+        glowColor: '#ff6b6b',        // Red glow
+        bodyColor: '#8b0000',
+        armorColor: '#2d2d2d',
         skills: [
             { name: 'Hızlı Saldırı', icon: '⚡', damage: 20, mpCost: 10, cooldown: 2000, key: 'Q' },
             { name: 'Gölge Adımı', icon: '💨', dodge: true, mpCost: 15, cooldown: 4000, key: 'W' },
@@ -33,6 +45,12 @@ const CLASSES = {
         baseMP: 120,
         baseDamage: 18,
         baseDefense: 7,
+        // Visual design
+        primaryColor: '#9370db',     // Purple
+        secondaryColor: '#ffd700',   // Gold
+        glowColor: '#da70d6',        // Orchid
+        bodyColor: '#663399',
+        armorColor: '#daa520',
         skills: [
             { name: 'Işın', icon: '✨', damage: 25, mpCost: 12, cooldown: 2500, key: 'Q' },
             { name: 'İyileştirme', icon: '💚', heal: 40, mpCost: 20, cooldown: 5000, key: 'W' },
@@ -46,6 +64,12 @@ const CLASSES = {
         baseMP: 100,
         baseDamage: 20,
         baseDefense: 8,
+        // Visual design
+        primaryColor: '#4b0082',     // Indigo/Dark purple
+        secondaryColor: '#2d0a4e',   // Darker purple
+        glowColor: '#8b00ff',        // Violet glow
+        bodyColor: '#1a0033',
+        armorColor: '#4b0082',
         skills: [
             { name: 'Karanlık Kılıç', icon: '🌑', damage: 28, mpCost: 14, cooldown: 2500, key: 'Q' },
             { name: 'Ruh Emme', icon: '👻', damage: 20, lifesteal: 0.5, mpCost: 18, cooldown: 4500, key: 'W' },
@@ -91,6 +115,22 @@ class Game {
         this.joystickAngle = 0;
         this.joystickPower = 0;
 
+        // Safe Zone - Starting plaza
+        this.safeZone = {
+            x: 0,
+            y: 0,
+            width: 500,
+            height: 500
+        };
+
+        // Electric poles in the plaza
+        this.poles = [
+            { x: 100, y: 100 },
+            { x: 400, y: 100 },
+            { x: 100, y: 400 },
+            { x: 400, y: 400 }
+        ];
+
         this.setupControls();
     }
 
@@ -106,8 +146,9 @@ class Game {
             class: className,
             name: classData.name,
             icon: classData.icon,
-            x: this.canvas.width / 2,
-            y: this.canvas.height / 2,
+            // Start in safe zone center
+            x: this.safeZone.x + this.safeZone.width / 2,
+            y: this.safeZone.y + this.safeZone.height / 2,
             size: 40,
 
             level: 1,
@@ -126,7 +167,14 @@ class Game {
             skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
 
             gold: 0,
-            attackCooldown: 0
+            attackCooldown: 0,
+
+            // Visual properties
+            primaryColor: classData.primaryColor,
+            secondaryColor: classData.secondaryColor,
+            glowColor: classData.glowColor,
+            bodyColor: classData.bodyColor,
+            armorColor: classData.armorColor
         };
 
         this.updateHUD();
@@ -137,6 +185,14 @@ class Game {
 
         this.spawnMobs();
         this.gameLoop();
+    }
+
+    // Check if entity is in safe zone
+    isInSafeZone(entity) {
+        return entity.x >= this.safeZone.x &&
+               entity.x <= this.safeZone.x + this.safeZone.width &&
+               entity.y >= this.safeZone.y &&
+               entity.y <= this.safeZone.y + this.safeZone.height;
     }
 
     createSkillButtons() {
@@ -488,13 +544,17 @@ class Game {
         this.mobs.forEach(mob => {
             const dist = this.getDistance(this.player, mob);
 
-            if (dist < 400) {
+            // Mobs don't chase or attack in safe zone
+            const playerInSafeZone = this.isInSafeZone(this.player);
+            const mobInSafeZone = this.isInSafeZone(mob);
+
+            if (dist < 400 && !playerInSafeZone) {
                 const angle = Math.atan2(this.player.y - mob.y, this.player.x - mob.x);
                 mob.x += Math.cos(angle) * mob.speed;
                 mob.y += Math.sin(angle) * mob.speed;
 
-                // Attack player
-                if (dist < 50) {
+                // Attack player - only if both are outside safe zone
+                if (dist < 50 && !mobInSafeZone) {
                     if (mob.targetCooldown <= 0) {
                         const damage = Math.max(1, mob.damage - this.player.defense);
                         this.player.hp -= damage;
@@ -540,7 +600,10 @@ class Game {
         this.ctx.fillStyle = '#1a1a2e';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Grid
+        // Draw Safe Zone - Gray brick plaza
+        this.drawSafeZone();
+
+        // Grid (outside safe zone)
         this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
         this.ctx.lineWidth = 1;
         for (let x = 0; x < this.canvas.width; x += 50) {
@@ -592,22 +655,7 @@ class Game {
 
         // Player
         if (this.player) {
-            // Shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            this.ctx.beginPath();
-            this.ctx.ellipse(this.player.x, this.player.y + this.player.size/2, this.player.size/2, this.player.size/4, 0, 0, Math.PI * 2);
-            this.ctx.fill();
-
-            // Player icon
-            this.ctx.font = this.player.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-
-            // Glow effect
-            this.ctx.shadowBlur = 10;
-            this.ctx.shadowColor = '#ffd700';
-            this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
-            this.ctx.shadowBlur = 0;
+            this.drawPlayer();
         }
     }
 
@@ -631,6 +679,182 @@ class Game {
             `MP: ${Math.floor(this.player.mp)}/${this.player.maxMP}`;
         document.getElementById('xpText').textContent =
             `XP: ${this.player.xp}/${this.player.xpToLevel}`;
+    }
+
+    drawSafeZone() {
+        const sz = this.safeZone;
+
+        // Gray brick pattern
+        const brickWidth = 40;
+        const brickHeight = 20;
+
+        for (let y = sz.y; y < sz.y + sz.height; y += brickHeight) {
+            for (let x = sz.x; x < sz.x + sz.width; x += brickWidth) {
+                const offset = (Math.floor((y - sz.y) / brickHeight) % 2) * (brickWidth / 2);
+                const brickX = x + offset;
+
+                if (brickX < sz.x + sz.width) {
+                    // Brick color variation
+                    const shade = 100 + Math.floor(Math.random() * 40);
+                    this.ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
+                    this.ctx.fillRect(brickX, y, brickWidth - 2, brickHeight - 2);
+
+                    // Brick border
+                    this.ctx.strokeStyle = '#555';
+                    this.ctx.lineWidth = 1;
+                    this.ctx.strokeRect(brickX, y, brickWidth - 2, brickHeight - 2);
+                }
+            }
+        }
+
+        // Border around safe zone
+        this.ctx.strokeStyle = '#ffd700';
+        this.ctx.lineWidth = 3;
+        this.ctx.setLineDash([10, 5]);
+        this.ctx.strokeRect(sz.x, sz.y, sz.width, sz.height);
+        this.ctx.setLineDash([]);
+
+        // Safe zone text
+        this.ctx.fillStyle = '#ffd700';
+        this.ctx.font = 'bold 16px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('🛡️ GÜVENLİ BÖLGE 🛡️', sz.x + sz.width / 2, sz.y - 10);
+
+        // Draw electric poles
+        this.poles.forEach(pole => {
+            // Pole base
+            this.ctx.fillStyle = '#444';
+            this.ctx.fillRect(pole.x - 5, pole.y - 60, 10, 60);
+
+            // Pole top
+            this.ctx.fillStyle = '#666';
+            this.ctx.fillRect(pole.x - 8, pole.y - 70, 16, 10);
+
+            // Electric wires (horizontal between poles)
+            this.ctx.strokeStyle = '#888';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(pole.x, pole.y - 65);
+            // Find nearest pole and draw wire
+            this.poles.forEach(otherPole => {
+                if (pole !== otherPole) {
+                    const dist = Math.sqrt((pole.x - otherPole.x) ** 2 + (pole.y - otherPole.y) ** 2);
+                    if (dist < 350) {
+                        this.ctx.lineTo(otherPole.x, otherPole.y - 65);
+                    }
+                }
+            });
+            this.ctx.stroke();
+
+            // Light on pole
+            const time = Date.now();
+            const pulse = Math.sin(time / 500) * 0.5 + 0.5;
+            this.ctx.fillStyle = `rgba(255, 255, 100, ${pulse})`;
+            this.ctx.beginPath();
+            this.ctx.arc(pole.x, pole.y - 65, 3, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+    }
+
+    drawPlayer() {
+        const p = this.player;
+
+        // Shadow
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        this.ctx.beginPath();
+        this.ctx.ellipse(p.x, p.y + p.size/2, p.size/2, p.size/4, 0, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // Character body with class colors
+        const bodySize = p.size * 0.8;
+
+        // Outer glow
+        this.ctx.shadowBlur = 15;
+        this.ctx.shadowColor = p.glowColor;
+
+        // Body circle
+        this.ctx.fillStyle = p.bodyColor;
+        this.ctx.beginPath();
+        this.ctx.arc(p.x, p.y, bodySize / 2, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // Armor highlights
+        this.ctx.fillStyle = p.armorColor;
+        this.ctx.beginPath();
+        this.ctx.arc(p.x - bodySize / 4, p.y - bodySize / 4, bodySize / 6, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.beginPath();
+        this.ctx.arc(p.x + bodySize / 4, p.y - bodySize / 4, bodySize / 6, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        this.ctx.shadowBlur = 0;
+
+        // Character icon (centered)
+        this.ctx.font = p.size + 'px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillStyle = p.primaryColor;
+        this.ctx.shadowBlur = 10;
+        this.ctx.shadowColor = p.glowColor;
+        this.ctx.fillText(p.icon, p.x, p.y);
+        this.ctx.shadowBlur = 0;
+
+        // Class-specific details
+        if (p.class === 'warrior') {
+            // Shield outline
+            this.ctx.strokeStyle = p.secondaryColor;
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            this.ctx.arc(p.x, p.y, bodySize / 2 + 2, 0, Math.PI * 2);
+            this.ctx.stroke();
+        } else if (p.class === 'ninja') {
+            // Speed lines
+            this.ctx.strokeStyle = p.primaryColor;
+            this.ctx.lineWidth = 2;
+            for (let i = 0; i < 3; i++) {
+                const angle = (Date.now() / 100 + i * Math.PI * 2 / 3) % (Math.PI * 2);
+                const x1 = p.x + Math.cos(angle) * bodySize / 2;
+                const y1 = p.y + Math.sin(angle) * bodySize / 2;
+                const x2 = p.x + Math.cos(angle) * (bodySize / 2 + 10);
+                const y2 = p.y + Math.sin(angle) * (bodySize / 2 + 10);
+                this.ctx.beginPath();
+                this.ctx.moveTo(x1, y1);
+                this.ctx.lineTo(x2, y2);
+                this.ctx.stroke();
+            }
+        } else if (p.class === 'shaman') {
+            // Magical aura particles
+            const time = Date.now() / 1000;
+            for (let i = 0; i < 5; i++) {
+                const angle = time + i * Math.PI * 2 / 5;
+                const radius = bodySize / 2 + 15 + Math.sin(time * 2 + i) * 5;
+                const px = p.x + Math.cos(angle) * radius;
+                const py = p.y + Math.sin(angle) * radius;
+                this.ctx.fillStyle = p.secondaryColor;
+                this.ctx.beginPath();
+                this.ctx.arc(px, py, 3, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+        } else if (p.class === 'sura') {
+            // Dark energy swirls
+            const time = Date.now() / 1000;
+            this.ctx.strokeStyle = p.glowColor;
+            this.ctx.lineWidth = 2;
+            for (let i = 0; i < 2; i++) {
+                this.ctx.beginPath();
+                for (let t = 0; t < Math.PI * 2; t += 0.1) {
+                    const radius = bodySize / 2 + 5 + Math.sin(t * 3 + time + i * Math.PI) * 8;
+                    const x = p.x + Math.cos(t) * radius;
+                    const y = p.y + Math.sin(t) * radius;
+                    if (t === 0) {
+                        this.ctx.moveTo(x, y);
+                    } else {
+                        this.ctx.lineTo(x, y);
+                    }
+                }
+                this.ctx.stroke();
+            }
+        }
     }
 
     gameOver() {
