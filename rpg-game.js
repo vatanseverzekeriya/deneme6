@@ -93,12 +93,43 @@ class Game {
         this.joystickAngle = 0;
         this.joystickPower = 0;
 
+        // City structure
+        this.setupCity();
+
         this.setupControls();
     }
 
     resizeCanvas() {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
+
+        // Update city position if it exists
+        if (this.city) {
+            this.setupCity();
+        }
+    }
+
+    setupCity() {
+        // City at center of map
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+
+        this.city = {
+            x: centerX,
+            y: centerY,
+            innerRadius: 150, // City area
+            wallThickness: 20,
+            wallRadius: 170, // City walls
+            riverWidth: 60,
+            riverRadius: 250, // River around city
+
+            // Three bridges - North, Southeast, Southwest
+            bridges: [
+                { angle: -Math.PI / 2, width: 80, name: 'Kuzey Köprüsü' },      // North (top)
+                { angle: Math.PI / 6, width: 80, name: 'Güneydoğu Köprüsü' },   // Southeast
+                { angle: 5 * Math.PI / 6, width: 80, name: 'Güneybatı Köprüsü' } // Southwest
+            ]
+        };
     }
 
     selectCharacter(className) {
@@ -244,14 +275,27 @@ class Game {
         );
         const type = MOB_TYPES[Math.floor(Math.random() * (typeIndex + 1))];
 
-        // Choose a spawn location for the group
-        const margin = 100;
-        const groupX = Math.random() < 0.5
-            ? Math.random() * margin
-            : this.canvas.width - Math.random() * margin;
-        const groupY = Math.random() < 0.5
-            ? Math.random() * margin
-            : this.canvas.height - Math.random() * margin;
+        // Choose a spawn location for the group (outside city and river)
+        let groupX, groupY;
+        let attempts = 0;
+        do {
+            const margin = 100;
+            groupX = Math.random() < 0.5
+                ? Math.random() * margin
+                : this.canvas.width - Math.random() * margin;
+            groupY = Math.random() < 0.5
+                ? Math.random() * margin
+                : this.canvas.height - Math.random() * margin;
+            attempts++;
+        } while (!this.canMobMoveTo(groupX, groupY) && attempts < 50);
+
+        // If couldn't find spot after 50 attempts, spawn far from city
+        if (attempts >= 50 && this.city) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = this.city.riverRadius + 100;
+            groupX = this.city.x + Math.cos(angle) * distance;
+            groupY = this.city.y + Math.sin(angle) * distance;
+        }
 
         // Create group info
         const group = {
@@ -368,6 +412,58 @@ class Game {
 
     getDistance(a, b) {
         return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+    }
+
+    isInCity(x, y) {
+        if (!this.city) return false;
+        const dist = Math.sqrt((x - this.city.x) ** 2 + (y - this.city.y) ** 2);
+        return dist <= this.city.wallRadius;
+    }
+
+    isInRiver(x, y) {
+        if (!this.city) return false;
+        const dist = Math.sqrt((x - this.city.x) ** 2 + (y - this.city.y) ** 2);
+        const riverInner = this.city.wallRadius + 20;
+        const riverOuter = this.city.riverRadius;
+        return dist >= riverInner && dist <= riverOuter;
+    }
+
+    isOnBridge(x, y) {
+        if (!this.city || !this.isInRiver(x, y)) return false;
+
+        const dx = x - this.city.x;
+        const dy = y - this.city.y;
+        const angle = Math.atan2(dy, dx);
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // Check each bridge
+        for (const bridge of this.city.bridges) {
+            let angleDiff = Math.abs(angle - bridge.angle);
+            // Normalize angle difference to 0-PI range
+            if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+
+            // Bridge width in radians at current distance
+            const bridgeAngleWidth = bridge.width / dist;
+
+            if (angleDiff < bridgeAngleWidth) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    canMobMoveTo(x, y) {
+        // Mobs cannot enter city or cross river (except on bridges, but we block them anyway)
+        if (this.isInCity(x, y)) return false;
+        if (this.isInRiver(x, y) && !this.isOnBridge(x, y)) return false;
+        return true;
+    }
+
+    canPlayerMoveTo(x, y) {
+        // Players can cross river only on bridges
+        if (this.isInRiver(x, y) && !this.isOnBridge(x, y)) return false;
+        return true;
     }
 
     damageEnemy(enemy, damage) {
@@ -540,8 +636,14 @@ class Game {
             dx = (dx / magnitude) * this.player.speed;
             dy = (dy / magnitude) * this.player.speed;
 
-            this.player.x = Math.max(20, Math.min(this.canvas.width - 20, this.player.x + dx));
-            this.player.y = Math.max(20, Math.min(this.canvas.height - 20, this.player.y + dy));
+            const newX = Math.max(20, Math.min(this.canvas.width - 20, this.player.x + dx));
+            const newY = Math.max(20, Math.min(this.canvas.height - 20, this.player.y + dy));
+
+            // Check if player can move to new position (river/bridge collision)
+            if (this.canPlayerMoveTo(newX, newY)) {
+                this.player.x = newX;
+                this.player.y = newY;
+            }
         }
 
         // Update mob groups first
@@ -566,8 +668,14 @@ class Game {
 
                 // Run faster when aggressive (2x speed)
                 const chaseSpeed = mob.speed * 2;
-                mob.x += Math.cos(angle) * chaseSpeed;
-                mob.y += Math.sin(angle) * chaseSpeed;
+                const newX = mob.x + Math.cos(angle) * chaseSpeed;
+                const newY = mob.y + Math.sin(angle) * chaseSpeed;
+
+                // Check if mob can move to new position (cannot enter city/river)
+                if (this.canMobMoveTo(newX, newY)) {
+                    mob.x = newX;
+                    mob.y = newY;
+                }
 
                 // Attack player when close
                 if (dist < 50) {
@@ -597,8 +705,14 @@ class Game {
 
                 if (distToTarget > 10) {
                     const angle = Math.atan2(targetY - mob.y, targetX - mob.x);
-                    mob.x += Math.cos(angle) * mob.speed * 0.5;
-                    mob.y += Math.sin(angle) * mob.speed * 0.5;
+                    const newX = mob.x + Math.cos(angle) * mob.speed * 0.5;
+                    const newY = mob.y + Math.sin(angle) * mob.speed * 0.5;
+
+                    // Check collision before moving
+                    if (this.canMobMoveTo(newX, newY)) {
+                        mob.x = newX;
+                        mob.y = newY;
+                    }
                 }
 
                 // Group wanders slowly (move center)
@@ -613,9 +727,17 @@ class Game {
                     group.wanderTime = 0;
                 }
 
-                // Move group center slowly
-                group.centerX += Math.cos(group.wanderAngle) * 0.3;
-                group.centerY += Math.sin(group.wanderAngle) * 0.3;
+                // Move group center slowly - avoid city area
+                const newCenterX = group.centerX + Math.cos(group.wanderAngle) * 0.3;
+                const newCenterY = group.centerY + Math.sin(group.wanderAngle) * 0.3;
+
+                if (this.canMobMoveTo(newCenterX, newCenterY)) {
+                    group.centerX = newCenterX;
+                    group.centerY = newCenterY;
+                } else {
+                    // If blocked, change direction
+                    group.wanderAngle = Math.random() * Math.PI * 2;
+                }
 
                 // Keep group on screen
                 group.centerX = Math.max(100, Math.min(this.canvas.width - 100, group.centerX));
@@ -666,6 +788,88 @@ class Game {
             this.ctx.moveTo(0, y);
             this.ctx.lineTo(this.canvas.width, y);
             this.ctx.stroke();
+        }
+
+        // Draw City
+        if (this.city) {
+            // Draw river (blue ring)
+            this.ctx.fillStyle = '#1e90ff';
+            this.ctx.beginPath();
+            this.ctx.arc(this.city.x, this.city.y, this.city.riverRadius, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Draw bridges over the river
+            this.city.bridges.forEach(bridge => {
+                const startDist = this.city.wallRadius + 20;
+                const endDist = this.city.riverRadius;
+
+                // Bridge path
+                const startX1 = this.city.x + Math.cos(bridge.angle - bridge.width / (startDist * 2)) * startDist;
+                const startY1 = this.city.y + Math.sin(bridge.angle - bridge.width / (startDist * 2)) * startDist;
+                const startX2 = this.city.x + Math.cos(bridge.angle + bridge.width / (startDist * 2)) * startDist;
+                const startY2 = this.city.y + Math.sin(bridge.angle + bridge.width / (startDist * 2)) * startDist;
+
+                const endX1 = this.city.x + Math.cos(bridge.angle - bridge.width / (endDist * 2)) * endDist;
+                const endY1 = this.city.y + Math.sin(bridge.angle - bridge.width / (endDist * 2)) * endDist;
+                const endX2 = this.city.x + Math.cos(bridge.angle + bridge.width / (endDist * 2)) * endDist;
+                const endY2 = this.city.y + Math.sin(bridge.angle + bridge.width / (endDist * 2)) * endDist;
+
+                // Draw bridge (stone color)
+                this.ctx.fillStyle = '#8b7355';
+                this.ctx.beginPath();
+                this.ctx.moveTo(startX1, startY1);
+                this.ctx.lineTo(endX1, endY1);
+                this.ctx.lineTo(endX2, endY2);
+                this.ctx.lineTo(startX2, startY2);
+                this.ctx.closePath();
+                this.ctx.fill();
+
+                // Bridge border
+                this.ctx.strokeStyle = '#654321';
+                this.ctx.lineWidth = 3;
+                this.ctx.stroke();
+            });
+
+            // Draw city ground (grass green)
+            this.ctx.fillStyle = '#2d5016';
+            this.ctx.beginPath();
+            this.ctx.arc(this.city.x, this.city.y, this.city.wallRadius, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Draw city walls (stone)
+            this.ctx.strokeStyle = '#696969';
+            this.ctx.lineWidth = this.city.wallThickness;
+            this.ctx.beginPath();
+            this.ctx.arc(this.city.x, this.city.y, this.city.wallRadius - this.city.wallThickness / 2, 0, Math.PI * 2);
+            this.ctx.stroke();
+
+            // Draw wall details (brick pattern)
+            this.ctx.strokeStyle = '#505050';
+            this.ctx.lineWidth = 2;
+            for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 12) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(
+                    this.city.x + Math.cos(angle) * (this.city.wallRadius - this.city.wallThickness),
+                    this.city.y + Math.sin(angle) * (this.city.wallRadius - this.city.wallThickness)
+                );
+                this.ctx.lineTo(
+                    this.city.x + Math.cos(angle) * this.city.wallRadius,
+                    this.city.y + Math.sin(angle) * this.city.wallRadius
+                );
+                this.ctx.stroke();
+            }
+
+            // Draw gates at bridge entrances
+            this.city.bridges.forEach(bridge => {
+                const gateX = this.city.x + Math.cos(bridge.angle) * (this.city.wallRadius - this.city.wallThickness / 2);
+                const gateY = this.city.y + Math.sin(bridge.angle) * (this.city.wallRadius - this.city.wallThickness / 2);
+
+                // Gate
+                this.ctx.fillStyle = '#3d2817';
+                this.ctx.beginPath();
+                this.ctx.arc(gateX, gateY, 15, 0, Math.PI * 2);
+                this.ctx.fill();
+            });
         }
 
         // Drops
