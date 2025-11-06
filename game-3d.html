@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>3D RPG Mobile - Metin2 Style</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #0a0e27;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            color: white;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Character Selection Screen */
+        #charSelect {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+
+        #charSelect.hidden {
+            display: none;
+        }
+
+        .select-title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            color: #ffd700;
+        }
+
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 600px;
+        }
+
+        .char-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .char-card:hover, .char-card:active {
+            transform: scale(1.05);
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .char-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .char-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .char-desc {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        /* HUD */
+        #hud {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .stat-bar {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .player-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .bar-container {
+            height: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 5px;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .hp-bar { background: linear-gradient(90deg, #ff4444, #cc0000); }
+        .mp-bar { background: linear-gradient(90deg, #4444ff, #0000cc); }
+        .xp-bar { background: linear-gradient(90deg, #44ff44, #00cc00); }
+
+        .bar-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-size: 11px;
+            line-height: 20px;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        /* Joystick */
+        #joystick {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 120px;
+            height: 120px;
+            pointer-events: auto;
+            z-index: 100;
+        }
+
+        .joystick-base {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+        }
+
+        .joystick-stick {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s;
+        }
+
+        /* Skills */
+        #skills {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .skill-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            background: rgba(100, 50, 150, 0.8);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            pointer-events: auto;
+        }
+
+        .skill-btn:active {
+            transform: scale(0.9);
+        }
+
+        .skill-icon {
+            font-size: 24px;
+        }
+
+        .skill-key {
+            font-size: 10px;
+            margin-top: 2px;
+        }
+
+        .minimap-3d {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 150px;
+            height: 150px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            z-index: 100;
+        }
+
+        @media (max-width: 768px) {
+            .char-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Character Selection -->
+    <div id="charSelect">
+        <div class="select-title">⚔️ KARAKTER SEÇ ⚔️</div>
+        <div class="char-grid">
+            <div class="char-card" onclick="selectCharacter('warrior')">
+                <div class="char-icon">🛡️</div>
+                <div class="char-name">SAVAŞÇI</div>
+                <div class="char-desc">Yüksek HP ve savunma</div>
+            </div>
+            <div class="char-card" onclick="selectCharacter('ninja')">
+                <div class="char-icon">🗡️</div>
+                <div class="char-name">NİNJA</div>
+                <div class="char-desc">Hızlı ve kritik vuruşlar</div>
+            </div>
+            <div class="char-card" onclick="selectCharacter('shaman')">
+                <div class="char-icon">🔮</div>
+                <div class="char-name">ŞAMAN</div>
+                <div class="char-desc">Büyü ve iyileştirme</div>
+            </div>
+            <div class="char-card" onclick="selectCharacter('sura')">
+                <div class="char-icon">⚡</div>
+                <div class="char-name">SURA</div>
+                <div class="char-desc">Karanlık sihir uzmanı</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game HUD -->
+    <div id="hud" style="display: none;">
+        <div class="stat-bar">
+            <div class="player-info">
+                <span id="playerName">Karakter</span>
+                <span id="playerLevel">Seviye: 1</span>
+            </div>
+            <div class="bar-container">
+                <div class="bar-fill hp-bar" id="hpBar" style="width: 100%"></div>
+                <div class="bar-text" id="hpText">HP: 100/100</div>
+            </div>
+            <div class="bar-container">
+                <div class="bar-fill mp-bar" id="mpBar" style="width: 100%"></div>
+                <div class="bar-text" id="mpText">MP: 100/100</div>
+            </div>
+            <div class="bar-container">
+                <div class="bar-fill xp-bar" id="xpBar" style="width: 0%"></div>
+                <div class="bar-text" id="xpText">XP: 0/100</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mini map -->
+    <canvas id="minimap" class="minimap-3d" style="display: none;"></canvas>
+
+    <!-- Joystick -->
+    <div id="joystick" style="display: none;">
+        <div class="joystick-base">
+            <div class="joystick-stick" id="joystickStick"></div>
+        </div>
+    </div>
+
+    <!-- Skills -->
+    <div id="skills" style="display: none;"></div>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="game-3d.js"></script>
+</body>
+</html>
