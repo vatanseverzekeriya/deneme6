@@ -82,6 +82,8 @@ class Game {
 
         this.player = null;
         this.mobs = [];
+        this.mobGroups = []; // Track mob groups
+        this.nextGroupId = 0; // Counter for group IDs
         this.projectiles = [];
         this.drops = [];
         this.inventory = Array(5).fill(null);
@@ -224,35 +226,69 @@ class Game {
     }
 
     spawnMobs() {
-        const mobCount = 5 + Math.floor(this.player.level / 2);
+        // Spawn mobs in groups of 3
+        const totalMobs = 5 + Math.floor(this.player.level / 2);
+        const groupCount = Math.ceil(totalMobs / 3);
 
-        for (let i = 0; i < mobCount; i++) {
-            this.spawnMob();
+        for (let i = 0; i < groupCount; i++) {
+            this.spawnMobGroup();
         }
     }
 
-    spawnMob() {
+    spawnMobGroup() {
+        // Spawn a group of 3 mobs
+        const groupId = this.nextGroupId++;
         const typeIndex = Math.min(
             Math.floor(this.player.level / 3),
             MOB_TYPES.length - 1
         );
         const type = MOB_TYPES[Math.floor(Math.random() * (typeIndex + 1))];
 
+        // Choose a spawn location for the group
         const margin = 100;
-        const x = Math.random() < 0.5
+        const groupX = Math.random() < 0.5
             ? Math.random() * margin
             : this.canvas.width - Math.random() * margin;
-        const y = Math.random() < 0.5
+        const groupY = Math.random() < 0.5
             ? Math.random() * margin
             : this.canvas.height - Math.random() * margin;
 
-        this.mobs.push({
-            ...type,
-            x, y,
-            maxHP: type.hp,
-            size: 35,
-            targetCooldown: 0
-        });
+        // Create group info
+        const group = {
+            id: groupId,
+            aggro: false, // Group starts as non-aggressive
+            centerX: groupX,
+            centerY: groupY,
+            members: []
+        };
+
+        // Spawn 3 mobs in a triangle formation around the group center
+        for (let i = 0; i < 3; i++) {
+            const angle = (i * Math.PI * 2) / 3; // 120 degrees apart
+            const offsetX = Math.cos(angle) * 60; // 60px radius
+            const offsetY = Math.sin(angle) * 60;
+
+            const mob = {
+                ...type,
+                x: groupX + offsetX,
+                y: groupY + offsetY,
+                maxHP: type.hp,
+                size: 35,
+                targetCooldown: 0,
+                groupId: groupId,
+                groupPosition: i // Position within group (0, 1, 2)
+            };
+
+            this.mobs.push(mob);
+            group.members.push(mob);
+        }
+
+        this.mobGroups.push(group);
+    }
+
+    spawnMob() {
+        // Legacy function - now spawns a single group
+        this.spawnMobGroup();
     }
 
     useSkill(index) {
@@ -338,6 +374,13 @@ class Game {
         enemy.hp -= damage;
         this.showDamage(enemy.x, enemy.y, damage);
 
+        // When a mob is attacked, make its entire group aggressive
+        const group = this.mobGroups.find(g => g.id === enemy.groupId);
+        if (group && !group.aggro) {
+            group.aggro = true;
+            this.showNotification(`⚠️ ${enemy.name} Grubu Saldırıya Geçti!`);
+        }
+
         if (enemy.hp <= 0) {
             this.killEnemy(enemy);
         }
@@ -347,6 +390,23 @@ class Game {
         const index = this.mobs.indexOf(enemy);
         if (index > -1) {
             this.mobs.splice(index, 1);
+        }
+
+        // Remove from group
+        const group = this.mobGroups.find(g => g.id === enemy.groupId);
+        if (group) {
+            const memberIndex = group.members.indexOf(enemy);
+            if (memberIndex > -1) {
+                group.members.splice(memberIndex, 1);
+            }
+
+            // If group is empty, remove it
+            if (group.members.length === 0) {
+                const groupIndex = this.mobGroups.indexOf(group);
+                if (groupIndex > -1) {
+                    this.mobGroups.splice(groupIndex, 1);
+                }
+            }
         }
 
         // XP
@@ -366,8 +426,8 @@ class Game {
             });
         }
 
-        // Spawn new mob
-        setTimeout(() => this.spawnMob(), 3000);
+        // Spawn new mob group after delay
+        setTimeout(() => this.spawnMobGroup(), 3000);
 
         this.updateHUD();
     }
@@ -484,30 +544,81 @@ class Game {
             this.player.y = Math.max(20, Math.min(this.canvas.height - 20, this.player.y + dy));
         }
 
+        // Update mob groups first
+        this.mobGroups.forEach(group => {
+            // Update group center based on living members
+            if (group.members.length > 0) {
+                const sumX = group.members.reduce((sum, m) => sum + m.x, 0);
+                const sumY = group.members.reduce((sum, m) => sum + m.y, 0);
+                group.centerX = sumX / group.members.length;
+                group.centerY = sumY / group.members.length;
+            }
+        });
+
         // Update mobs
         this.mobs.forEach(mob => {
             const dist = this.getDistance(this.player, mob);
+            const group = this.mobGroups.find(g => g.id === mob.groupId);
 
-            if (dist < 400) {
-                const angle = Math.atan2(this.player.y - mob.y, this.player.x - mob.x);
-                mob.x += Math.cos(angle) * mob.speed;
-                mob.y += Math.sin(angle) * mob.speed;
+            if (group && group.aggro) {
+                // Aggressive group - chase player
+                if (dist < 400) {
+                    const angle = Math.atan2(this.player.y - mob.y, this.player.x - mob.x);
+                    mob.x += Math.cos(angle) * mob.speed;
+                    mob.y += Math.sin(angle) * mob.speed;
 
-                // Attack player
-                if (dist < 50) {
-                    if (mob.targetCooldown <= 0) {
-                        const damage = Math.max(1, mob.damage - this.player.defense);
-                        this.player.hp -= damage;
-                        this.showDamage(this.player.x, this.player.y - 40, damage);
-                        mob.targetCooldown = 1000;
+                    // Attack player
+                    if (dist < 50) {
+                        if (mob.targetCooldown <= 0) {
+                            const damage = Math.max(1, mob.damage - this.player.defense);
+                            this.player.hp -= damage;
+                            this.showDamage(this.player.x, this.player.y - 40, damage);
+                            mob.targetCooldown = 1000;
 
-                        if (this.player.hp <= 0) {
-                            this.gameOver();
+                            if (this.player.hp <= 0) {
+                                this.gameOver();
+                            }
+
+                            this.updateHUD();
                         }
-
-                        this.updateHUD();
                     }
                 }
+            } else if (group) {
+                // Non-aggressive group - maintain formation and wander
+                const targetAngle = (mob.groupPosition * Math.PI * 2) / 3;
+                const targetX = group.centerX + Math.cos(targetAngle) * 60;
+                const targetY = group.centerY + Math.sin(targetAngle) * 60;
+
+                // Move towards formation position
+                const distToTarget = Math.sqrt(
+                    (targetX - mob.x) ** 2 + (targetY - mob.y) ** 2
+                );
+
+                if (distToTarget > 10) {
+                    const angle = Math.atan2(targetY - mob.y, targetX - mob.x);
+                    mob.x += Math.cos(angle) * mob.speed * 0.5;
+                    mob.y += Math.sin(angle) * mob.speed * 0.5;
+                }
+
+                // Group wanders slowly (move center)
+                if (!group.wanderAngle) {
+                    group.wanderAngle = Math.random() * Math.PI * 2;
+                    group.wanderTime = 0;
+                }
+
+                group.wanderTime = (group.wanderTime || 0) + 16;
+                if (group.wanderTime > 2000) {
+                    group.wanderAngle = Math.random() * Math.PI * 2;
+                    group.wanderTime = 0;
+                }
+
+                // Move group center slowly
+                group.centerX += Math.cos(group.wanderAngle) * 0.3;
+                group.centerY += Math.sin(group.wanderAngle) * 0.3;
+
+                // Keep group on screen
+                group.centerX = Math.max(100, Math.min(this.canvas.width - 100, group.centerX));
+                group.centerY = Math.max(100, Math.min(this.canvas.height - 100, group.centerY));
             }
 
             if (mob.targetCooldown > 0) {
@@ -566,11 +677,25 @@ class Game {
 
         // Mobs
         this.mobs.forEach(mob => {
+            const group = this.mobGroups.find(g => g.id === mob.groupId);
+
             // Shadow
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
             this.ctx.beginPath();
             this.ctx.ellipse(mob.x, mob.y + mob.size/2, mob.size/2, mob.size/4, 0, 0, Math.PI * 2);
             this.ctx.fill();
+
+            // Aggro indicator (red glow for aggressive groups)
+            if (group && group.aggro) {
+                this.ctx.shadowBlur = 15;
+                this.ctx.shadowColor = '#ff0000';
+                this.ctx.strokeStyle = '#ff0000';
+                this.ctx.lineWidth = 3;
+                this.ctx.beginPath();
+                this.ctx.arc(mob.x, mob.y, mob.size / 2, 0, Math.PI * 2);
+                this.ctx.stroke();
+                this.ctx.shadowBlur = 0;
+            }
 
             // Mob icon
             this.ctx.font = mob.size + 'px Arial';
