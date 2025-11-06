@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oyun Portalı - Metin2 MMORPG</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            font-family: 'Arial', sans-serif;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .header h1 {
+            font-size: 56px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-shadow: 3px 3px 10px rgba(0, 0, 0, 0.8);
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 20px;
+            color: #aaa;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+        }
+
+        .games-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 40px;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        .game-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 3px solid rgba(255, 215, 0, 0.3);
+            border-radius: 25px;
+            padding: 35px;
+            cursor: pointer;
+            transition: all 0.4s;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 215, 0, 0.1), transparent);
+            transform: rotate(45deg);
+            transition: all 0.6s;
+        }
+
+        .game-card:hover::before {
+            left: 100%;
+        }
+
+        .game-card:hover {
+            transform: translateY(-15px) scale(1.03);
+            border-color: #ffd700;
+            box-shadow: 0 20px 60px rgba(255, 215, 0, 0.3);
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .game-icon {
+            font-size: 80px;
+            text-align: center;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.5));
+        }
+
+        .game-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #ffd700;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.8);
+        }
+
+        .game-description {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #ccc;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .game-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+            justify-content: center;
+        }
+
+        .feature-badge {
+            background: rgba(59, 130, 246, 0.3);
+            border: 2px solid #3b82f6;
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .play-button {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            border: none;
+            border-radius: 15px;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #000;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .play-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 30px rgba(255, 215, 0, 0.6);
+        }
+
+        .play-button:active {
+            transform: scale(0.98);
+        }
+
+        .badge-new {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #ef4444;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(239, 68, 68, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .footer {
+            margin-top: 80px;
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #aaa;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 36px;
+            }
+
+            .games-container {
+                grid-template-columns: 1fr;
+            }
+
+            .game-card {
+                padding: 25px;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎮 METIN2 MMORPG PORTALI 🎮</h1>
+        <p>Tam Özellikli PC Oyunu - Metin2 Seviyesinde Kapsamlı</p>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Krallık</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">4</div>
+                <div class="stat-label">Karakter Sınıfı</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">18</div>
+                <div class="stat-label">Yetenek</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">∞</div>
+                <div class="stat-label">Macera</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="games-container">
+        <!-- Main PC Game -->
+        <div class="game-card" onclick="window.location.href='metin2-pc-full.html'">
+            <div class="badge-new">YENİ!</div>
+            <div class="game-icon">🐉</div>
+            <div class="game-title">Metin2 PC - TAM SÜRÜM</div>
+            <div class="game-description">
+                Metin2 seviyesinde tam kapsamlı PC MMORPG deneyimi.
+                3 krallık, 4 sınıf, lonca sistemi, at sistemi, balık tutma ve daha fazlası!
+            </div>
+            <div class="game-features">
+                <span class="feature-badge">🏰 3 Krallık</span>
+                <span class="feature-badge">⚔️ 4 Sınıf</span>
+                <span class="feature-badge">🛡️ Ekipman Sistemi</span>
+                <span class="feature-badge">👥 Lonca Sistemi</span>
+                <span class="feature-badge">🐴 At Sistemi</span>
+                <span class="feature-badge">📜 Görevler</span>
+                <span class="feature-badge">🎣 Balık Tutma</span>
+                <span class="feature-badge">💎 6 Ekipman Slotu</span>
+                <span class="feature-badge">💊 4 Tip İksir</span>
+                <span class="feature-badge">🏪 NPC Sistemi</span>
+                <span class="feature-badge">🔨 Demirci</span>
+                <span class="feature-badge">🗺️ Minimap</span>
+            </div>
+            <button class="play-button">🎮 OYNA (PC)</button>
+        </div>
+
+        <!-- Mobile Version -->
+        <div class="game-card" onclick="window.location.href='metin2-style.html'">
+            <div class="game-icon">📱</div>
+            <div class="game-title">Metin2 Mobile</div>
+            <div class="game-description">
+                Mobil uyumlu hafif sürüm. Dokunmatik kontroller ve joystick desteği ile
+                mobil cihazlarda sorunsuz oynanabilir.
+            </div>
+            <div class="game-features">
+                <span class="feature-badge">📱 Mobil Uyumlu</span>
+                <span class="feature-badge">🕹️ Joystick</span>
+                <span class="feature-badge">⚔️ 4 Sınıf</span>
+                <span class="feature-badge">👾 Canavar Sistemi</span>
+                <span class="feature-badge">💪 Yetenekler</span>
+            </div>
+            <button class="play-button">🎮 OYNA (Mobile)</button>
+        </div>
+
+        <!-- Classic Version -->
+        <div class="game-card" onclick="window.location.href='game.html'">
+            <div class="game-icon">🎯</div>
+            <div class="game-title">Klasik Sürüm</div>
+            <div class="game-description">
+                Basit ve klasik RPG deneyimi. Hızlı ve hafif oyun mekaniği.
+            </div>
+            <div class="game-features">
+                <span class="feature-badge">🎮 Basit Kontroller</span>
+                <span class="feature-badge">⚡ Hızlı</span>
+                <span class="feature-badge">💨 Hafif</span>
+            </div>
+            <button class="play-button">🎮 OYNA</button>
+        </div>
+    </div>
+
+    <div class="footer">
+        <h3>🎮 OYUN ÖZELLİKLERİ 🎮</h3>
+        <p style="margin-top: 15px; max-width: 800px; line-height: 1.8;">
+            <strong>Metin2 PC - Tam Sürüm</strong> size gerçek bir MMORPG deneyimi sunar:<br><br>
+
+            <strong>🏰 Krallıklar:</strong> Chunjo, Jinno ve Shinsoo krallıkları arasından seçim yapın<br>
+            <strong>⚔️ Sınıflar:</strong> Savaşçı, Ninja, Şaman ve Sura - Her biri benzersiz yeteneklere sahip<br>
+            <strong>🛡️ Ekipman:</strong> Silah, Kask, Zırh, Kolye, Bilezik ve Ayakkabı - 6 tam ekipman slotu<br>
+            <strong>👥 Lonca:</strong> Kendi loncanızı kurun, üye toplayın ve lonca savaşlarına katılın<br>
+            <strong>🐴 Atlar:</strong> Normal At, Zırhlı At ve Savaş Atı - Hızınızı artırın<br>
+            <strong>📜 Görevler:</strong> Kurt Avı'ndan Ejderha Avı'na kadar onlarca görev<br>
+            <strong>🎣 Balık Tutma:</strong> Mini oyun ile balık tutun ve Yang kazanın<br>
+            <strong>💊 İksirler:</strong> Mavi (HP), Kırmızı (SP), Mor (MP) ve Yeşil (Panzehir) iksirler<br>
+            <strong>🏪 NPC'ler:</strong> Depocular, Satıcılar, Demirciler, Lonca Demircileri<br>
+            <strong>👾 Canavarlar:</strong> Kurt'tan Antik Ejderha'ya 8 farklı canavar türü<br>
+            <strong>🗺️ Açık Dünya:</strong> 3000x3000 büyüklüğünde keşfedilebilir dünya<br>
+            <strong>💬 Chat Sistemi:</strong> Sistem, Lonca ve Oyuncu mesajlaşması<br>
+        </p>
+        <p style="margin-top: 30px; color: #666;">
+            Keyboard + Mouse ile PC'de en iyi deneyim için tasarlandı<br>
+            © 2024 Metin2 Style MMORPG - Tüm hakları saklıdır
+        </p>
+    </div>
+</body>
+</html>
