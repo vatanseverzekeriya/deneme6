@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="0; url=http://localhost:3000/metin2-style.html">
+    <title>Oyunu Açıyor...</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .manual-link {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        a {
+            color: #ffd700;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .info {
+            margin-top: 20px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Oyun Açılıyor...</h1>
+        <div class="spinner"></div>
+        <p>Metin2-Style RPG Oyununa yönlendiriliyorsunuz</p>
+
+        <div class="manual-link">
+            <p>Otomatik yönlendirme çalışmazsa:</p>
+            <a href="http://localhost:3000/metin2-style.html" target="_blank">
+                🚀 Buraya Tıklayın
+            </a>
+        </div>
+
+        <div class="info">
+            <p>✨ 4 Karakter Sınıfı | 6 Farklı Harita | Mobil Uyumlu</p>
+        </div>
+    </div>
+
+    <script>
+        // Fallback redirect after 2 seconds
+        setTimeout(() => {
+            window.location.href = 'http://localhost:3000/metin2-style.html';
+        }, 2000);
+    </script>
+</body>
+</html>
