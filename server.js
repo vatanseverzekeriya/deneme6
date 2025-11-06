@@ -345,13 +345,13 @@ app.get('/dashboard', (req, res) => {
                 <div class="game-selector">
                     <div class="game-option active" onclick="selectGame('game')">
                         <div class="game-icon">🎯</div>
-                        <div class="game-title">Basit Oyun</div>
-                        <div class="game-desc">Engellerden kaçma oyunu</div>
+                        <div class="game-title">3D Basit Oyun</div>
+                        <div class="game-desc">3D engellerden kaçma oyunu</div>
                     </div>
                     <div class="game-option" onclick="selectGame('rpg')">
                         <div class="game-icon">⚔️</div>
-                        <div class="game-title">RPG Oyunu</div>
-                        <div class="game-desc">Metin2-style RPG</div>
+                        <div class="game-title">3D RPG Oyunu</div>
+                        <div class="game-desc">3D Metin2-style RPG</div>
                     </div>
                 </div>
 

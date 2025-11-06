@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Mobil Oyun</title>
+    <title>3D Mobil Oyun</title>
     <style>
         * {
             margin: 0;
@@ -15,55 +15,50 @@
         }
 
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            background: #0a0e27;
             font-family: 'Arial', sans-serif;
             overflow: hidden;
             touch-action: none;
+            color: white;
         }
 
         #gameContainer {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            max-width: 100%;
+            position: fixed;
+            inset: 0;
         }
 
         canvas {
-            background: #1a1a2e;
-            border-radius: 10px;
             display: block;
-            touch-action: none;
-            max-width: 100%;
-            height: auto;
+            width: 100vw;
+            height: 100vh;
+            outline: none;
         }
 
         #score {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             color: white;
-            text-align: center;
-            font-size: 24px;
-            margin-top: 15px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            font-size: 32px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 10;
         }
 
         #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
-            justify-content: center;
             gap: 15px;
-            margin-top: 20px;
-            flex-wrap: wrap;
+            z-index: 10;
         }
 
         .btn {
             background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.5);
             color: white;
             padding: 15px 30px;
             font-size: 18px;
@@ -72,36 +67,39 @@
             transition: all 0.3s;
             user-select: none;
             touch-action: manipulation;
+            font-weight: bold;
         }
 
         .btn:active {
             transform: scale(0.95);
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.4);
         }
 
         #mobileControls {
-            display: none;
             position: fixed;
-            bottom: 20px;
+            bottom: 100px;
             left: 50%;
             transform: translateX(-50%);
-            gap: 10px;
+            display: flex;
+            gap: 20px;
+            z-index: 10;
         }
 
         .arrow-btn {
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.3);
-            border: 2px solid rgba(255, 255, 255, 0.5);
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 3px solid rgba(255, 255, 255, 0.5);
             border-radius: 50%;
             color: white;
-            font-size: 24px;
+            font-size: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             user-select: none;
             touch-action: manipulation;
+            font-weight: bold;
         }
 
         .arrow-btn:active {
@@ -109,24 +107,10 @@
             transform: scale(0.9);
         }
 
-        @media (max-width: 768px) {
-            #mobileControls {
-                display: flex;
-            }
-
-            #gameContainer {
-                padding: 10px;
-            }
-
-            #score {
-                font-size: 20px;
-            }
-        }
-
         .live-indicator {
             position: fixed;
-            top: 10px;
-            right: 10px;
+            top: 20px;
+            right: 20px;
             background: #4ade80;
             color: white;
             padding: 8px 15px;
@@ -134,11 +118,40 @@
             font-size: 12px;
             font-weight: bold;
             animation: pulse 2s infinite;
+            z-index: 10;
         }
 
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
+        }
+
+        #gameOver {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        #gameOver.active {
+            display: flex;
+        }
+
+        .game-over-text {
+            font-size: 48px;
+            font-weight: bold;
+            color: #ff4444;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+        }
+
+        .final-score {
+            font-size: 32px;
+            margin-bottom: 30px;
         }
     </style>
 </head>
@@ -146,78 +159,192 @@
     <div class="live-indicator">🔴 CANLI</div>
 
     <div id="gameContainer">
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <canvas id="renderCanvas"></canvas>
         <div id="score">Skor: 0</div>
+
         <div id="controls">
             <button class="btn" onclick="game.reset()">Yeni Oyun</button>
             <button class="btn" onclick="game.togglePause()">Duraklat</button>
         </div>
+
+        <div id="mobileControls">
+            <div class="arrow-btn" ontouchstart="game.moveLeft()" ontouchend="game.stopMove()">◀</div>
+            <div class="arrow-btn" ontouchstart="game.moveRight()" ontouchend="game.stopMove()">▶</div>
+        </div>
+
+        <div id="gameOver">
+            <div class="game-over-text">OYUN BİTTİ!</div>
+            <div class="final-score" id="finalScore">Skorunuz: 0</div>
+            <button class="btn" onclick="game.reset()">Tekrar Oyna</button>
+        </div>
     </div>
 
-    <div id="mobileControls">
-        <div class="arrow-btn" ontouchstart="game.moveLeft()" ontouchend="game.stopMove()">◀</div>
-        <div class="arrow-btn" ontouchstart="game.moveRight()" ontouchend="game.stopMove()">▶</div>
-    </div>
+    <!-- Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
     <script>
         class Game {
             constructor() {
-                this.canvas = document.getElementById('gameCanvas');
-                this.ctx = this.canvas.getContext('2d');
-                this.scoreElement = document.getElementById('score');
+                this.canvas = document.getElementById('renderCanvas');
 
-                // Responsive canvas
-                this.resizeCanvas();
-                window.addEventListener('resize', () => this.resizeCanvas());
+                // Three.js setup
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
 
-                // Oyun değişkenleri
-                this.player = {
-                    x: this.canvas.width / 2,
-                    y: this.canvas.height - 50,
-                    width: 50,
-                    height: 50,
-                    color: '#00ff88',
-                    speed: 5
-                };
-
+                this.player = null;
+                this.playerMesh = null;
                 this.obstacles = [];
+                this.obstacleMeshes = [];
+
                 this.score = 0;
                 this.gameOver = false;
                 this.paused = false;
+
                 this.keys = {};
                 this.moveDirection = 0;
 
-                // Event listeners
-                document.addEventListener('keydown', (e) => this.keys[e.key] = true);
-                document.addEventListener('keyup', (e) => this.keys[e.key] = false);
-
-                // Touch controls
-                this.canvas.addEventListener('touchmove', (e) => this.handleTouch(e), { passive: false });
-
+                this.setupScene();
+                this.setupControls();
                 this.init();
             }
 
-            resizeCanvas() {
-                const maxWidth = Math.min(800, window.innerWidth - 40);
-                const maxHeight = Math.min(600, window.innerHeight - 200);
-                const ratio = 800 / 600;
+            setupScene() {
+                // Scene
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0x0a0e27);
+                this.scene.fog = new THREE.Fog(0x0a0e27, 30, 80);
 
-                if (maxWidth / ratio <= maxHeight) {
-                    this.canvas.style.width = maxWidth + 'px';
-                    this.canvas.style.height = (maxWidth / ratio) + 'px';
-                } else {
-                    this.canvas.style.width = (maxHeight * ratio) + 'px';
-                    this.canvas.style.height = maxHeight + 'px';
+                // Camera
+                this.camera = new THREE.PerspectiveCamera(
+                    60,
+                    window.innerWidth / window.innerHeight,
+                    0.1,
+                    1000
+                );
+                this.camera.position.set(0, 15, 25);
+                this.camera.lookAt(0, 0, -10);
+
+                // Renderer
+                this.renderer = new THREE.WebGLRenderer({
+                    canvas: this.canvas,
+                    antialias: true
+                });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+                // Lights
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+                this.scene.add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(5, 15, 10);
+                directionalLight.castShadow = true;
+                directionalLight.shadow.camera.left = -30;
+                directionalLight.shadow.camera.right = 30;
+                directionalLight.shadow.camera.top = 30;
+                directionalLight.shadow.camera.bottom = -30;
+                this.scene.add(directionalLight);
+
+                // Ground
+                const groundGeometry = new THREE.PlaneGeometry(60, 100);
+                const groundMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x1a3a2e,
+                    roughness: 0.8,
+                    metalness: 0.2
+                });
+                const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+                ground.rotation.x = -Math.PI / 2;
+                ground.position.z = -20;
+                ground.receiveShadow = true;
+                this.scene.add(ground);
+
+                // Grid lines
+                const gridGroup = new THREE.Group();
+                for (let i = -5; i < 5; i++) {
+                    const lineGeometry = new THREE.PlaneGeometry(0.2, 100);
+                    const lineMaterial = new THREE.MeshBasicMaterial({
+                        color: 0x444444,
+                        transparent: true,
+                        opacity: 0.3
+                    });
+                    const line = new THREE.Mesh(lineGeometry, lineMaterial);
+                    line.rotation.x = -Math.PI / 2;
+                    line.position.set(i * 4, 0.01, -20);
+                    gridGroup.add(line);
                 }
+                this.scene.add(gridGroup);
+
+                // Player
+                this.createPlayer();
+
+                // Resize handler
+                window.addEventListener('resize', () => {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                });
             }
 
-            handleTouch(e) {
-                e.preventDefault();
-                const touch = e.touches[0];
-                const rect = this.canvas.getBoundingClientRect();
-                const scaleX = this.canvas.width / rect.width;
-                const x = (touch.clientX - rect.left) * scaleX;
-                this.player.x = x - this.player.width / 2;
+            createPlayer() {
+                const group = new THREE.Group();
+
+                // Player body
+                const bodyGeometry = new THREE.BoxGeometry(2, 2, 2);
+                const bodyMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x00ff88,
+                    emissive: 0x00ff88,
+                    emissiveIntensity: 0.3,
+                    roughness: 0.5,
+                    metalness: 0.5
+                });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.castShadow = true;
+                body.position.y = 1;
+                group.add(body);
+
+                // Glow effect
+                const glowGeometry = new THREE.SphereGeometry(1.5, 16, 16);
+                const glowMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x00ff88,
+                    transparent: true,
+                    opacity: 0.2
+                });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                glow.position.y = 1;
+                group.add(glow);
+
+                this.playerMesh = group;
+                this.scene.add(this.playerMesh);
+
+                this.player = {
+                    x: 0,
+                    z: 8,
+                    speed: 0.15
+                };
+
+                this.playerMesh.position.set(this.player.x, 0, this.player.z);
+            }
+
+            setupControls() {
+                // Keyboard
+                document.addEventListener('keydown', (e) => {
+                    this.keys[e.key] = true;
+                });
+
+                document.addEventListener('keyup', (e) => {
+                    this.keys[e.key] = false;
+                });
+
+                // Touch controls
+                this.canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+                    this.player.x = x * 12;
+                }, { passive: false });
             }
 
             init() {
@@ -228,17 +355,42 @@
             spawnObstacle() {
                 if (this.gameOver || this.paused) return;
 
+                const x = (Math.random() - 0.5) * 20;
+                const speed = 0.1 + Math.random() * 0.1 + this.score * 0.001;
+
                 const obstacle = {
-                    x: Math.random() * (this.canvas.width - 40),
-                    y: -40,
-                    width: 40,
-                    height: 40,
-                    speed: 2 + Math.random() * 2,
-                    color: `hsl(${Math.random() * 360}, 70%, 60%)`
+                    x: x,
+                    z: -50,
+                    speed: speed
                 };
 
                 this.obstacles.push(obstacle);
-                setTimeout(() => this.spawnObstacle(), 1000 + Math.random() * 1000);
+
+                // Create 3D obstacle
+                const geometry = new THREE.BoxGeometry(2, 2, 2);
+                const hue = Math.random();
+                const color = new THREE.Color().setHSL(hue, 0.7, 0.6);
+                const material = new THREE.MeshStandardMaterial({
+                    color: color,
+                    emissive: color,
+                    emissiveIntensity: 0.5,
+                    roughness: 0.5,
+                    metalness: 0.5
+                });
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.castShadow = true;
+                mesh.position.set(x, 1, -50);
+                this.scene.add(mesh);
+                this.obstacleMeshes.push(mesh);
+
+                // Add rotation animation
+                mesh.userData.rotationSpeed = {
+                    x: (Math.random() - 0.5) * 0.05,
+                    y: (Math.random() - 0.5) * 0.05,
+                    z: (Math.random() - 0.5) * 0.05
+                };
+
+                setTimeout(() => this.spawnObstacle(), 800 - Math.min(this.score * 2, 600));
             }
 
             update() {
@@ -253,80 +405,76 @@
                 }
 
                 // Keep player in bounds
-                this.player.x = Math.max(0, Math.min(this.canvas.width - this.player.width, this.player.x));
+                this.player.x = Math.max(-12, Math.min(12, this.player.x));
+                this.playerMesh.position.x = this.player.x;
+
+                // Add player rotation based on movement
+                if (this.moveDirection !== 0 || this.keys['ArrowLeft'] || this.keys['ArrowRight']) {
+                    this.playerMesh.rotation.y += 0.05;
+                }
 
                 // Update obstacles
                 for (let i = this.obstacles.length - 1; i >= 0; i--) {
-                    this.obstacles[i].y += this.obstacles[i].speed;
+                    this.obstacles[i].z += this.obstacles[i].speed;
+                    const mesh = this.obstacleMeshes[i];
+
+                    if (mesh) {
+                        mesh.position.z = this.obstacles[i].z;
+
+                        // Rotate obstacle
+                        mesh.rotation.x += mesh.userData.rotationSpeed.x;
+                        mesh.rotation.y += mesh.userData.rotationSpeed.y;
+                        mesh.rotation.z += mesh.userData.rotationSpeed.z;
+                    }
 
                     // Check collision
-                    if (this.checkCollision(this.player, this.obstacles[i])) {
-                        this.gameOver = true;
-                        alert('Oyun Bitti! Skorunuz: ' + this.score);
+                    const dx = this.player.x - this.obstacles[i].x;
+                    const dz = this.player.z - this.obstacles[i].z;
+                    const distance = Math.sqrt(dx * dx + dz * dz);
+
+                    if (distance < 2) {
+                        this.endGame();
                         return;
                     }
 
-                    // Remove off-screen obstacles and increase score
-                    if (this.obstacles[i].y > this.canvas.height) {
+                    // Remove off-screen obstacles
+                    if (this.obstacles[i].z > 15) {
                         this.obstacles.splice(i, 1);
+                        if (mesh) {
+                            this.scene.remove(mesh);
+                        }
+                        this.obstacleMeshes.splice(i, 1);
                         this.score += 10;
-                        this.scoreElement.textContent = 'Skor: ' + this.score;
+                        document.getElementById('score').textContent = 'Skor: ' + this.score;
                     }
                 }
             }
 
-            checkCollision(rect1, rect2) {
-                return rect1.x < rect2.x + rect2.width &&
-                       rect1.x + rect1.width > rect2.x &&
-                       rect1.y < rect2.y + rect2.height &&
-                       rect1.y + rect1.height > rect2.y;
-            }
-
-            draw() {
-                // Clear canvas
-                this.ctx.fillStyle = '#1a1a2e';
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-                // Draw player
-                this.ctx.fillStyle = this.player.color;
-                this.ctx.shadowBlur = 10;
-                this.ctx.shadowColor = this.player.color;
-                this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
-
-                // Draw obstacles
-                this.obstacles.forEach(obstacle => {
-                    this.ctx.fillStyle = obstacle.color;
-                    this.ctx.shadowBlur = 10;
-                    this.ctx.shadowColor = obstacle.color;
-                    this.ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-                });
-
-                this.ctx.shadowBlur = 0;
-
-                // Draw pause message
-                if (this.paused) {
-                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-                    this.ctx.fillStyle = 'white';
-                    this.ctx.font = '48px Arial';
-                    this.ctx.textAlign = 'center';
-                    this.ctx.fillText('DURAKLATILDI', this.canvas.width / 2, this.canvas.height / 2);
-                }
-            }
-
-            gameLoop() {
-                this.update();
-                this.draw();
-                requestAnimationFrame(() => this.gameLoop());
+            endGame() {
+                this.gameOver = true;
+                document.getElementById('finalScore').textContent = 'Skorunuz: ' + this.score;
+                document.getElementById('gameOver').classList.add('active');
             }
 
             reset() {
-                this.player.x = this.canvas.width / 2;
+                // Remove all obstacles
                 this.obstacles = [];
+                this.obstacleMeshes.forEach(mesh => this.scene.remove(mesh));
+                this.obstacleMeshes = [];
+
+                // Reset player
+                this.player.x = 0;
+                this.playerMesh.position.set(0, 0, this.player.z);
+                this.playerMesh.rotation.set(0, 0, 0);
+
+                // Reset game state
                 this.score = 0;
                 this.gameOver = false;
                 this.paused = false;
-                this.scoreElement.textContent = 'Skor: 0';
+                document.getElementById('score').textContent = 'Skor: 0';
+                document.getElementById('gameOver').classList.remove('active');
+
+                // Restart spawning
                 this.spawnObstacle();
             }
 
@@ -344,6 +492,12 @@
 
             stopMove() {
                 this.moveDirection = 0;
+            }
+
+            gameLoop() {
+                this.update();
+                this.renderer.render(this.scene, this.camera);
+                requestAnimationFrame(() => this.gameLoop());
             }
         }
 

@@ -3,6 +3,7 @@ const CLASSES = {
     warrior: {
         name: 'Savaşçı',
         icon: '🛡️',
+        color: 0xff6b6b,
         baseHP: 150,
         baseMP: 50,
         baseDamage: 15,
@@ -16,6 +17,7 @@ const CLASSES = {
     ninja: {
         name: 'Ninja',
         icon: '🗡️',
+        color: 0x4ecdc4,
         baseHP: 100,
         baseMP: 80,
         baseDamage: 25,
@@ -29,6 +31,7 @@ const CLASSES = {
     shaman: {
         name: 'Şaman',
         icon: '🔮',
+        color: 0x9b59b6,
         baseHP: 120,
         baseMP: 120,
         baseDamage: 18,
@@ -42,6 +45,7 @@ const CLASSES = {
     sura: {
         name: 'Sura',
         icon: '⚡',
+        color: 0xe74c3c,
         baseHP: 130,
         baseMP: 100,
         baseDamage: 20,
@@ -56,34 +60,38 @@ const CLASSES = {
 
 // Mob types
 const MOB_TYPES = [
-    { name: 'Kurt', icon: '🐺', hp: 50, damage: 8, xp: 25, gold: 10, speed: 1.5 },
-    { name: 'Goblin', icon: '👹', hp: 60, damage: 10, xp: 30, gold: 15, speed: 1.2 },
-    { name: 'Ork', icon: '👾', hp: 80, damage: 12, xp: 40, gold: 20, speed: 1.0 },
-    { name: 'Troll', icon: '🧟', hp: 120, damage: 15, xp: 60, gold: 30, speed: 0.8 },
-    { name: 'Ejderha', icon: '🐉', hp: 200, damage: 25, xp: 100, gold: 50, speed: 0.6 }
+    { name: 'Kurt', icon: '🐺', color: 0x808080, hp: 50, damage: 8, xp: 25, gold: 10, speed: 0.05 },
+    { name: 'Goblin', icon: '👹', color: 0x00ff00, hp: 60, damage: 10, xp: 30, gold: 15, speed: 0.04 },
+    { name: 'Ork', icon: '👾', color: 0xff00ff, hp: 80, damage: 12, xp: 40, gold: 20, speed: 0.03 },
+    { name: 'Troll', icon: '🧟', color: 0x90ee90, hp: 120, damage: 15, xp: 60, gold: 30, speed: 0.025 },
+    { name: 'Ejderha', icon: '🐉', color: 0xff0000, hp: 200, damage: 25, xp: 100, gold: 50, speed: 0.02 }
 ];
 
 // Items
 const ITEMS = [
-    { name: 'Can İksiri', icon: '❤️', type: 'potion', heal: 50 },
-    { name: 'Mana İksiri', icon: '💙', type: 'potion', mana: 50 },
-    { name: 'Altın', icon: '💰', type: 'gold', value: 10 },
-    { name: 'Kılıç', icon: '⚔️', type: 'weapon', damage: 5 },
-    { name: 'Zırh', icon: '🛡️', type: 'armor', defense: 5 }
+    { name: 'Can İksiri', icon: '❤️', type: 'potion', heal: 50, color: 0xff0000 },
+    { name: 'Mana İksiri', icon: '💙', type: 'potion', mana: 50, color: 0x0000ff },
+    { name: 'Altın', icon: '💰', type: 'gold', value: 10, color: 0xffd700 },
+    { name: 'Kılıç', icon: '⚔️', type: 'weapon', damage: 5, color: 0xc0c0c0 },
+    { name: 'Zırh', icon: '🛡️', type: 'armor', defense: 5, color: 0x4682b4 }
 ];
 
-class Game {
+class Game3D {
     constructor() {
-        this.canvas = document.getElementById('gameCanvas');
-        this.ctx = this.canvas.getContext('2d');
+        this.canvas = document.getElementById('renderCanvas');
 
-        this.resizeCanvas();
-        window.addEventListener('resize', () => this.resizeCanvas());
+        // Three.js setup
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
 
         this.player = null;
+        this.playerMesh = null;
         this.mobs = [];
-        this.projectiles = [];
+        this.mobMeshes = [];
         this.drops = [];
+        this.dropMeshes = [];
+        this.projectiles = [];
         this.inventory = Array(5).fill(null);
 
         this.keys = {};
@@ -94,9 +102,158 @@ class Game {
         this.setupControls();
     }
 
-    resizeCanvas() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+    initThreeJS() {
+        // Scene
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x0a0e27);
+        this.scene.fog = new THREE.Fog(0x0a0e27, 10, 50);
+
+        // Camera
+        this.camera = new THREE.PerspectiveCamera(
+            60,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+        this.camera.position.set(0, 15, 20);
+        this.camera.lookAt(0, 0, 0);
+
+        // Renderer
+        this.renderer = new THREE.WebGLRenderer({
+            canvas: this.canvas,
+            antialias: true
+        });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        this.scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(10, 20, 10);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.camera.left = -50;
+        directionalLight.shadow.camera.right = 50;
+        directionalLight.shadow.camera.top = 50;
+        directionalLight.shadow.camera.bottom = -50;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        this.scene.add(directionalLight);
+
+        // Ground
+        const groundGeometry = new THREE.PlaneGeometry(100, 100, 10, 10);
+        const groundMaterial = new THREE.MeshStandardMaterial({
+            color: 0x1a3a2e,
+            roughness: 0.8,
+            metalness: 0.2
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        this.scene.add(ground);
+
+        // Grid helper
+        const gridHelper = new THREE.GridHelper(100, 50, 0x444444, 0x222222);
+        this.scene.add(gridHelper);
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            this.camera.aspect = window.innerWidth / window.innerHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    }
+
+    createPlayerMesh(classData) {
+        const group = new THREE.Group();
+
+        // Body
+        const bodyGeometry = new THREE.CapsuleGeometry(0.5, 1.5, 4, 8);
+        const bodyMaterial = new THREE.MeshStandardMaterial({
+            color: classData.color,
+            roughness: 0.5,
+            metalness: 0.3
+        });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.castShadow = true;
+        body.position.y = 1;
+        group.add(body);
+
+        // Glow effect
+        const glowGeometry = new THREE.SphereGeometry(0.8, 16, 16);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            color: classData.color,
+            transparent: true,
+            opacity: 0.3
+        });
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        glow.position.y = 1;
+        group.add(glow);
+
+        // Weapon indicator
+        const weaponGeometry = new THREE.ConeGeometry(0.1, 0.8, 4);
+        const weaponMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00 });
+        const weapon = new THREE.Mesh(weaponGeometry, weaponMaterial);
+        weapon.position.set(0.5, 1, 0);
+        weapon.rotation.z = Math.PI / 2;
+        group.add(weapon);
+
+        return group;
+    }
+
+    createMobMesh(mobType) {
+        const group = new THREE.Group();
+
+        // Body
+        const bodyGeometry = new THREE.SphereGeometry(0.6, 8, 8);
+        const bodyMaterial = new THREE.MeshStandardMaterial({
+            color: mobType.color,
+            roughness: 0.6,
+            metalness: 0.2
+        });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.castShadow = true;
+        body.position.y = 0.6;
+        group.add(body);
+
+        // Eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+
+        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        leftEye.position.set(-0.2, 0.7, 0.5);
+        group.add(leftEye);
+
+        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        rightEye.position.set(0.2, 0.7, 0.5);
+        group.add(rightEye);
+
+        return group;
+    }
+
+    createDropMesh(item) {
+        const group = new THREE.Group();
+
+        // Item base
+        const geometry = new THREE.BoxGeometry(0.4, 0.4, 0.4);
+        const material = new THREE.MeshStandardMaterial({
+            color: item.color,
+            emissive: item.color,
+            emissiveIntensity: 0.5,
+            roughness: 0.3,
+            metalness: 0.7
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.castShadow = true;
+        mesh.position.y = 0.3;
+        group.add(mesh);
+
+        // Rotation animation
+        group.userData.rotationSpeed = 0.02;
+
+        return group;
     }
 
     selectCharacter(className) {
@@ -106,9 +263,8 @@ class Game {
             class: className,
             name: classData.name,
             icon: classData.icon,
-            x: this.canvas.width / 2,
-            y: this.canvas.height / 2,
-            size: 40,
+            x: 0,
+            z: 0,
 
             level: 1,
             xp: 0,
@@ -122,12 +278,16 @@ class Game {
             damage: classData.baseDamage,
             defense: classData.baseDefense,
 
-            speed: 3,
+            speed: 0.1,
             skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
 
             gold: 0,
             attackCooldown: 0
         };
+
+        this.initThreeJS();
+        this.playerMesh = this.createPlayerMesh(classData);
+        this.scene.add(this.playerMesh);
 
         this.updateHUD();
         this.createSkillButtons();
@@ -238,21 +398,24 @@ class Game {
         );
         const type = MOB_TYPES[Math.floor(Math.random() * (typeIndex + 1))];
 
-        const margin = 100;
-        const x = Math.random() < 0.5
-            ? Math.random() * margin
-            : this.canvas.width - Math.random() * margin;
-        const y = Math.random() < 0.5
-            ? Math.random() * margin
-            : this.canvas.height - Math.random() * margin;
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 15 + Math.random() * 20;
+        const x = Math.cos(angle) * distance;
+        const z = Math.sin(angle) * distance;
 
-        this.mobs.push({
+        const mob = {
             ...type,
-            x, y,
+            x, z,
             maxHP: type.hp,
-            size: 35,
             targetCooldown: 0
-        });
+        };
+
+        this.mobs.push(mob);
+
+        const mobMesh = this.createMobMesh(type);
+        mobMesh.position.set(x, 0, z);
+        this.scene.add(mobMesh);
+        this.mobMeshes.push(mobMesh);
     }
 
     useSkill(index) {
@@ -270,8 +433,11 @@ class Game {
         if (skill.damage) {
             const nearestMob = this.findNearestMob();
             if (nearestMob) {
-                const distance = this.getDistance(this.player, nearestMob);
-                if (distance < 300) {
+                const distance = this.getDistance(
+                    { x: this.player.x, z: this.player.z },
+                    { x: nearestMob.x, z: nearestMob.z }
+                );
+                if (distance < 10) {
                     this.damageEnemy(nearestMob, skill.damage + this.player.damage);
 
                     if (skill.lifesteal) {
@@ -280,6 +446,9 @@ class Game {
                             this.player.hp + skill.damage * skill.lifesteal
                         );
                     }
+
+                    // Visual effect
+                    this.createSkillEffect(nearestMob);
                 }
             }
         }
@@ -290,6 +459,32 @@ class Game {
 
         this.updateHUD();
         this.updateSkillUI(index);
+    }
+
+    createSkillEffect(target) {
+        const geometry = new THREE.SphereGeometry(1, 16, 16);
+        const material = new THREE.MeshBasicMaterial({
+            color: 0xffff00,
+            transparent: true,
+            opacity: 0.6
+        });
+        const effect = new THREE.Mesh(geometry, material);
+        effect.position.set(target.x, 1, target.z);
+        this.scene.add(effect);
+
+        let scale = 0;
+        const animate = () => {
+            scale += 0.2;
+            effect.scale.set(scale, scale, scale);
+            effect.material.opacity = Math.max(0, 0.6 - scale * 0.2);
+
+            if (scale < 3) {
+                requestAnimationFrame(animate);
+            } else {
+                this.scene.remove(effect);
+            }
+        };
+        animate();
     }
 
     updateSkillUI(index) {
@@ -320,7 +515,10 @@ class Game {
         let minDist = Infinity;
 
         this.mobs.forEach(mob => {
-            const dist = this.getDistance(this.player, mob);
+            const dist = this.getDistance(
+                { x: this.player.x, z: this.player.z },
+                { x: mob.x, z: mob.z }
+            );
             if (dist < minDist) {
                 minDist = dist;
                 nearest = mob;
@@ -331,12 +529,12 @@ class Game {
     }
 
     getDistance(a, b) {
-        return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+        return Math.sqrt((a.x - b.x) ** 2 + (a.z - b.z) ** 2);
     }
 
     damageEnemy(enemy, damage) {
         enemy.hp -= damage;
-        this.showDamage(enemy.x, enemy.y, damage);
+        this.showDamage(enemy.x, enemy.z, damage);
 
         if (enemy.hp <= 0) {
             this.killEnemy(enemy);
@@ -347,6 +545,11 @@ class Game {
         const index = this.mobs.indexOf(enemy);
         if (index > -1) {
             this.mobs.splice(index, 1);
+
+            // Remove mesh
+            const mesh = this.mobMeshes[index];
+            this.scene.remove(mesh);
+            this.mobMeshes.splice(index, 1);
         }
 
         // XP
@@ -358,12 +561,17 @@ class Game {
         // Drop
         if (Math.random() < 0.4) {
             const item = ITEMS[Math.floor(Math.random() * ITEMS.length)];
-            this.drops.push({
+            const drop = {
                 ...item,
                 x: enemy.x,
-                y: enemy.y,
-                size: 25
-            });
+                z: enemy.z
+            };
+            this.drops.push(drop);
+
+            const dropMesh = this.createDropMesh(item);
+            dropMesh.position.set(enemy.x, 0, enemy.z);
+            this.scene.add(dropMesh);
+            this.dropMeshes.push(dropMesh);
         }
 
         // Spawn new mob
@@ -388,12 +596,18 @@ class Game {
         this.updateHUD();
     }
 
-    showDamage(x, y, damage) {
+    showDamage(x, z, damage) {
+        const vector = new THREE.Vector3(x, 2, z);
+        vector.project(this.camera);
+
+        const screenX = (vector.x * 0.5 + 0.5) * window.innerWidth;
+        const screenY = (-(vector.y * 0.5) + 0.5) * window.innerHeight;
+
         const dmg = document.createElement('div');
         dmg.className = 'damage-number';
         dmg.textContent = '-' + damage;
-        dmg.style.left = x + 'px';
-        dmg.style.top = y + 'px';
+        dmg.style.left = screenX + 'px';
+        dmg.style.top = screenY + 'px';
         dmg.style.color = '#ff4444';
         document.body.appendChild(dmg);
 
@@ -414,6 +628,11 @@ class Game {
         const index = this.drops.indexOf(drop);
         if (index > -1) {
             this.drops.splice(index, 1);
+
+            // Remove mesh
+            const mesh = this.dropMeshes[index];
+            this.scene.remove(mesh);
+            this.dropMeshes.splice(index, 1);
         }
 
         // Add to inventory
@@ -462,43 +681,65 @@ class Game {
         if (!this.player) return;
 
         // Player movement
-        let dx = 0, dy = 0;
+        let dx = 0, dz = 0;
 
         if (this.keys['arrowleft'] || this.keys['a']) dx -= 1;
         if (this.keys['arrowright'] || this.keys['d']) dx += 1;
-        if (this.keys['arrowup'] || this.keys['w']) dy -= 1;
-        if (this.keys['arrowdown'] || this.keys['s']) dy += 1;
+        if (this.keys['arrowup'] || this.keys['w']) dz -= 1;
+        if (this.keys['arrowdown'] || this.keys['s']) dz += 1;
 
         // Joystick
         if (this.joystickActive) {
             dx = Math.cos(this.joystickAngle) * this.joystickPower;
-            dy = Math.sin(this.joystickAngle) * this.joystickPower;
+            dz = Math.sin(this.joystickAngle) * this.joystickPower;
         }
 
-        if (dx || dy) {
-            const magnitude = Math.sqrt(dx * dx + dy * dy);
+        if (dx || dz) {
+            const magnitude = Math.sqrt(dx * dx + dz * dz);
             dx = (dx / magnitude) * this.player.speed;
-            dy = (dy / magnitude) * this.player.speed;
+            dz = (dz / magnitude) * this.player.speed;
 
-            this.player.x = Math.max(20, Math.min(this.canvas.width - 20, this.player.x + dx));
-            this.player.y = Math.max(20, Math.min(this.canvas.height - 20, this.player.y + dy));
+            this.player.x = Math.max(-40, Math.min(40, this.player.x + dx));
+            this.player.z = Math.max(-40, Math.min(40, this.player.z + dz));
+
+            // Update player mesh
+            this.playerMesh.position.set(this.player.x, 0, this.player.z);
+
+            // Rotate player to face movement direction
+            const angle = Math.atan2(dx, dz);
+            this.playerMesh.rotation.y = -angle;
         }
+
+        // Update camera to follow player
+        this.camera.position.x = this.player.x;
+        this.camera.position.z = this.player.z + 20;
+        this.camera.lookAt(this.player.x, 0, this.player.z);
 
         // Update mobs
-        this.mobs.forEach(mob => {
-            const dist = this.getDistance(this.player, mob);
+        this.mobs.forEach((mob, index) => {
+            const dist = this.getDistance(
+                { x: this.player.x, z: this.player.z },
+                { x: mob.x, z: mob.z }
+            );
 
-            if (dist < 400) {
-                const angle = Math.atan2(this.player.y - mob.y, this.player.x - mob.x);
+            if (dist < 20) {
+                const angle = Math.atan2(this.player.z - mob.z, this.player.x - mob.x);
                 mob.x += Math.cos(angle) * mob.speed;
-                mob.y += Math.sin(angle) * mob.speed;
+                mob.z += Math.sin(angle) * mob.speed;
+
+                // Update mesh
+                const mobMesh = this.mobMeshes[index];
+                if (mobMesh) {
+                    mobMesh.position.set(mob.x, 0, mob.z);
+                    mobMesh.rotation.y = -angle + Math.PI / 2;
+                }
 
                 // Attack player
-                if (dist < 50) {
+                if (dist < 2) {
                     if (mob.targetCooldown <= 0) {
                         const damage = Math.max(1, mob.damage - this.player.defense);
                         this.player.hp -= damage;
-                        this.showDamage(this.player.x, this.player.y - 40, damage);
+                        this.showDamage(this.player.x, this.player.z, damage);
                         mob.targetCooldown = 1000;
 
                         if (this.player.hp <= 0) {
@@ -516,9 +757,20 @@ class Game {
         });
 
         // Update drops
-        this.drops.forEach(drop => {
-            if (this.getDistance(this.player, drop) < 40) {
+        this.drops.forEach((drop, index) => {
+            const dist = this.getDistance(
+                { x: this.player.x, z: this.player.z },
+                { x: drop.x, z: drop.z }
+            );
+            if (dist < 2) {
                 this.pickupDrop(drop);
+            }
+
+            // Rotate drops
+            const dropMesh = this.dropMeshes[index];
+            if (dropMesh) {
+                dropMesh.rotation.y += 0.02;
+                dropMesh.position.y = 0.3 + Math.sin(Date.now() * 0.003) * 0.2;
             }
         });
 
@@ -533,81 +785,6 @@ class Game {
         if (this.player.mp < this.player.maxMP) {
             this.player.mp = Math.min(this.player.maxMP, this.player.mp + 0.1);
             if (Math.random() < 0.1) this.updateHUD();
-        }
-    }
-
-    draw() {
-        this.ctx.fillStyle = '#1a1a2e';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Grid
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-        this.ctx.lineWidth = 1;
-        for (let x = 0; x < this.canvas.width; x += 50) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.canvas.height);
-            this.ctx.stroke();
-        }
-        for (let y = 0; y < this.canvas.height; y += 50) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.canvas.width, y);
-            this.ctx.stroke();
-        }
-
-        // Drops
-        this.drops.forEach(drop => {
-            this.ctx.font = drop.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(drop.icon, drop.x, drop.y);
-        });
-
-        // Mobs
-        this.mobs.forEach(mob => {
-            // Shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            this.ctx.beginPath();
-            this.ctx.ellipse(mob.x, mob.y + mob.size/2, mob.size/2, mob.size/4, 0, 0, Math.PI * 2);
-            this.ctx.fill();
-
-            // Mob icon
-            this.ctx.font = mob.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(mob.icon, mob.x, mob.y);
-
-            // HP bar
-            const barWidth = 40;
-            const barHeight = 4;
-            const hpPercent = mob.hp / mob.maxHP;
-
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth, barHeight);
-
-            this.ctx.fillStyle = hpPercent > 0.5 ? '#4ade80' : hpPercent > 0.25 ? '#fbbf24' : '#ef4444';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth * hpPercent, barHeight);
-        });
-
-        // Player
-        if (this.player) {
-            // Shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            this.ctx.beginPath();
-            this.ctx.ellipse(this.player.x, this.player.y + this.player.size/2, this.player.size/2, this.player.size/4, 0, 0, Math.PI * 2);
-            this.ctx.fill();
-
-            // Player icon
-            this.ctx.font = this.player.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-
-            // Glow effect
-            this.ctx.shadowBlur = 10;
-            this.ctx.shadowColor = '#ffd700';
-            this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
-            this.ctx.shadowBlur = 0;
         }
     }
 
@@ -640,13 +817,13 @@ class Game {
 
     gameLoop() {
         this.update();
-        this.draw();
+        this.renderer.render(this.scene, this.camera);
         requestAnimationFrame(() => this.gameLoop());
     }
 }
 
 // Initialize game
-const game = new Game();
+const game = new Game3D();
 
 function selectCharacter(className) {
     game.selectCharacter(className);

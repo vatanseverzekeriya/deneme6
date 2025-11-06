@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>RPG Mobile - Metin2 Style</title>
+    <title>3D RPG Mobile - Metin2 Style</title>
     <style>
         * {
             margin: 0;
@@ -92,12 +92,12 @@
             color: #aaa;
         }
 
-        /* Game Canvas */
-        #gameCanvas {
+        /* 3D Canvas */
+        #renderCanvas {
             display: block;
             width: 100vw;
             height: 100vh;
-            background: #1a1a2e;
+            outline: none;
         }
 
         /* HUD */
@@ -136,11 +136,6 @@
         .bar-fill {
             height: 100%;
             transition: width 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: bold;
         }
 
         .hp-bar { background: linear-gradient(90deg, #ff4444, #cc0000); }
@@ -279,16 +274,6 @@
             background: rgba(255, 215, 0, 0.2);
         }
 
-        .item-count {
-            position: absolute;
-            bottom: 2px;
-            right: 4px;
-            font-size: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 1px 4px;
-            border-radius: 3px;
-        }
-
         /* Damage Numbers */
         .damage-number {
             position: fixed;
@@ -297,6 +282,7 @@
             pointer-events: none;
             animation: floatUp 1s ease-out forwards;
             text-shadow: 2px 2px 4px black;
+            z-index: 1000;
         }
 
         @keyframes floatUp {
@@ -380,7 +366,7 @@
 
     <!-- Game Screen -->
     <div id="gameScreen">
-        <canvas id="gameCanvas"></canvas>
+        <canvas id="renderCanvas"></canvas>
 
         <!-- HUD -->
         <div id="hud">
@@ -427,7 +413,9 @@
         <div id="lootNotif"></div>
     </div>
 
-    <script src="rpg-game.js"></script>
+    <!-- Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="rpg-game-3d.js"></script>
 
     <script>
         // Live reload
