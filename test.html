@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oyun Bağlantı Testi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 { margin-bottom: 30px; }
+        .link-box {
+            background: white;
+            color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            display: block;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            margin: 10px 0;
+            transition: all 0.3s;
+        }
+        a:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+        .status {
+            background: rgba(74, 222, 128, 0.2);
+            border: 2px solid #4ade80;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Oyun Sunucusu Bağlantı Testi</h1>
+
+        <div class="status">
+            ✅ Sunucu çalışıyor! Aşağıdaki linklerden birine tıklayın:
+        </div>
+
+        <div class="link-box">
+            <h3>Metin2 RPG Oyunu</h3>
+            <a href="http://localhost:3000/metin2-style.html" target="_blank">
+                localhost:3000/metin2-style.html
+            </a>
+            <a href="http://127.0.0.1:3000/metin2-style.html" target="_blank">
+                127.0.0.1:3000/metin2-style.html
+            </a>
+        </div>
+
+        <div class="link-box">
+            <h3>Dashboard</h3>
+            <a href="http://localhost:3000/dashboard" target="_blank">
+                localhost:3000/dashboard
+            </a>
+            <a href="http://127.0.0.1:3000/dashboard" target="_blank">
+                127.0.0.1:3000/dashboard
+            </a>
+        </div>
+
+        <div class="link-box">
+            <h3>Klasik Oyun</h3>
+            <a href="http://localhost:3000/game.html" target="_blank">
+                localhost:3000/game.html
+            </a>
+            <a href="http://127.0.0.1:3000/game.html" target="_blank">
+                127.0.0.1:3000/game.html
+            </a>
+        </div>
+
+        <div class="status" style="margin-top: 30px; background: rgba(255, 193, 7, 0.2); border-color: #ffc107;">
+            💡 <strong>Not:</strong> Eğer hiçbir link çalışmazsa:
+            <ul style="text-align: left; margin-top: 10px;">
+                <li>Antivirus/Firewall'unuzu kontrol edin</li>
+                <li>Farklı bir tarayıcı deneyin (Chrome, Firefox)</li>
+                <li>Tarayıcınızı yeniden başlatın</li>
+                <li>Port 3000'in başka bir uygulama tarafından kullanılmadığından emin olun</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
