@@ -77,6 +77,16 @@ class Game {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
 
+        // World size (much larger than viewport)
+        this.WORLD_WIDTH = 3000;
+        this.WORLD_HEIGHT = 3000;
+
+        // Camera system
+        this.camera = { x: 0, y: 0 };
+
+        // Minimap state
+        this.minimapOpen = false;
+
         this.resizeCanvas();
         window.addEventListener('resize', () => this.resizeCanvas());
 
@@ -106,8 +116,8 @@ class Game {
             class: className,
             name: classData.name,
             icon: classData.icon,
-            x: this.canvas.width / 2,
-            y: this.canvas.height / 2,
+            x: this.WORLD_WIDTH / 2,
+            y: this.WORLD_HEIGHT / 2,
             size: 40,
 
             level: 1,
@@ -137,6 +147,22 @@ class Game {
 
         this.spawnMobs();
         this.gameLoop();
+    }
+
+    updateCamera() {
+        // Center camera on player
+        this.camera.x = this.player.x - this.canvas.width / 2;
+        this.camera.y = this.player.y - this.canvas.height / 2;
+
+        // Clamp camera to world bounds
+        this.camera.x = Math.max(0, Math.min(this.WORLD_WIDTH - this.canvas.width, this.camera.x));
+        this.camera.y = Math.max(0, Math.min(this.WORLD_HEIGHT - this.canvas.height, this.camera.y));
+    }
+
+    toggleMinimap() {
+        this.minimapOpen = !this.minimapOpen;
+        const overlay = document.getElementById('minimapOverlay');
+        overlay.style.display = this.minimapOpen ? 'flex' : 'none';
     }
 
     createSkillButtons() {
@@ -238,13 +264,12 @@ class Game {
         );
         const type = MOB_TYPES[Math.floor(Math.random() * (typeIndex + 1))];
 
-        const margin = 100;
-        const x = Math.random() < 0.5
-            ? Math.random() * margin
-            : this.canvas.width - Math.random() * margin;
-        const y = Math.random() < 0.5
-            ? Math.random() * margin
-            : this.canvas.height - Math.random() * margin;
+        // Spawn mobs randomly in the world, not too close to player
+        let x, y;
+        do {
+            x = Math.random() * this.WORLD_WIDTH;
+            y = Math.random() * this.WORLD_HEIGHT;
+        } while (this.getDistance({x, y}, this.player) < 300);
 
         this.mobs.push({
             ...type,
@@ -480,9 +505,12 @@ class Game {
             dx = (dx / magnitude) * this.player.speed;
             dy = (dy / magnitude) * this.player.speed;
 
-            this.player.x = Math.max(20, Math.min(this.canvas.width - 20, this.player.x + dx));
-            this.player.y = Math.max(20, Math.min(this.canvas.height - 20, this.player.y + dy));
+            this.player.x = Math.max(20, Math.min(this.WORLD_WIDTH - 20, this.player.x + dx));
+            this.player.y = Math.max(20, Math.min(this.WORLD_HEIGHT - 20, this.player.y + dy));
         }
+
+        // Update camera
+        this.updateCamera();
 
         // Update mobs
         this.mobs.forEach(mob => {
@@ -540,21 +568,34 @@ class Game {
         this.ctx.fillStyle = '#1a1a2e';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Grid
+        // Save context and apply camera transform
+        this.ctx.save();
+        this.ctx.translate(-this.camera.x, -this.camera.y);
+
+        // Grid (world-based)
         this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
         this.ctx.lineWidth = 1;
-        for (let x = 0; x < this.canvas.width; x += 50) {
+        const gridSize = 50;
+        const startX = Math.floor(this.camera.x / gridSize) * gridSize;
+        const startY = Math.floor(this.camera.y / gridSize) * gridSize;
+
+        for (let x = startX; x < this.camera.x + this.canvas.width + gridSize; x += gridSize) {
             this.ctx.beginPath();
-            this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.canvas.height);
+            this.ctx.moveTo(x, this.camera.y);
+            this.ctx.lineTo(x, this.camera.y + this.canvas.height);
             this.ctx.stroke();
         }
-        for (let y = 0; y < this.canvas.height; y += 50) {
+        for (let y = startY; y < this.camera.y + this.canvas.height + gridSize; y += gridSize) {
             this.ctx.beginPath();
-            this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.canvas.width, y);
+            this.ctx.moveTo(this.camera.x, y);
+            this.ctx.lineTo(this.camera.x + this.canvas.width, y);
             this.ctx.stroke();
         }
+
+        // World boundaries
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        this.ctx.lineWidth = 4;
+        this.ctx.strokeRect(0, 0, this.WORLD_WIDTH, this.WORLD_HEIGHT);
 
         // Drops
         this.drops.forEach(drop => {
@@ -609,6 +650,85 @@ class Game {
             this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
             this.ctx.shadowBlur = 0;
         }
+
+        // Restore context
+        this.ctx.restore();
+
+        // Draw minimap if open
+        if (this.minimapOpen) {
+            this.drawFullMinimap();
+        }
+    }
+
+    drawFullMinimap() {
+        const minimapCanvas = document.getElementById('minimapCanvas');
+        if (!minimapCanvas) return;
+
+        const ctx = minimapCanvas.getContext('2d');
+        const scale = Math.min(minimapCanvas.width / this.WORLD_WIDTH, minimapCanvas.height / this.WORLD_HEIGHT);
+
+        // Clear
+        ctx.fillStyle = '#1a1a2e';
+        ctx.fillRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+
+        // World bounds
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(0, 0, this.WORLD_WIDTH * scale, this.WORLD_HEIGHT * scale);
+
+        // Grid
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < this.WORLD_WIDTH; x += 500) {
+            ctx.beginPath();
+            ctx.moveTo(x * scale, 0);
+            ctx.lineTo(x * scale, this.WORLD_HEIGHT * scale);
+            ctx.stroke();
+        }
+        for (let y = 0; y < this.WORLD_HEIGHT; y += 500) {
+            ctx.beginPath();
+            ctx.moveTo(0, y * scale);
+            ctx.lineTo(this.WORLD_WIDTH * scale, y * scale);
+            ctx.stroke();
+        }
+
+        // Mobs
+        ctx.fillStyle = '#ff4444';
+        this.mobs.forEach(mob => {
+            ctx.beginPath();
+            ctx.arc(mob.x * scale, mob.y * scale, 3, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // Player
+        if (this.player) {
+            ctx.fillStyle = '#ffd700';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ffd700';
+            ctx.beginPath();
+            ctx.arc(this.player.x * scale, this.player.y * scale, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Player direction indicator
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(this.player.x * scale, this.player.y * scale, 15, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        // Viewport indicator
+        const vpX = this.camera.x * scale;
+        const vpY = this.camera.y * scale;
+        const vpW = this.canvas.width * scale;
+        const vpH = this.canvas.height * scale;
+
+        ctx.strokeStyle = '#00ff88';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(vpX, vpY, vpW, vpH);
+        ctx.setLineDash([]);
     }
 
     updateHUD() {
