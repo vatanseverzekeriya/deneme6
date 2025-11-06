@@ -87,6 +87,11 @@ class Game {
         // Minimap state
         this.minimapOpen = false;
 
+        // Terrain system
+        this.TILE_SIZE = 100;
+        this.terrain = [];
+        this.generateTerrain();
+
         this.resizeCanvas();
         window.addEventListener('resize', () => this.resizeCanvas());
 
@@ -102,6 +107,70 @@ class Game {
         this.joystickPower = 0;
 
         this.setupControls();
+    }
+
+    generateTerrain() {
+        // Simple terrain generation with biomes
+        const cols = Math.ceil(this.WORLD_WIDTH / this.TILE_SIZE);
+        const rows = Math.ceil(this.WORLD_HEIGHT / this.TILE_SIZE);
+
+        for (let y = 0; y < rows; y++) {
+            for (let x = 0; x < cols; x++) {
+                // Use pseudo-random but deterministic values
+                const seed = x * 73 + y * 131;
+                const noise = Math.sin(seed * 0.1) * Math.cos(seed * 0.15);
+                const value = (noise + 1) / 2; // Normalize to 0-1
+
+                let type, elevation;
+
+                // Create smooth terrain with different biomes
+                if (value < 0.3) {
+                    type = 'grass'; // Çimenlik - canavarlar burada
+                    elevation = 0;
+                } else if (value < 0.5) {
+                    type = 'grass-light'; // Açık çimen
+                    elevation = 0.2;
+                } else if (value < 0.7) {
+                    type = 'dirt'; // Toprak
+                    elevation = -0.3;
+                } else if (value < 0.85) {
+                    type = 'hill'; // Tepe
+                    elevation = 0.5;
+                } else {
+                    type = 'mountain'; // Yüksek tepe
+                    elevation = 0.8;
+                }
+
+                this.terrain.push({
+                    x: x * this.TILE_SIZE,
+                    y: y * this.TILE_SIZE,
+                    type: type,
+                    elevation: elevation,
+                    color: this.getTerrainColor(type, elevation)
+                });
+            }
+        }
+    }
+
+    getTerrainColor(type, elevation) {
+        const colors = {
+            'grass': '#2d6e31',        // Koyu yeşil çimen
+            'grass-light': '#3a8a3f',  // Açık yeşil çimen
+            'dirt': '#5c4d3c',         // Toprak
+            'hill': '#4a6b3e',         // Tepe (yeşilimsi)
+            'mountain': '#536a52'      // Dağ (gri-yeşil)
+        };
+
+        // Add slight variation based on elevation
+        return colors[type] || '#2d6e31';
+    }
+
+    getTerrainAt(x, y) {
+        const col = Math.floor(x / this.TILE_SIZE);
+        const row = Math.floor(y / this.TILE_SIZE);
+        const cols = Math.ceil(this.WORLD_WIDTH / this.TILE_SIZE);
+        const index = row * cols + col;
+        return this.terrain[index] || { type: 'grass', elevation: 0, color: '#2d6e31' };
     }
 
     resizeCanvas() {
@@ -264,12 +333,17 @@ class Game {
         );
         const type = MOB_TYPES[Math.floor(Math.random() * (typeIndex + 1))];
 
-        // Spawn mobs randomly in the world, not too close to player
-        let x, y;
+        // Spawn mobs in grass areas, not too close to player
+        let x, y, terrain, attempts = 0;
         do {
             x = Math.random() * this.WORLD_WIDTH;
             y = Math.random() * this.WORLD_HEIGHT;
-        } while (this.getDistance({x, y}, this.player) < 300);
+            terrain = this.getTerrainAt(x, y);
+            attempts++;
+            // Try to spawn on grass, but give up after 50 attempts
+        } while (attempts < 50 &&
+                 (this.getDistance({x, y}, this.player) < 300 ||
+                  (terrain.type !== 'grass' && terrain.type !== 'grass-light')));
 
         this.mobs.push({
             ...type,
@@ -572,24 +646,54 @@ class Game {
         this.ctx.save();
         this.ctx.translate(-this.camera.x, -this.camera.y);
 
-        // Grid (world-based)
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-        this.ctx.lineWidth = 1;
-        const gridSize = 50;
-        const startX = Math.floor(this.camera.x / gridSize) * gridSize;
-        const startY = Math.floor(this.camera.y / gridSize) * gridSize;
+        // Draw terrain
+        const startCol = Math.floor(this.camera.x / this.TILE_SIZE);
+        const startRow = Math.floor(this.camera.y / this.TILE_SIZE);
+        const endCol = Math.ceil((this.camera.x + this.canvas.width) / this.TILE_SIZE);
+        const endRow = Math.ceil((this.camera.y + this.canvas.height) / this.TILE_SIZE);
+        const cols = Math.ceil(this.WORLD_WIDTH / this.TILE_SIZE);
 
-        for (let x = startX; x < this.camera.x + this.canvas.width + gridSize; x += gridSize) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(x, this.camera.y);
-            this.ctx.lineTo(x, this.camera.y + this.canvas.height);
-            this.ctx.stroke();
-        }
-        for (let y = startY; y < this.camera.y + this.canvas.height + gridSize; y += gridSize) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(this.camera.x, y);
-            this.ctx.lineTo(this.camera.x + this.canvas.width, y);
-            this.ctx.stroke();
+        for (let row = startRow; row <= endRow; row++) {
+            for (let col = startCol; col <= endCol; col++) {
+                const index = row * cols + col;
+                const tile = this.terrain[index];
+                if (!tile) continue;
+
+                // Base terrain color
+                this.ctx.fillStyle = tile.color;
+                this.ctx.fillRect(tile.x, tile.y, this.TILE_SIZE, this.TILE_SIZE);
+
+                // Add elevation shading
+                if (tile.elevation > 0) {
+                    // Hills are lighter
+                    this.ctx.fillStyle = `rgba(255, 255, 255, ${tile.elevation * 0.15})`;
+                    this.ctx.fillRect(tile.x, tile.y, this.TILE_SIZE, this.TILE_SIZE);
+                } else if (tile.elevation < 0) {
+                    // Valleys are darker
+                    this.ctx.fillStyle = `rgba(0, 0, 0, ${Math.abs(tile.elevation) * 0.2})`;
+                    this.ctx.fillRect(tile.x, tile.y, this.TILE_SIZE, this.TILE_SIZE);
+                }
+
+                // Add grass texture for grass tiles
+                if (tile.type === 'grass' || tile.type === 'grass-light') {
+                    this.ctx.strokeStyle = `rgba(0, 0, 0, 0.1)`;
+                    this.ctx.lineWidth = 1;
+                    // Simple grass lines
+                    for (let i = 0; i < 5; i++) {
+                        const gx = tile.x + (i * 20) + 10;
+                        const gy = tile.y + ((i * 37) % this.TILE_SIZE);
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(gx, gy);
+                        this.ctx.lineTo(gx + 2, gy + 5);
+                        this.ctx.stroke();
+                    }
+                }
+
+                // Tile borders (subtle)
+                this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(tile.x, tile.y, this.TILE_SIZE, this.TILE_SIZE);
+            }
         }
 
         // World boundaries
@@ -671,26 +775,40 @@ class Game {
         ctx.fillStyle = '#1a1a2e';
         ctx.fillRect(0, 0, minimapCanvas.width, minimapCanvas.height);
 
+        // Draw terrain on minimap
+        this.terrain.forEach(tile => {
+            ctx.fillStyle = tile.color;
+            ctx.fillRect(
+                tile.x * scale,
+                tile.y * scale,
+                this.TILE_SIZE * scale,
+                this.TILE_SIZE * scale
+            );
+
+            // Add elevation indicator
+            if (tile.elevation > 0) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${tile.elevation * 0.2})`;
+                ctx.fillRect(
+                    tile.x * scale,
+                    tile.y * scale,
+                    this.TILE_SIZE * scale,
+                    this.TILE_SIZE * scale
+                );
+            } else if (tile.elevation < 0) {
+                ctx.fillStyle = `rgba(0, 0, 0, ${Math.abs(tile.elevation) * 0.3})`;
+                ctx.fillRect(
+                    tile.x * scale,
+                    tile.y * scale,
+                    this.TILE_SIZE * scale,
+                    this.TILE_SIZE * scale
+                );
+            }
+        });
+
         // World bounds
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
         ctx.lineWidth = 2;
         ctx.strokeRect(0, 0, this.WORLD_WIDTH * scale, this.WORLD_HEIGHT * scale);
-
-        // Grid
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-        ctx.lineWidth = 1;
-        for (let x = 0; x < this.WORLD_WIDTH; x += 500) {
-            ctx.beginPath();
-            ctx.moveTo(x * scale, 0);
-            ctx.lineTo(x * scale, this.WORLD_HEIGHT * scale);
-            ctx.stroke();
-        }
-        for (let y = 0; y < this.WORLD_HEIGHT; y += 500) {
-            ctx.beginPath();
-            ctx.moveTo(0, y * scale);
-            ctx.lineTo(this.WORLD_WIDTH * scale, y * scale);
-            ctx.stroke();
-        }
 
         // Mobs
         ctx.fillStyle = '#ff4444';
