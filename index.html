@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Oyun Seçimi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 3px 3px 6px rgba(0,0,0,0.5), 0 0 10px #ffd700;
+            }
+            to {
+                text-shadow: 3px 3px 6px rgba(0,0,0,0.5), 0 0 20px #ffd700, 0 0 30px #ffd700;
+            }
+        }
+
+        .subtitle {
+            font-size: 20px;
+            margin-bottom: 50px;
+            opacity: 0.9;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .game-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 40px 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent
+            );
+            transform: rotate(45deg);
+            transition: all 0.5s;
+        }
+
+        .game-card:hover::before {
+            left: 100%;
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            border-color: #ffd700;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .game-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .game-title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #ffd700;
+        }
+
+        .game-desc {
+            font-size: 16px;
+            line-height: 1.6;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .features {
+            list-style: none;
+            text-align: left;
+            margin: 20px 0;
+        }
+
+        .features li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #4ade80;
+            font-weight: bold;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 2px solid #ffd700;
+            color: white;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.5);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .footer {
+            margin-top: 50px;
+            opacity: 0.7;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 32px;
+            }
+
+            .game-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .game-icon {
+                font-size: 60px;
+            }
+
+            .game-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚔️ RPG OYUN SEÇİMİ ⚔️</h1>
+        <div class="subtitle">Hangi versiyonu oynamak istersin?</div>
+
+        <div class="game-grid">
+            <!-- 2D Game Card -->
+            <div class="game-card" onclick="location.href='metin2-style.html'">
+                <span class="game-icon">🎮</span>
+                <div class="game-title">2D KLASIK</div>
+                <div class="game-desc">Tepeden bakış açısı ile klasik RPG deneyimi</div>
+                <ul class="features">
+                    <li>Geniş harita sistemi</li>
+                    <li>Kamera takip sistemi</li>
+                    <li>Minimap ile navigasyon</li>
+                    <li>Arazi sistemi (çimen, tepe, çukur)</li>
+                    <li>4 farklı karakter sınıfı</li>
+                    <li>Mobil joystick desteği</li>
+                </ul>
+                <a href="metin2-style.html" class="btn">Oyna</a>
+            </div>
+
+            <!-- 3D Game Card -->
+            <div class="game-card" onclick="location.href='game-3d.html'">
+                <span class="game-icon">🌍</span>
+                <div class="game-title">3D MODERN</div>
+                <div class="game-desc">Tam 3D grafik motoru ile gerçekçi deneyim</div>
+                <ul class="features">
+                    <li>Three.js 3D grafik motoru</li>
+                    <li>3. şahıs kamera</li>
+                    <li>3D arazi ve tepeler</li>
+                    <li>Gerçek ışıklandırma ve gölgeler</li>
+                    <li>3D ağaçlar ve çevre</li>
+                    <li>360° hareket özgürlüğü</li>
+                </ul>
+                <a href="game-3d.html" class="btn">Oyna</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            🎯 İki versiyonu da dene ve favorini bul!
+        </div>
+    </div>
+
+    <script>
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '1') location.href = 'metin2-style.html';
+            if (e.key === '2') location.href = 'game-3d.html';
+        });
+
+        // Live reload support
+        if (typeof WebSocket !== 'undefined') {
+            const ws = new WebSocket('ws://' + window.location.host);
+            ws.onmessage = function(event) {
+                if (event.data === 'reload') {
+                    window.location.reload();
+                }
+            };
+        }
+    </script>
+</body>
+</html>
