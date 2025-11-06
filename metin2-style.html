@@ -346,6 +346,275 @@
             font-weight: bold;
             z-index: 1000;
         }
+
+        /* Stat Panel */
+        #statPanel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 14, 39, 0.98);
+            border: 3px solid #ffd700;
+            border-radius: 15px;
+            padding: 20px;
+            min-width: 350px;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+            display: none;
+            z-index: 2000;
+            pointer-events: auto;
+        }
+
+        #statPanel.active {
+            display: block;
+        }
+
+        .panel-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #ffd700;
+            text-align: center;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .panel-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #ff4444;
+            font-weight: bold;
+        }
+
+        .stat-points-info {
+            background: rgba(255, 215, 0, 0.2);
+            border: 2px solid #ffd700;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-name {
+            font-size: 15px;
+            font-weight: bold;
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            color: #4ade80;
+            margin: 0 15px;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .stat-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .stat-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.6);
+        }
+
+        .stat-btn:active {
+            transform: scale(0.95);
+        }
+
+        .stat-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Skill Panel */
+        #skillPanel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 14, 39, 0.98);
+            border: 3px solid #ffd700;
+            border-radius: 15px;
+            padding: 20px;
+            min-width: 350px;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+            display: none;
+            z-index: 2000;
+            pointer-events: auto;
+        }
+
+        #skillPanel.active {
+            display: block;
+        }
+
+        .skill-upgrade-row {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+
+        .skill-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .skill-title {
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .skill-grade {
+            font-size: 14px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+
+        .skill-grade.master {
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            color: white;
+        }
+
+        .skill-grade.grandmaster {
+            background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+            color: white;
+        }
+
+        .skill-grade.perfect {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: white;
+        }
+
+        .skill-progress {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .skill-progress-bar {
+            flex: 1;
+            height: 18px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 9px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .skill-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ade80, #22c55e);
+            transition: width 0.3s;
+        }
+
+        .skill-progress-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-size: 11px;
+            line-height: 18px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        .skill-upgrade-btn {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 8px 15px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .skill-upgrade-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
+        }
+
+        .skill-upgrade-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .book-required {
+            font-size: 12px;
+            color: #fbbf24;
+            margin-top: 5px;
+        }
+
+        /* Panel buttons */
+        .panel-buttons {
+            position: fixed;
+            top: 150px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: auto;
+        }
+
+        .panel-open-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            background: rgba(255, 215, 0, 0.3);
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .panel-open-btn:active {
+            transform: scale(0.9);
+        }
     </style>
 </head>
 <body>
@@ -425,6 +694,32 @@
 
         <!-- Loot Notification -->
         <div id="lootNotif"></div>
+
+        <!-- Panel Buttons -->
+        <div class="panel-buttons">
+            <div class="panel-open-btn" onclick="game.toggleStatPanel()" title="Stat (S)">📊</div>
+            <div class="panel-open-btn" onclick="game.toggleSkillPanel()" title="Skill (K)">📖</div>
+        </div>
+
+        <!-- Stat Panel -->
+        <div id="statPanel">
+            <div class="panel-close" onclick="game.toggleStatPanel()">✕</div>
+            <div class="panel-title">⚡ STAT GELİŞTİRME ⚡</div>
+            <div class="stat-points-info" id="statPointsInfo">
+                Kullanılabilir Stat Puanı: 0
+            </div>
+            <div id="statRows"></div>
+        </div>
+
+        <!-- Skill Panel -->
+        <div id="skillPanel">
+            <div class="panel-close" onclick="game.toggleSkillPanel()">✕</div>
+            <div class="panel-title">📖 SKİLL GELİŞTİRME 📖</div>
+            <div class="stat-points-info">
+                Kitap okuyarak skilllerini geliştirebilirsin!
+            </div>
+            <div id="skillRows"></div>
+        </div>
     </div>
 
     <script src="rpg-game.js"></script>

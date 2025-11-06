@@ -69,8 +69,18 @@ const ITEMS = [
     { name: 'Mana İksiri', icon: '💙', type: 'potion', mana: 50 },
     { name: 'Altın', icon: '💰', type: 'gold', value: 10 },
     { name: 'Kılıç', icon: '⚔️', type: 'weapon', damage: 5 },
-    { name: 'Zırh', icon: '🛡️', type: 'armor', defense: 5 }
+    { name: 'Zırh', icon: '🛡️', type: 'armor', defense: 5 },
+    { name: 'Skill Kitabı (M)', icon: '📘', type: 'skillbook', grade: 'master' },
+    { name: 'Skill Kitabı (G)', icon: '📗', type: 'skillbook', grade: 'grandmaster' },
+    { name: 'Skill Kitabı (P)', icon: '📕', type: 'skillbook', grade: 'perfect' }
 ];
+
+// Skill grade requirements
+const SKILL_GRADES = {
+    master: { name: 'Master', shortName: 'M', maxLevel: 20, color: 'master' },
+    grandmaster: { name: 'Grand Master', shortName: 'G', maxLevel: 30, color: 'grandmaster' },
+    perfect: { name: 'Perfect', shortName: 'P', maxLevel: 40, color: 'perfect' }
+};
 
 class Game {
     constructor() {
@@ -113,6 +123,7 @@ class Game {
             level: 1,
             xp: 0,
             xpToLevel: 100,
+            lastStatPoint: 0, // Track when last stat point was earned
 
             hp: classData.baseHP,
             maxHP: classData.baseHP,
@@ -122,8 +133,22 @@ class Game {
             damage: classData.baseDamage,
             defense: classData.baseDefense,
 
+            // Base stats for upgrades
+            baseSTR: 10,
+            baseDEX: 10,
+            baseINT: 10,
+            baseVIT: 10,
+
+            statPoints: 0,
+
             speed: 3,
-            skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
+            skills: classData.skills.map(s => ({
+                ...s,
+                cooldownRemaining: 0,
+                grade: 'master',
+                gradeLevel: 1,
+                gradeProgress: 0
+            })),
 
             gold: 0,
             attackCooldown: 0
@@ -131,6 +156,8 @@ class Game {
 
         this.updateHUD();
         this.createSkillButtons();
+        this.createStatPanel();
+        this.createSkillPanel();
 
         document.getElementById('charSelect').classList.add('hidden');
         document.getElementById('gameScreen').classList.add('active');
@@ -165,6 +192,10 @@ class Game {
             if (e.key.toLowerCase() === 'q') this.useSkill(0);
             if (e.key.toLowerCase() === 'w') this.useSkill(1);
             if (e.key.toLowerCase() === 'e') this.useSkill(2);
+
+            // Panels
+            if (e.key.toLowerCase() === 's') this.toggleStatPanel();
+            if (e.key.toLowerCase() === 'k') this.toggleSkillPanel();
 
             // Use potion
             if (e.key >= '1' && e.key <= '5') {
@@ -349,14 +380,30 @@ class Game {
             this.mobs.splice(index, 1);
         }
 
-        // XP
+        // XP and stat points
+        const oldXP = this.player.xp;
         this.player.xp += enemy.xp;
+
+        // Check for stat point every 25% of level progress
+        const checkpoints = [25, 50, 75];
+        for (let checkpoint of checkpoints) {
+            const checkpointXP = Math.floor(this.player.xpToLevel * checkpoint / 100);
+            if (oldXP < checkpointXP && this.player.xp >= checkpointXP) {
+                if (this.player.lastStatPoint < checkpointXP) {
+                    this.player.statPoints++;
+                    this.player.lastStatPoint = checkpointXP;
+                    this.showNotification('⭐ +1 Stat Puanı! (Toplam: ' + this.player.statPoints + ')');
+                    this.updateStatPanel();
+                }
+            }
+        }
+
         if (this.player.xp >= this.player.xpToLevel) {
             this.levelUp();
         }
 
-        // Drop
-        if (Math.random() < 0.4) {
+        // Drop (higher chance for skill books)
+        if (Math.random() < 0.5) {
             const item = ITEMS[Math.floor(Math.random() * ITEMS.length)];
             this.drops.push({
                 ...item,
@@ -376,6 +423,7 @@ class Game {
         this.player.level++;
         this.player.xp = 0;
         this.player.xpToLevel = Math.floor(this.player.xpToLevel * 1.5);
+        this.player.lastStatPoint = 0; // Reset for new level
 
         this.player.maxHP += 20;
         this.player.hp = this.player.maxHP;
@@ -384,8 +432,12 @@ class Game {
         this.player.damage += 3;
         this.player.defense += 2;
 
-        this.showNotification('🎉 LEVEL UP! ' + this.player.level);
+        // Bonus stat point at level up
+        this.player.statPoints++;
+
+        this.showNotification('🎉 LEVEL UP! ' + this.player.level + ' (+1 Stat Puanı)');
         this.updateHUD();
+        this.updateStatPanel();
     }
 
     showDamage(x, y, damage) {
@@ -442,6 +494,10 @@ class Game {
             this.inventory[slot] = null;
             this.updateInventory();
             this.updateHUD();
+        } else if (item.type === 'skillbook') {
+            // Store for skill upgrade
+            this.showNotification('📖 Skill panelini aç (K) ve bir skill seç!');
+            // Item will be consumed when skill is upgraded
         }
     }
 
@@ -636,6 +692,197 @@ class Game {
     gameOver() {
         alert('😵 Öldün!\n\nSeviye: ' + this.player.level + '\nXP: ' + this.player.xp);
         window.location.reload();
+    }
+
+    // Stat Panel Methods
+    toggleStatPanel() {
+        const panel = document.getElementById('statPanel');
+        panel.classList.toggle('active');
+    }
+
+    createStatPanel() {
+        this.updateStatPanel();
+    }
+
+    updateStatPanel() {
+        if (!this.player) return;
+
+        document.getElementById('statPointsInfo').textContent =
+            `Kullanılabilir Stat Puanı: ${this.player.statPoints}`;
+
+        const statRows = document.getElementById('statRows');
+        statRows.innerHTML = `
+            <div class="stat-row">
+                <div class="stat-name">💪 STR (Güç)</div>
+                <div class="stat-value">${this.player.baseSTR}</div>
+                <button class="stat-btn" onclick="game.upgradeStat('STR')" ${this.player.statPoints <= 0 ? 'disabled' : ''}>+</button>
+            </div>
+            <div class="stat-row">
+                <div class="stat-name">⚡ DEX (Çeviklik)</div>
+                <div class="stat-value">${this.player.baseDEX}</div>
+                <button class="stat-btn" onclick="game.upgradeStat('DEX')" ${this.player.statPoints <= 0 ? 'disabled' : ''}>+</button>
+            </div>
+            <div class="stat-row">
+                <div class="stat-name">🧠 INT (Zeka)</div>
+                <div class="stat-value">${this.player.baseINT}</div>
+                <button class="stat-btn" onclick="game.upgradeStat('INT')" ${this.player.statPoints <= 0 ? 'disabled' : ''}>+</button>
+            </div>
+            <div class="stat-row">
+                <div class="stat-name">❤️ VIT (Canlılık)</div>
+                <div class="stat-value">${this.player.baseVIT}</div>
+                <button class="stat-btn" onclick="game.upgradeStat('VIT')" ${this.player.statPoints <= 0 ? 'disabled' : ''}>+</button>
+            </div>
+            <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 12px;">
+                <div><b>STR:</b> Hasar +2 per puan</div>
+                <div><b>DEX:</b> Kritik şansı artırır</div>
+                <div><b>INT:</b> MP +5, Skill hasarı +1%</div>
+                <div><b>VIT:</b> HP +10 per puan</div>
+            </div>
+        `;
+    }
+
+    upgradeStat(statName) {
+        if (!this.player || this.player.statPoints <= 0) return;
+
+        this.player.statPoints--;
+
+        switch(statName) {
+            case 'STR':
+                this.player.baseSTR++;
+                this.player.damage += 2;
+                this.showNotification('💪 +1 STR! Hasar arttı!');
+                break;
+            case 'DEX':
+                this.player.baseDEX++;
+                this.showNotification('⚡ +1 DEX! Kritik şansı arttı!');
+                break;
+            case 'INT':
+                this.player.baseINT++;
+                this.player.maxMP += 5;
+                this.player.mp = Math.min(this.player.mp + 5, this.player.maxMP);
+                this.showNotification('🧠 +1 INT! MP arttı!');
+                break;
+            case 'VIT':
+                this.player.baseVIT++;
+                this.player.maxHP += 10;
+                this.player.hp = Math.min(this.player.hp + 10, this.player.maxHP);
+                this.showNotification('❤️ +1 VIT! HP arttı!');
+                break;
+        }
+
+        this.updateStatPanel();
+        this.updateHUD();
+    }
+
+    // Skill Panel Methods
+    toggleSkillPanel() {
+        const panel = document.getElementById('skillPanel');
+        panel.classList.toggle('active');
+        if (panel.classList.contains('active')) {
+            this.updateSkillPanel();
+        }
+    }
+
+    createSkillPanel() {
+        this.updateSkillPanel();
+    }
+
+    updateSkillPanel() {
+        if (!this.player) return;
+
+        const skillRows = document.getElementById('skillRows');
+        skillRows.innerHTML = '';
+
+        this.player.skills.forEach((skill, index) => {
+            const gradeData = SKILL_GRADES[skill.grade];
+            const maxProgress = gradeData.maxLevel;
+            const progressPercent = (skill.gradeLevel / maxProgress) * 100;
+            const canUpgrade = skill.gradeLevel < maxProgress;
+
+            const row = document.createElement('div');
+            row.className = 'skill-upgrade-row';
+            row.innerHTML = `
+                <div class="skill-header">
+                    <div class="skill-title">
+                        <span style="font-size: 20px;">${skill.icon}</span>
+                        <span>${skill.name}</span>
+                    </div>
+                    <div class="skill-grade ${gradeData.color}">${gradeData.shortName}</div>
+                </div>
+                <div class="skill-progress">
+                    <div class="skill-progress-bar">
+                        <div class="skill-progress-fill" style="width: ${progressPercent}%"></div>
+                        <div class="skill-progress-text">${skill.gradeLevel}/${maxProgress}</div>
+                    </div>
+                </div>
+                <div class="book-required">
+                    ${canUpgrade ? '📘 Gerekli: ' + gradeData.name + ' Kitabı' : '✅ Maksimum seviye!'}
+                </div>
+                <button class="skill-upgrade-btn" onclick="game.upgradeSkill(${index})" ${!canUpgrade ? 'disabled' : ''}>
+                    Geliştir
+                </button>
+            `;
+            skillRows.appendChild(row);
+        });
+    }
+
+    upgradeSkill(skillIndex) {
+        if (!this.player) return;
+
+        const skill = this.player.skills[skillIndex];
+        const gradeData = SKILL_GRADES[skill.grade];
+
+        // Check if max level
+        if (skill.gradeLevel >= gradeData.maxLevel) {
+            this.showNotification('❌ Bu skill maksimum seviyede!');
+            return;
+        }
+
+        // Find skill book in inventory
+        let bookSlot = -1;
+        for (let i = 0; i < this.inventory.length; i++) {
+            const item = this.inventory[i];
+            if (item && item.type === 'skillbook' && item.grade === skill.grade) {
+                bookSlot = i;
+                break;
+            }
+        }
+
+        if (bookSlot === -1) {
+            this.showNotification('❌ Gerekli skill kitabı yok! (' + gradeData.name + ')');
+            return;
+        }
+
+        // Consume book and upgrade
+        this.inventory[bookSlot] = null;
+        this.updateInventory();
+
+        const oldLevel = skill.gradeLevel;
+        skill.gradeLevel++;
+
+        // Upgrade to next grade if max level reached
+        if (skill.gradeLevel >= gradeData.maxLevel) {
+            if (skill.grade === 'master') {
+                skill.grade = 'grandmaster';
+                skill.gradeLevel = 1;
+                this.showNotification(`🎉 ${skill.name} Grand Master oldu!`);
+            } else if (skill.grade === 'grandmaster') {
+                skill.grade = 'perfect';
+                skill.gradeLevel = 1;
+                this.showNotification(`✨ ${skill.name} Perfect oldu!`);
+            } else {
+                this.showNotification(`⭐ ${skill.name} Perfect Maksimum!`);
+            }
+        } else {
+            this.showNotification(`📈 ${skill.name} ${gradeData.shortName}${skill.gradeLevel} oldu!`);
+        }
+
+        // Improve skill stats
+        if (skill.damage) skill.damage += 5;
+        if (skill.heal) skill.heal += 10;
+        skill.mpCost = Math.max(5, skill.mpCost - 1);
+
+        this.updateSkillPanel();
     }
 
     gameLoop() {
