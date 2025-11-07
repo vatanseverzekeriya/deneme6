@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>3D RPG Mobile - Metin2 Style</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #0a0e27;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            color: white;
+        }
+
+        #gameScreen {
+            display: none;
+        }
+
+        #gameScreen.active {
+            display: block;
+        }
+
+        /* Character Selection Screen */
+        #charSelect {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+
+        #charSelect.hidden {
+            display: none;
+        }
+
+        .select-title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            color: #ffd700;
+        }
+
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 600px;
+        }
+
+        .char-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .char-card:hover, .char-card:active {
+            transform: scale(1.05);
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .char-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .char-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .char-desc {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        /* Game Canvas */
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* HUD */
+        #hud {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .stat-bar {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .player-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .bar-container {
+            height: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 5px;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .hp-bar { background: linear-gradient(90deg, #ff4444, #cc0000); }
+        .mp-bar { background: linear-gradient(90deg, #4444ff, #0000cc); }
+        .xp-bar { background: linear-gradient(90deg, #44ff44, #00cc00); }
+
+        .bar-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-size: 11px;
+            line-height: 20px;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        /* Skills */
+        #skills {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .skill-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            background: rgba(100, 50, 150, 0.8);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            pointer-events: auto;
+            position: relative;
+        }
+
+        .skill-btn:active {
+            transform: scale(0.9);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        .skill-btn.cooldown {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .skill-icon {
+            font-size: 24px;
+        }
+
+        .skill-key {
+            font-size: 10px;
+            margin-top: 2px;
+        }
+
+        .cooldown-overlay {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        /* Joystick */
+        #joystick {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 120px;
+            height: 120px;
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        .joystick-base {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+        }
+
+        .joystick-stick {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s;
+        }
+
+        /* Inventory */
+        #inventory {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+            display: flex;
+            gap: 5px;
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        .inv-slot {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            position: relative;
+        }
+
+        .inv-slot.has-item {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .item-count {
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+
+        /* Damage Numbers */
+        .damage-number {
+            position: fixed;
+            font-weight: bold;
+            font-size: 24px;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+            text-shadow: 2px 2px 4px black;
+            z-index: 100;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-100px); }
+        }
+
+        /* Loot notification */
+        #lootNotif {
+            position: fixed;
+            top: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            padding: 10px 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: slideDown 0.3s;
+            z-index: 100;
+        }
+
+        @keyframes slideDown {
+            from { top: -50px; opacity: 0; }
+            to { top: 120px; opacity: 1; }
+        }
+
+        .live-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #4ade80;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: bold;
+            z-index: 1000;
+        }
+
+        @media (max-width: 768px) {
+            .char-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .select-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="live-indicator">🔴 3D CANLI</div>
+
+    <!-- Character Selection -->
+    <div id="charSelect">
+        <div class="select-title">⚔️ KARAKTER SEÇ ⚔️</div>
+        <div class="char-grid">
+            <div class="char-card" onclick="selectCharacter('warrior')">
+                <div class="char-icon">🛡️</div>
+                <div class="char-name">SAVAŞÇI</div>
+                <div class="char-desc">Yüksek HP ve savunma</div>
+            </div>
+            <div class="char-card" onclick="selectCharacter('ninja')">
+                <div class="char-icon">🗡️</div>
+                <div class="char-name">NİNJA</div>
+                <div class="char-desc">Hızlı ve kritik vuruşlar</div>
+            </div>
+            <div class="char-card" onclick="selectCharacter('shaman')">
+                <div class="char-icon">🔮</div>
+                <div class="char-name">ŞAMAN</div>
+                <div class="char-desc">Büyü ve iyileştirme</div>
+            </div>
+            <div class="char-card" onclick="selectCharacter('sura')">
+                <div class="char-icon">⚡</div>
+                <div class="char-name">SURA</div>
+                <div class="char-desc">Karanlık sihir uzmanı</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen">
+        <div id="gameCanvas"></div>
+
+        <!-- HUD -->
+        <div id="hud">
+            <div class="stat-bar">
+                <div class="player-info">
+                    <span id="playerName">Karakter</span>
+                    <span id="playerLevel">Seviye: 1</span>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-fill hp-bar" id="hpBar" style="width: 100%"></div>
+                    <div class="bar-text" id="hpText">HP: 100/100</div>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-fill mp-bar" id="mpBar" style="width: 100%"></div>
+                    <div class="bar-text" id="mpText">MP: 100/100</div>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-fill xp-bar" id="xpBar" style="width: 0%"></div>
+                    <div class="bar-text" id="xpText">XP: 0/100</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skills -->
+        <div id="skills"></div>
+
+        <!-- Joystick -->
+        <div id="joystick">
+            <div class="joystick-base">
+                <div class="joystick-stick" id="joystickStick"></div>
+            </div>
+        </div>
+
+        <!-- Inventory -->
+        <div id="inventory">
+            <div class="inv-slot" id="slot0"></div>
+            <div class="inv-slot" id="slot1"></div>
+            <div class="inv-slot" id="slot2"></div>
+            <div class="inv-slot" id="slot3"></div>
+            <div class="inv-slot" id="slot4"></div>
+        </div>
+
+        <!-- Loot Notification -->
+        <div id="lootNotif"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Character Classes
+        const CLASSES = {
+            warrior: {
+                name: 'Savaşçı',
+                icon: '🛡️',
+                color: 0xff4444,
+                baseHP: 150,
+                baseMP: 50,
+                baseDamage: 15,
+                baseDefense: 10,
+                skills: [
+                    { name: 'Güçlü Vuruş', icon: '⚔️', damage: 30, mpCost: 15, cooldown: 3000, key: 'Q' },
+                    { name: 'Kalkan', icon: '🛡️', defense: 20, mpCost: 20, cooldown: 5000, key: 'W' },
+                    { name: 'Savaş Çığlığı', icon: '💥', damage: 50, mpCost: 30, cooldown: 8000, key: 'E' }
+                ]
+            },
+            ninja: {
+                name: 'Ninja',
+                icon: '🗡️',
+                color: 0x4444ff,
+                baseHP: 100,
+                baseMP: 80,
+                baseDamage: 25,
+                baseDefense: 5,
+                skills: [
+                    { name: 'Hızlı Saldırı', icon: '⚡', damage: 20, mpCost: 10, cooldown: 2000, key: 'Q' },
+                    { name: 'Gölge Adımı', icon: '💨', dodge: true, mpCost: 15, cooldown: 4000, key: 'W' },
+                    { name: 'Kritik Vuruş', icon: '🗡️', damage: 60, mpCost: 25, cooldown: 6000, key: 'E' }
+                ]
+            },
+            shaman: {
+                name: 'Şaman',
+                icon: '🔮',
+                color: 0x44ff44,
+                baseHP: 120,
+                baseMP: 120,
+                baseDamage: 18,
+                baseDefense: 7,
+                skills: [
+                    { name: 'Işın', icon: '✨', damage: 25, mpCost: 12, cooldown: 2500, key: 'Q' },
+                    { name: 'İyileştirme', icon: '💚', heal: 40, mpCost: 20, cooldown: 5000, key: 'W' },
+                    { name: 'Yıldırım', icon: '⚡', damage: 45, mpCost: 28, cooldown: 7000, key: 'E' }
+                ]
+            },
+            sura: {
+                name: 'Sura',
+                icon: '⚡',
+                color: 0xff44ff,
+                baseHP: 130,
+                baseMP: 100,
+                baseDamage: 20,
+                baseDefense: 8,
+                skills: [
+                    { name: 'Karanlık Kılıç', icon: '🌑', damage: 28, mpCost: 14, cooldown: 2500, key: 'Q' },
+                    { name: 'Ruh Emme', icon: '👻', damage: 20, lifesteal: 0.5, mpCost: 18, cooldown: 4500, key: 'W' },
+                    { name: 'Kara Büyü', icon: '💀', damage: 55, mpCost: 32, cooldown: 8000, key: 'E' }
+                ]
+            }
+        };
+
+        // Mob types
+        const MOB_TYPES = [
+            { name: 'Kurt', icon: '🐺', color: 0x888888, hp: 50, damage: 8, xp: 25, gold: 10, speed: 2.0 },
+            { name: 'Goblin', icon: '👹', color: 0x88ff88, hp: 60, damage: 10, xp: 30, gold: 15, speed: 1.8 },
+            { name: 'Ork', icon: '👾', color: 0xff8888, hp: 80, damage: 12, xp: 40, gold: 20, speed: 1.5 },
+            { name: 'Troll', icon: '🧟', color: 0x88ff88, hp: 120, damage: 15, xp: 60, gold: 30, speed: 1.2 },
+            { name: 'Ejderha', icon: '🐉', color: 0xff0000, hp: 200, damage: 25, xp: 100, gold: 50, speed: 1.0 }
+        ];
+
+        // Items
+        const ITEMS = [
+            { name: 'Can İksiri', icon: '❤️', type: 'potion', heal: 50 },
+            { name: 'Mana İksiri', icon: '💙', type: 'potion', mana: 50 },
+            { name: 'Altın', icon: '💰', type: 'gold', value: 10 },
+            { name: 'Kılıç', icon: '⚔️', type: 'weapon', damage: 5 },
+            { name: 'Zırh', icon: '🛡️', type: 'armor', defense: 5 }
+        ];
+
+        class Game3D {
+            constructor() {
+                this.container = document.getElementById('gameCanvas');
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.player = null;
+                this.playerMesh = null;
+                this.mobs = [];
+                this.drops = [];
+                this.inventory = Array(5).fill(null);
+
+                this.keys = {};
+                this.joystickActive = false;
+                this.joystickAngle = 0;
+                this.joystickPower = 0;
+
+                this.setupControls();
+            }
+
+            init3D() {
+                // Scene
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0x0a0e27);
+                this.scene.fog = new THREE.Fog(0x0a0e27, 10, 50);
+
+                // Camera
+                this.camera = new THREE.PerspectiveCamera(
+                    75,
+                    window.innerWidth / window.innerHeight,
+                    0.1,
+                    1000
+                );
+                this.camera.position.set(0, 15, 20);
+                this.camera.lookAt(0, 0, 0);
+
+                // Renderer
+                this.renderer = new THREE.WebGLRenderer({ antialias: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.container.appendChild(this.renderer.domElement);
+
+                // Lights
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                this.scene.add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(10, 20, 10);
+                directionalLight.castShadow = true;
+                directionalLight.shadow.mapSize.width = 2048;
+                directionalLight.shadow.mapSize.height = 2048;
+                directionalLight.shadow.camera.near = 0.5;
+                directionalLight.shadow.camera.far = 50;
+                directionalLight.shadow.camera.left = -30;
+                directionalLight.shadow.camera.right = 30;
+                directionalLight.shadow.camera.top = 30;
+                directionalLight.shadow.camera.bottom = -30;
+                this.scene.add(directionalLight);
+
+                // Ground
+                const groundGeometry = new THREE.PlaneGeometry(100, 100, 50, 50);
+                const groundMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x1a3a1a,
+                    roughness: 0.8,
+                    metalness: 0.2,
+                    wireframe: false
+                });
+                const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+                ground.rotation.x = -Math.PI / 2;
+                ground.receiveShadow = true;
+
+                // Add some variation to ground
+                const positions = groundGeometry.attributes.position;
+                for (let i = 0; i < positions.count; i++) {
+                    const y = Math.random() * 0.5;
+                    positions.setZ(i, y);
+                }
+                positions.needsUpdate = true;
+                groundGeometry.computeVertexNormals();
+
+                this.scene.add(ground);
+
+                // Grid helper
+                const gridHelper = new THREE.GridHelper(100, 50, 0x00ff00, 0x004400);
+                gridHelper.position.y = 0.01;
+                this.scene.add(gridHelper);
+
+                // Window resize
+                window.addEventListener('resize', () => {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+            }
+
+            selectCharacter(className) {
+                const classData = CLASSES[className];
+
+                this.player = {
+                    class: className,
+                    name: classData.name,
+                    icon: classData.icon,
+                    color: classData.color,
+                    position: { x: 0, y: 0, z: 0 },
+
+                    level: 1,
+                    xp: 0,
+                    xpToLevel: 100,
+
+                    hp: classData.baseHP,
+                    maxHP: classData.baseHP,
+                    mp: classData.baseMP,
+                    maxMP: classData.baseMP,
+
+                    damage: classData.baseDamage,
+                    defense: classData.baseDefense,
+
+                    speed: 0.15,
+                    skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
+
+                    gold: 0,
+                    attackCooldown: 0
+                };
+
+                this.init3D();
+                this.createPlayer();
+                this.updateHUD();
+                this.createSkillButtons();
+
+                document.getElementById('charSelect').classList.add('hidden');
+                document.getElementById('gameScreen').classList.add('active');
+
+                this.spawnMobs();
+                this.animate();
+            }
+
+            createPlayer() {
+                // Player geometry
+                const geometry = new THREE.ConeGeometry(0.5, 2, 4);
+                const material = new THREE.MeshStandardMaterial({
+                    color: this.player.color,
+                    emissive: this.player.color,
+                    emissiveIntensity: 0.3,
+                    roughness: 0.5,
+                    metalness: 0.5
+                });
+                this.playerMesh = new THREE.Mesh(geometry, material);
+                this.playerMesh.position.set(0, 1, 0);
+                this.playerMesh.castShadow = true;
+                this.playerMesh.receiveShadow = true;
+
+                // Rotate to face forward
+                this.playerMesh.rotation.y = Math.PI;
+
+                this.scene.add(this.playerMesh);
+            }
+
+            createMob(type, x, z) {
+                // Mob geometry
+                const geometry = new THREE.BoxGeometry(1, 1.5, 1);
+                const material = new THREE.MeshStandardMaterial({
+                    color: type.color,
+                    roughness: 0.7,
+                    metalness: 0.3
+                });
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.set(x, 0.75, z);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                this.scene.add(mesh);
+
+                const mob = {
+                    ...type,
+                    mesh: mesh,
+                    position: { x, y: 0, z },
+                    maxHP: type.hp,
+                    targetCooldown: 0,
+                    rotation: 0
+                };
+
+                this.mobs.push(mob);
+                return mob;
+            }
+
+            spawnMobs() {
+                const mobCount = 5 + Math.floor(this.player.level / 2);
+
+                for (let i = 0; i < mobCount; i++) {
+                    this.spawnMob();
+                }
+            }
+
+            spawnMob() {
+                const typeIndex = Math.min(
+                    Math.floor(this.player.level / 3),
+                    MOB_TYPES.length - 1
+                );
+                const type = MOB_TYPES[Math.floor(Math.random() * (typeIndex + 1))];
+
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 10 + Math.random() * 20;
+                const x = Math.cos(angle) * distance;
+                const z = Math.sin(angle) * distance;
+
+                this.createMob(type, x, z);
+            }
+
+            createSkillButtons() {
+                const skillsDiv = document.getElementById('skills');
+                skillsDiv.innerHTML = '';
+
+                this.player.skills.forEach((skill, index) => {
+                    const btn = document.createElement('div');
+                    btn.className = 'skill-btn';
+                    btn.id = `skill${index}`;
+                    btn.innerHTML = `
+                        <div class="skill-icon">${skill.icon}</div>
+                        <div class="skill-key">${skill.key}</div>
+                    `;
+                    btn.onclick = () => this.useSkill(index);
+                    skillsDiv.appendChild(btn);
+                });
+            }
+
+            setupControls() {
+                // Keyboard
+                document.addEventListener('keydown', (e) => {
+                    this.keys[e.key.toLowerCase()] = true;
+
+                    if (e.key.toLowerCase() === 'q') this.useSkill(0);
+                    if (e.key.toLowerCase() === 'w') this.useSkill(1);
+                    if (e.key.toLowerCase() === 'e') this.useSkill(2);
+
+                    if (e.key >= '1' && e.key <= '5') {
+                        this.useItem(parseInt(e.key) - 1);
+                    }
+                });
+
+                document.addEventListener('keyup', (e) => {
+                    this.keys[e.key.toLowerCase()] = false;
+                });
+
+                // Joystick
+                const joystick = document.getElementById('joystick');
+                const stick = document.getElementById('joystickStick');
+
+                const handleJoystickStart = (e) => {
+                    e.preventDefault();
+                    this.joystickActive = true;
+                };
+
+                const handleJoystickMove = (e) => {
+                    if (!this.joystickActive) return;
+                    e.preventDefault();
+
+                    const touch = e.touches ? e.touches[0] : e;
+                    const rect = joystick.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+
+                    const deltaX = touch.clientX - centerX;
+                    const deltaY = touch.clientY - centerY;
+
+                    const distance = Math.min(Math.sqrt(deltaX * deltaX + deltaY * deltaY), 35);
+                    this.joystickAngle = Math.atan2(deltaY, deltaX);
+                    this.joystickPower = distance / 35;
+
+                    const stickX = Math.cos(this.joystickAngle) * distance;
+                    const stickY = Math.sin(this.joystickAngle) * distance;
+
+                    stick.style.transform = `translate(calc(-50% + ${stickX}px), calc(-50% + ${stickY}px))`;
+                };
+
+                const handleJoystickEnd = (e) => {
+                    e.preventDefault();
+                    this.joystickActive = false;
+                    this.joystickPower = 0;
+                    stick.style.transform = 'translate(-50%, -50%)';
+                };
+
+                joystick.addEventListener('touchstart', handleJoystickStart);
+                joystick.addEventListener('touchmove', handleJoystickMove);
+                joystick.addEventListener('touchend', handleJoystickEnd);
+
+                joystick.addEventListener('mousedown', handleJoystickStart);
+                document.addEventListener('mousemove', handleJoystickMove);
+                document.addEventListener('mouseup', handleJoystickEnd);
+            }
+
+            useSkill(index) {
+                if (!this.player) return;
+
+                const skill = this.player.skills[index];
+
+                if (skill.cooldownRemaining > 0) return;
+                if (this.player.mp < skill.mpCost) return;
+
+                this.player.mp -= skill.mpCost;
+                skill.cooldownRemaining = skill.cooldown;
+
+                if (skill.damage) {
+                    const nearestMob = this.findNearestMob();
+                    if (nearestMob) {
+                        const distance = this.getDistance3D(this.player.position, nearestMob.position);
+                        if (distance < 15) {
+                            this.damageEnemy(nearestMob, skill.damage + this.player.damage);
+
+                            if (skill.lifesteal) {
+                                this.player.hp = Math.min(
+                                    this.player.maxHP,
+                                    this.player.hp + skill.damage * skill.lifesteal
+                                );
+                            }
+
+                            // Skill effect
+                            this.createSkillEffect(nearestMob.position);
+                        }
+                    }
+                }
+
+                if (skill.heal) {
+                    this.player.hp = Math.min(this.player.maxHP, this.player.hp + skill.heal);
+                    this.createHealEffect(this.player.position);
+                }
+
+                this.updateHUD();
+                this.updateSkillUI(index);
+            }
+
+            createSkillEffect(position) {
+                const geometry = new THREE.SphereGeometry(0.5, 8, 8);
+                const material = new THREE.MeshBasicMaterial({
+                    color: 0xffff00,
+                    transparent: true,
+                    opacity: 1
+                });
+                const sphere = new THREE.Mesh(geometry, material);
+                sphere.position.set(position.x, position.y + 1, position.z);
+                this.scene.add(sphere);
+
+                let scale = 1;
+                const animate = () => {
+                    scale += 0.1;
+                    sphere.scale.set(scale, scale, scale);
+                    material.opacity -= 0.02;
+
+                    if (material.opacity > 0) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        this.scene.remove(sphere);
+                    }
+                };
+                animate();
+            }
+
+            createHealEffect(position) {
+                const geometry = new THREE.SphereGeometry(0.8, 8, 8);
+                const material = new THREE.MeshBasicMaterial({
+                    color: 0x00ff00,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const sphere = new THREE.Mesh(geometry, material);
+                sphere.position.set(position.x, position.y + 1, position.z);
+                this.scene.add(sphere);
+
+                let y = position.y + 1;
+                const animate = () => {
+                    y += 0.05;
+                    sphere.position.y = y;
+                    material.opacity -= 0.02;
+
+                    if (material.opacity > 0) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        this.scene.remove(sphere);
+                    }
+                };
+                animate();
+            }
+
+            updateSkillUI(index) {
+                const btn = document.getElementById(`skill${index}`);
+                const skill = this.player.skills[index];
+
+                btn.classList.add('cooldown');
+
+                const overlay = document.createElement('div');
+                overlay.className = 'cooldown-overlay';
+                overlay.textContent = Math.ceil(skill.cooldownRemaining / 1000);
+                btn.appendChild(overlay);
+
+                const interval = setInterval(() => {
+                    const remaining = Math.ceil(skill.cooldownRemaining / 1000);
+                    overlay.textContent = remaining;
+
+                    if (remaining <= 0) {
+                        btn.classList.remove('cooldown');
+                        overlay.remove();
+                        clearInterval(interval);
+                    }
+                }, 100);
+            }
+
+            findNearestMob() {
+                let nearest = null;
+                let minDist = Infinity;
+
+                this.mobs.forEach(mob => {
+                    const dist = this.getDistance3D(this.player.position, mob.position);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearest = mob;
+                    }
+                });
+
+                return nearest;
+            }
+
+            getDistance3D(a, b) {
+                return Math.sqrt(
+                    (a.x - b.x) ** 2 +
+                    (a.y - b.y) ** 2 +
+                    (a.z - b.z) ** 2
+                );
+            }
+
+            damageEnemy(enemy, damage) {
+                enemy.hp -= damage;
+
+                // Flash effect
+                const originalColor = enemy.mesh.material.color.getHex();
+                enemy.mesh.material.color.setHex(0xff0000);
+                setTimeout(() => {
+                    if (enemy.mesh) {
+                        enemy.mesh.material.color.setHex(originalColor);
+                    }
+                }, 100);
+
+                this.showDamage(enemy.mesh.position.x, enemy.mesh.position.y, enemy.mesh.position.z, damage);
+
+                if (enemy.hp <= 0) {
+                    this.killEnemy(enemy);
+                }
+            }
+
+            killEnemy(enemy) {
+                const index = this.mobs.indexOf(enemy);
+                if (index > -1) {
+                    this.mobs.splice(index, 1);
+                }
+
+                this.scene.remove(enemy.mesh);
+
+                this.player.xp += enemy.xp;
+                if (this.player.xp >= this.player.xpToLevel) {
+                    this.levelUp();
+                }
+
+                if (Math.random() < 0.4) {
+                    this.createDrop(enemy.position.x, enemy.position.z);
+                }
+
+                setTimeout(() => this.spawnMob(), 3000);
+
+                this.updateHUD();
+            }
+
+            createDrop(x, z) {
+                const item = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+
+                const geometry = new THREE.SphereGeometry(0.3, 8, 8);
+                const material = new THREE.MeshStandardMaterial({
+                    color: 0xffd700,
+                    emissive: 0xffd700,
+                    emissiveIntensity: 0.5,
+                    roughness: 0.3,
+                    metalness: 0.7
+                });
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.set(x, 0.5, z);
+                this.scene.add(mesh);
+
+                const drop = {
+                    ...item,
+                    mesh: mesh,
+                    position: { x, y: 0, z },
+                    rotation: 0
+                };
+
+                this.drops.push(drop);
+            }
+
+            levelUp() {
+                this.player.level++;
+                this.player.xp = 0;
+                this.player.xpToLevel = Math.floor(this.player.xpToLevel * 1.5);
+
+                this.player.maxHP += 20;
+                this.player.hp = this.player.maxHP;
+                this.player.maxMP += 10;
+                this.player.mp = this.player.maxMP;
+                this.player.damage += 3;
+                this.player.defense += 2;
+
+                this.showNotification('🎉 LEVEL UP! ' + this.player.level);
+                this.updateHUD();
+            }
+
+            showDamage(x, y, z, damage) {
+                const vector = new THREE.Vector3(x, y + 2, z);
+                vector.project(this.camera);
+
+                const screenX = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                const screenY = (-(vector.y) * 0.5 + 0.5) * window.innerHeight;
+
+                const dmg = document.createElement('div');
+                dmg.className = 'damage-number';
+                dmg.textContent = '-' + damage;
+                dmg.style.left = screenX + 'px';
+                dmg.style.top = screenY + 'px';
+                dmg.style.color = '#ff4444';
+                document.body.appendChild(dmg);
+
+                setTimeout(() => dmg.remove(), 1000);
+            }
+
+            showNotification(text) {
+                const notif = document.getElementById('lootNotif');
+                notif.textContent = text;
+                notif.style.display = 'flex';
+
+                setTimeout(() => {
+                    notif.style.display = 'none';
+                }, 2000);
+            }
+
+            useItem(slot) {
+                const item = this.inventory[slot];
+                if (!item) return;
+
+                if (item.type === 'potion') {
+                    if (item.heal) {
+                        this.player.hp = Math.min(this.player.maxHP, this.player.hp + item.heal);
+                    }
+                    if (item.mana) {
+                        this.player.mp = Math.min(this.player.maxMP, this.player.mp + item.mana);
+                    }
+
+                    this.inventory[slot] = null;
+                    this.updateInventory();
+                    this.updateHUD();
+                }
+            }
+
+            updateInventory() {
+                this.inventory.forEach((item, i) => {
+                    const slot = document.getElementById(`slot${i}`);
+                    if (item) {
+                        slot.innerHTML = `${item.icon}`;
+                        slot.classList.add('has-item');
+                    } else {
+                        slot.innerHTML = '';
+                        slot.classList.remove('has-item');
+                    }
+                });
+            }
+
+            update() {
+                if (!this.player || !this.playerMesh) return;
+
+                // Player movement
+                let dx = 0, dz = 0;
+
+                if (this.keys['arrowleft'] || this.keys['a']) dx -= 1;
+                if (this.keys['arrowright'] || this.keys['d']) dx += 1;
+                if (this.keys['arrowup'] || this.keys['w']) dz -= 1;
+                if (this.keys['arrowdown'] || this.keys['s']) dz += 1;
+
+                if (this.joystickActive) {
+                    dx = Math.cos(this.joystickAngle) * this.joystickPower;
+                    dz = Math.sin(this.joystickAngle) * this.joystickPower;
+                }
+
+                if (dx || dz) {
+                    const magnitude = Math.sqrt(dx * dx + dz * dz);
+                    dx = (dx / magnitude) * this.player.speed;
+                    dz = (dz / magnitude) * this.player.speed;
+
+                    this.player.position.x += dx;
+                    this.player.position.z += dz;
+
+                    // Rotate player to face movement direction
+                    if (magnitude > 0) {
+                        const targetRotation = Math.atan2(dx, dz);
+                        this.playerMesh.rotation.y = targetRotation;
+                    }
+
+                    // Limit to map bounds
+                    this.player.position.x = Math.max(-45, Math.min(45, this.player.position.x));
+                    this.player.position.z = Math.max(-45, Math.min(45, this.player.position.z));
+
+                    this.playerMesh.position.x = this.player.position.x;
+                    this.playerMesh.position.z = this.player.position.z;
+
+                    // Camera follow
+                    this.camera.position.x = this.player.position.x;
+                    this.camera.position.z = this.player.position.z + 20;
+                    this.camera.lookAt(this.player.position.x, 0, this.player.position.z);
+                }
+
+                // Update mobs
+                this.mobs.forEach(mob => {
+                    const dist = this.getDistance3D(this.player.position, mob.position);
+
+                    if (dist < 20) {
+                        const angle = Math.atan2(
+                            this.player.position.z - mob.position.z,
+                            this.player.position.x - mob.position.x
+                        );
+                        const speed = mob.speed * 0.05;
+                        mob.position.x += Math.cos(angle) * speed;
+                        mob.position.z += Math.sin(angle) * speed;
+                        mob.mesh.position.x = mob.position.x;
+                        mob.mesh.position.z = mob.position.z;
+
+                        // Rotate mob to face player
+                        mob.mesh.rotation.y = angle + Math.PI / 2;
+
+                        // Bob animation
+                        mob.mesh.position.y = 0.75 + Math.sin(Date.now() * 0.005) * 0.1;
+
+                        if (dist < 2) {
+                            if (mob.targetCooldown <= 0) {
+                                const damage = Math.max(1, mob.damage - this.player.defense);
+                                this.player.hp -= damage;
+                                this.showDamage(
+                                    this.playerMesh.position.x,
+                                    this.playerMesh.position.y,
+                                    this.playerMesh.position.z,
+                                    damage
+                                );
+                                mob.targetCooldown = 1000;
+
+                                if (this.player.hp <= 0) {
+                                    this.gameOver();
+                                }
+
+                                this.updateHUD();
+                            }
+                        }
+                    }
+
+                    if (mob.targetCooldown > 0) {
+                        mob.targetCooldown -= 16;
+                    }
+                });
+
+                // Update drops
+                this.drops.forEach((drop, index) => {
+                    // Rotate drop
+                    drop.mesh.rotation.y += 0.05;
+                    drop.mesh.position.y = 0.5 + Math.sin(Date.now() * 0.003 + index) * 0.2;
+
+                    if (this.getDistance3D(this.player.position, drop.position) < 2) {
+                        this.pickupDrop(drop);
+                    }
+                });
+
+                // Update cooldowns
+                this.player.skills.forEach(skill => {
+                    if (skill.cooldownRemaining > 0) {
+                        skill.cooldownRemaining -= 16;
+                    }
+                });
+
+                // MP regen
+                if (this.player.mp < this.player.maxMP) {
+                    this.player.mp = Math.min(this.player.maxMP, this.player.mp + 0.1);
+                    if (Math.random() < 0.1) this.updateHUD();
+                }
+            }
+
+            pickupDrop(drop) {
+                const index = this.drops.indexOf(drop);
+                if (index > -1) {
+                    this.drops.splice(index, 1);
+                }
+
+                this.scene.remove(drop.mesh);
+
+                for (let i = 0; i < this.inventory.length; i++) {
+                    if (!this.inventory[i]) {
+                        this.inventory[i] = drop;
+                        this.updateInventory();
+                        this.showNotification(`+1 ${drop.name} ${drop.icon}`);
+                        break;
+                    }
+                }
+            }
+
+            updateHUD() {
+                if (!this.player) return;
+
+                document.getElementById('playerName').textContent = this.player.name;
+                document.getElementById('playerLevel').textContent = `Seviye: ${this.player.level}`;
+
+                const hpPercent = (this.player.hp / this.player.maxHP) * 100;
+                const mpPercent = (this.player.mp / this.player.maxMP) * 100;
+                const xpPercent = (this.player.xp / this.player.xpToLevel) * 100;
+
+                document.getElementById('hpBar').style.width = hpPercent + '%';
+                document.getElementById('mpBar').style.width = mpPercent + '%';
+                document.getElementById('xpBar').style.width = xpPercent + '%';
+
+                document.getElementById('hpText').textContent =
+                    `HP: ${Math.floor(this.player.hp)}/${this.player.maxHP}`;
+                document.getElementById('mpText').textContent =
+                    `MP: ${Math.floor(this.player.mp)}/${this.player.maxMP}`;
+                document.getElementById('xpText').textContent =
+                    `XP: ${this.player.xp}/${this.player.xpToLevel}`;
+            }
+
+            gameOver() {
+                alert('😵 Öldün!\n\nSeviye: ' + this.player.level + '\nXP: ' + this.player.xp);
+                window.location.reload();
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                this.update();
+                if (this.renderer && this.scene && this.camera) {
+                    this.renderer.render(this.scene, this.camera);
+                }
+            }
+        }
+
+        // Initialize game
+        const game = new Game3D();
+
+        function selectCharacter(className) {
+            game.selectCharacter(className);
+        }
+
+        // Live reload
+        if (typeof WebSocket !== 'undefined') {
+            const ws = new WebSocket('ws://' + window.location.host);
+            ws.onmessage = function(event) {
+                if (event.data === 'reload') {
+                    window.location.reload();
+                }
+            };
+        }
+    </script>
+</body>
+</html>
