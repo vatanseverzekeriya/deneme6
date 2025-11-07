@@ -318,11 +318,210 @@
             align-items: center;
             gap: 10px;
             animation: slideDown 0.3s;
+            z-index: 1000;
         }
 
         @keyframes slideDown {
             from { top: -50px; opacity: 0; }
             to { top: 120px; opacity: 1; }
+        }
+
+        /* Menu Buttons */
+        #menuButtons {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 10px;
+            pointer-events: auto;
+            z-index: 100;
+        }
+
+        .menu-btn {
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .menu-btn:active {
+            transform: scale(0.9);
+            border-color: #ffd700;
+        }
+
+        /* Modal Panels */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 3px solid #ffd700;
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 0, 0, 0.7);
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        /* Achievement Item */
+        .achievement-item {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .achievement-item.unlocked {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .achievement-item.locked {
+            opacity: 0.5;
+        }
+
+        .achievement-icon {
+            font-size: 32px;
+        }
+
+        .achievement-info {
+            flex: 1;
+        }
+
+        .achievement-name {
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .achievement-desc {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        /* Quest Item */
+        .quest-item {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .quest-item.completed {
+            border-color: #4ade80;
+        }
+
+        .quest-progress {
+            width: 100%;
+            height: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .quest-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4ade80, #00cc00);
+            transition: width 0.3s;
+        }
+
+        /* Pet Info */
+        .pet-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .pet-card.active {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .pet-icon-large {
+            font-size: 48px;
+        }
+
+        .pet-bonuses {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #4ade80;
+        }
+
+        /* Stats Panel */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #aaa;
         }
 
         @media (max-width: 768px) {
@@ -425,9 +624,194 @@
 
         <!-- Loot Notification -->
         <div id="lootNotif"></div>
+
+        <!-- Menu Buttons -->
+        <div id="menuButtons">
+            <div class="menu-btn" onclick="openModal('questsModal')" title="Görevler">📜</div>
+            <div class="menu-btn" onclick="openModal('achievementsModal')" title="Başarımlar">🏆</div>
+            <div class="menu-btn" onclick="openModal('petsModal')" title="Petler">🐾</div>
+            <div class="menu-btn" onclick="openModal('statsModal')" title="İstatistikler">📊</div>
+        </div>
+    </div>
+
+    <!-- Quests Modal -->
+    <div id="questsModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('questsModal')">×</button>
+            <div class="modal-title">📜 Günlük Görevler</div>
+            <div id="questsList"></div>
+        </div>
+    </div>
+
+    <!-- Achievements Modal -->
+    <div id="achievementsModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('achievementsModal')">×</button>
+            <div class="modal-title">🏆 Başarımlar</div>
+            <div id="achievementsList"></div>
+        </div>
+    </div>
+
+    <!-- Pets Modal -->
+    <div id="petsModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('petsModal')">×</button>
+            <div class="modal-title">🐾 Pet Koleksiyonu</div>
+            <div id="petsList"></div>
+            <div style="margin-top: 20px; padding: 10px; background: rgba(255,215,0,0.2); border-radius: 10px; text-align: center;">
+                💡 Pet yumurtası bul ve kuluçkaya yatır!
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Modal -->
+    <div id="statsModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('statsModal')">×</button>
+            <div class="modal-title">📊 İstatistikler</div>
+            <div id="statsContent"></div>
+        </div>
     </div>
 
     <script src="rpg-game.js"></script>
+
+    <script>
+        // Modal functions
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+
+            modal.classList.add('active');
+
+            // Update content based on modal
+            if (modalId === 'questsModal') updateQuestsUI();
+            else if (modalId === 'achievementsModal') updateAchievementsUI();
+            else if (modalId === 'petsModal') updatePetsUI();
+            else if (modalId === 'statsModal') updateStatsUI();
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.classList.remove('active');
+        }
+
+        // Update UI functions
+        function updateQuestsUI() {
+            const list = document.getElementById('questsList');
+            if (!list || !game.dailyQuests) return;
+
+            list.innerHTML = game.dailyQuests.map(quest => {
+                const progress = Math.min(quest.progress, quest.target);
+                const percent = (progress / quest.target) * 100;
+                const completed = progress >= quest.target;
+
+                return `
+                    <div class="quest-item ${completed ? 'completed' : ''}">
+                        <div style="font-weight: bold;">${quest.name}</div>
+                        <div style="font-size: 12px; color: #aaa; margin: 5px 0;">
+                            ${progress}/${quest.target}
+                        </div>
+                        <div class="quest-progress">
+                            <div class="quest-progress-bar" style="width: ${percent}%"></div>
+                        </div>
+                        <div style="font-size: 12px; color: #ffd700; margin-top: 5px;">
+                            Ödül: ${quest.reward.gold}💰 ${quest.reward.xp}XP
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateAchievementsUI() {
+            const list = document.getElementById('achievementsList');
+            if (!list || !game.achievements) return;
+
+            list.innerHTML = game.achievements.map(ach => `
+                <div class="achievement-item ${ach.unlocked ? 'unlocked' : 'locked'}">
+                    <div class="achievement-icon">${ach.icon}</div>
+                    <div class="achievement-info">
+                        <div class="achievement-name">${ach.name}</div>
+                        <div class="achievement-desc">${ach.desc}</div>
+                        <div style="font-size: 12px; color: #ffd700; margin-top: 5px;">
+                            ${ach.unlocked ? '✅ Tamamlandı' : `Ödül: ${ach.reward.gold}💰`}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updatePetsUI() {
+            const list = document.getElementById('petsList');
+            if (!list) return;
+
+            if (!game.pets || game.pets.length === 0) {
+                list.innerHTML = '<div style="text-align: center; padding: 20px; color: #aaa;">Henüz petin yok!</div>';
+                return;
+            }
+
+            list.innerHTML = game.pets.map(pet => {
+                const isActive = game.activePet && game.activePet.name === pet.name;
+                return `
+                    <div class="pet-card ${isActive ? 'active' : ''}">
+                        <div class="pet-icon-large">${pet.icon}</div>
+                        <div style="font-weight: bold; font-size: 18px; margin: 10px 0;">${pet.name}</div>
+                        <div style="color: #aaa; font-size: 12px;">Level ${pet.level} • ${pet.rarity}</div>
+                        <div class="pet-bonuses">${pet.passive}</div>
+                        ${isActive ? '<div style="color: #ffd700; margin-top: 10px;">⭐ Aktif</div>' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateStatsUI() {
+            const content = document.getElementById('statsContent');
+            if (!content || !game.statistics || !game.player) return;
+
+            content.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">${game.player.level}</div>
+                        <div class="stat-label">Seviye</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${game.player.gold}</div>
+                        <div class="stat-label">Altın</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${game.statistics.totalKills}</div>
+                        <div class="stat-label">Öldürülen Düşman</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${game.statistics.skillsUsed}</div>
+                        <div class="stat-label">Kullanılan Beceri</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${game.statistics.itemsCollected}</div>
+                        <div class="stat-label">Toplanan Item</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${game.statistics.bossesKilled}</div>
+                        <div class="stat-label">Öldürülen Boss</div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;">
+                    <div style="font-size: 14px; margin-bottom: 5px;">⚔️ Hasar: ${game.player.damage}</div>
+                    <div style="font-size: 14px; margin-bottom: 5px;">🛡️ Savunma: ${game.player.defense}</div>
+                    <div style="font-size: 14px; margin-bottom: 5px;">💨 Hız: ${game.player.speed}</div>
+                    <div style="font-size: 14px;">🏃 Sınıf: ${game.player.name}</div>
+                </div>
+            `;
+        }
+
+        // Close modal on background click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+    </script>
 
     <script>
         // Live reload
