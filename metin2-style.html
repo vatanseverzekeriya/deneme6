@@ -256,9 +256,17 @@
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 10px;
             padding: 10px;
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
             gap: 5px;
             pointer-events: auto;
+            max-width: 90%;
+        }
+
+        @media (max-width: 768px) {
+            #inventory {
+                grid-template-columns: repeat(5, 1fr);
+            }
         }
 
         .inv-slot {
@@ -272,11 +280,18 @@
             justify-content: center;
             font-size: 24px;
             position: relative;
+            transition: all 0.3s;
         }
 
         .inv-slot.has-item {
             border-color: #ffd700;
             background: rgba(255, 215, 0, 0.2);
+            cursor: pointer;
+        }
+
+        .inv-slot.has-item:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
         }
 
         .item-count {
@@ -325,6 +340,232 @@
             to { top: 120px; opacity: 1; }
         }
 
+        /* Game Controls */
+        .game-controls {
+            position: fixed;
+            top: 150px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .control-btn {
+            background: rgba(100, 50, 150, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .control-btn:hover {
+            background: rgba(120, 70, 170, 1);
+            transform: scale(1.05);
+        }
+
+        /* Gold Display */
+        .gold-display {
+            position: fixed;
+            top: 150px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            padding: 10px 15px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffd700;
+            z-index: 100;
+        }
+
+        /* Stats Display */
+        .stats-display {
+            position: fixed;
+            top: 200px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 14px;
+            color: white;
+            z-index: 100;
+        }
+
+        /* Shop Modal */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 3px solid #ffd700;
+            border-radius: 20px;
+            padding: 20px;
+            max-width: 600px;
+            max-height: 80vh;
+            width: 90%;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .modal-close {
+            background: rgba(255, 0, 0, 0.7);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .shop-item, .save-slot {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .shop-item-icon {
+            font-size: 36px;
+            width: 50px;
+            text-align: center;
+        }
+
+        .shop-item-info {
+            flex: 1;
+        }
+
+        .shop-item-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .shop-item-stats {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .shop-item-price {
+            font-size: 14px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .shop-buy-btn, .save-btn, .load-btn, .delete-btn {
+            background: rgba(100, 50, 150, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .shop-buy-btn:hover, .save-btn:hover, .load-btn:hover {
+            background: rgba(120, 70, 170, 1);
+        }
+
+        .delete-btn {
+            background: rgba(200, 50, 50, 0.9);
+        }
+
+        .delete-btn:hover {
+            background: rgba(220, 70, 70, 1);
+        }
+
+        /* Equipment Panel */
+        .equipment-panel {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .equipment-slot {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .equipment-slot.has-item {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .equipment-slot:hover {
+            transform: scale(1.05);
+        }
+
+        .save-slot-info {
+            flex: 1;
+        }
+
+        .save-slot-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .save-slot-details {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .save-slot-empty {
+            font-style: italic;
+            color: #666;
+        }
+
         @media (max-width: 768px) {
             .char-grid {
                 grid-template-columns: 1fr;
@@ -332,6 +573,11 @@
 
             .select-title {
                 font-size: 24px;
+            }
+
+            .modal-content {
+                width: 95%;
+                max-height: 85vh;
             }
         }
 
@@ -376,6 +622,7 @@
                 <div class="char-desc">Karanlık sihir uzmanı</div>
             </div>
         </div>
+        <button class="control-btn" style="margin-top: 20px; padding: 15px 30px; font-size: 16px;" onclick="openLoadMenuFromCharSelect()">📂 Kayıtlı Oyun Yükle</button>
     </div>
 
     <!-- Game Screen -->
@@ -414,6 +661,24 @@
             </div>
         </div>
 
+        <!-- Game Controls -->
+        <div class="game-controls">
+            <button class="control-btn" onclick="game.openShop()">🏪 Dükkan</button>
+            <button class="control-btn" onclick="openSaveMenu()">💾 Kaydet</button>
+            <button class="control-btn" onclick="openLoadMenu()">📂 Yükle</button>
+            <button class="control-btn" onclick="openEquipmentPanel()">🎒 Ekipman</button>
+        </div>
+
+        <!-- Gold Display -->
+        <div class="gold-display">
+            💰 <span id="goldAmount">0</span>
+        </div>
+
+        <!-- Stats Display -->
+        <div class="stats-display" id="statsDisplay">
+            ⚔️ 15 | 🛡️ 10 | ⚡ 3.0
+        </div>
+
         <!-- Inventory -->
         <div id="inventory">
             <div class="inv-slot" id="slot0"></div>
@@ -421,15 +686,173 @@
             <div class="inv-slot" id="slot2"></div>
             <div class="inv-slot" id="slot3"></div>
             <div class="inv-slot" id="slot4"></div>
+            <div class="inv-slot" id="slot5"></div>
+            <div class="inv-slot" id="slot6"></div>
+            <div class="inv-slot" id="slot7"></div>
+            <div class="inv-slot" id="slot8"></div>
+            <div class="inv-slot" id="slot9"></div>
+            <div class="inv-slot" id="slot10"></div>
+            <div class="inv-slot" id="slot11"></div>
+            <div class="inv-slot" id="slot12"></div>
+            <div class="inv-slot" id="slot13"></div>
+            <div class="inv-slot" id="slot14"></div>
+            <div class="inv-slot" id="slot15"></div>
+            <div class="inv-slot" id="slot16"></div>
+            <div class="inv-slot" id="slot17"></div>
+            <div class="inv-slot" id="slot18"></div>
+            <div class="inv-slot" id="slot19"></div>
         </div>
 
         <!-- Loot Notification -->
         <div id="lootNotif"></div>
     </div>
 
+    <!-- Shop Modal -->
+    <div id="shopModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">🏪 DÜKKAN</div>
+                <button class="modal-close" onclick="game.closeShop()">✕</button>
+            </div>
+            <div id="shopContent"></div>
+        </div>
+    </div>
+
+    <!-- Save Menu Modal -->
+    <div id="saveModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">💾 OYUNU KAYDET</div>
+                <button class="modal-close" onclick="closeSaveMenu()">✕</button>
+            </div>
+            <div id="saveContent">
+                <div class="save-slot">
+                    <div class="save-slot-info">
+                        <div class="save-slot-title">Slot 1</div>
+                    </div>
+                    <button class="save-btn" onclick="game.saveGame(1); closeSaveMenu()">Kaydet</button>
+                </div>
+                <div class="save-slot">
+                    <div class="save-slot-info">
+                        <div class="save-slot-title">Slot 2</div>
+                    </div>
+                    <button class="save-btn" onclick="game.saveGame(2); closeSaveMenu()">Kaydet</button>
+                </div>
+                <div class="save-slot">
+                    <div class="save-slot-info">
+                        <div class="save-slot-title">Slot 3</div>
+                    </div>
+                    <button class="save-btn" onclick="game.saveGame(3); closeSaveMenu()">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Menu Modal -->
+    <div id="loadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">📂 OYUNU YÜKLE</div>
+                <button class="modal-close" onclick="closeLoadMenu()">✕</button>
+            </div>
+            <div id="loadContent"></div>
+        </div>
+    </div>
+
+    <!-- Equipment Panel Modal -->
+    <div id="equipmentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">🎒 EKİPMANLAR</div>
+                <button class="modal-close" onclick="closeEquipmentPanel()">✕</button>
+            </div>
+            <div class="equipment-panel">
+                <p style="margin-bottom: 10px; color: #aaa; font-size: 12px;">
+                    Tıkla: Çıkar | Çift Tıkla: Geliştir
+                </p>
+                <div class="equipment-grid">
+                    <div class="equipment-slot" id="equip_head" title="Baş"></div>
+                    <div></div>
+                    <div class="equipment-slot" id="equip_weapon" title="Silah"></div>
+                    <div class="equipment-slot" id="equip_gloves" title="Eldiven"></div>
+                    <div class="equipment-slot" id="equip_chest" title="Göğüs"></div>
+                    <div class="equipment-slot" id="equip_boots" title="Ayakkabı"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="rpg-game.js"></script>
 
     <script>
+        // Modal functions
+        function openSaveMenu() {
+            document.getElementById('saveModal').style.display = 'flex';
+        }
+
+        function closeSaveMenu() {
+            document.getElementById('saveModal').style.display = 'none';
+        }
+
+        function openLoadMenu() {
+            renderLoadMenu();
+            document.getElementById('loadModal').style.display = 'flex';
+        }
+
+        function closeLoadMenu() {
+            document.getElementById('loadModal').style.display = 'none';
+        }
+
+        function renderLoadMenu() {
+            const loadContent = document.getElementById('loadContent');
+            loadContent.innerHTML = '';
+
+            const slots = game.getSaveSlots();
+
+            slots.forEach(slot => {
+                const slotDiv = document.createElement('div');
+                slotDiv.className = 'save-slot';
+
+                if (slot.empty) {
+                    slotDiv.innerHTML = `
+                        <div class="save-slot-info">
+                            <div class="save-slot-title">Slot ${slot.slot}</div>
+                            <div class="save-slot-empty">Boş</div>
+                        </div>
+                    `;
+                } else {
+                    const date = new Date(slot.timestamp);
+                    slotDiv.innerHTML = `
+                        <div class="save-slot-info">
+                            <div class="save-slot-title">Slot ${slot.slot}</div>
+                            <div class="save-slot-details">
+                                ${slot.player.name} - Seviye ${slot.player.level}<br>
+                                ${date.toLocaleDateString('tr-TR')} ${date.toLocaleTimeString('tr-TR')}
+                            </div>
+                        </div>
+                        <button class="load-btn" onclick="game.loadGame(${slot.slot}); closeLoadMenu()">Yükle</button>
+                        <button class="delete-btn" onclick="game.deleteSave(${slot.slot}); renderLoadMenu()">Sil</button>
+                    `;
+                }
+
+                loadContent.appendChild(slotDiv);
+            });
+        }
+
+        function openEquipmentPanel() {
+            game.updateEquipmentDisplay();
+            document.getElementById('equipmentModal').style.display = 'flex';
+        }
+
+        function closeEquipmentPanel() {
+            document.getElementById('equipmentModal').style.display = 'none';
+        }
+
+        function openLoadMenuFromCharSelect() {
+            renderLoadMenu();
+            document.getElementById('loadModal').style.display = 'flex';
+        }
+
         // Live reload
         if (typeof WebSocket !== 'undefined') {
             const ws = new WebSocket('ws://' + window.location.host);

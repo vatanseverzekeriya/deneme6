@@ -68,8 +68,35 @@ const ITEMS = [
     { name: 'Can İksiri', icon: '❤️', type: 'potion', heal: 50 },
     { name: 'Mana İksiri', icon: '💙', type: 'potion', mana: 50 },
     { name: 'Altın', icon: '💰', type: 'gold', value: 10 },
-    { name: 'Kılıç', icon: '⚔️', type: 'weapon', damage: 5 },
-    { name: 'Zırh', icon: '🛡️', type: 'armor', defense: 5 }
+    { name: 'Kılıç', icon: '⚔️', type: 'weapon', damage: 5, slot: 'weapon', rarity: 'normal' },
+    { name: 'Zırh', icon: '🛡️', type: 'armor', defense: 5, slot: 'chest', rarity: 'normal' }
+];
+
+// Equipment rarities with upgrade chances
+const RARITIES = {
+    normal: { color: '#ffffff', name: 'Normal', upgradeCost: 100, upgradeChance: 0.7 },
+    rare: { color: '#4444ff', name: 'Nadir', upgradeCost: 250, upgradeChance: 0.5 },
+    epic: { color: '#9933ff', name: 'Efsanevi', upgradeCost: 500, upgradeChance: 0.3 }
+};
+
+// Equipment types
+const EQUIPMENT_TYPES = [
+    { name: 'Demir Kılıç', icon: '⚔️', type: 'weapon', slot: 'weapon', damage: 5, rarity: 'normal', price: 50 },
+    { name: 'Çelik Kılıç', icon: '⚔️', type: 'weapon', slot: 'weapon', damage: 10, rarity: 'rare', price: 150 },
+    { name: 'Deri Zırh', icon: '🛡️', type: 'armor', slot: 'chest', defense: 5, rarity: 'normal', price: 50 },
+    { name: 'Çelik Zırh', icon: '🛡️', type: 'armor', slot: 'chest', defense: 10, rarity: 'rare', price: 150 },
+    { name: 'Demir Başlık', icon: '⛑️', type: 'armor', slot: 'head', defense: 3, hp: 20, rarity: 'normal', price: 40 },
+    { name: 'Deri Eldivenler', icon: '🧤', type: 'armor', slot: 'gloves', defense: 2, damage: 2, rarity: 'normal', price: 30 },
+    { name: 'Savaş Botları', icon: '👢', type: 'armor', slot: 'boots', defense: 2, speed: 0.5, rarity: 'normal', price: 30 }
+];
+
+// Shop items
+const SHOP_ITEMS = [
+    { name: 'Can İksiri', icon: '❤️', type: 'potion', heal: 50, price: 20 },
+    { name: 'Mana İksiri', icon: '💙', type: 'potion', mana: 50, price: 15 },
+    { name: 'Büyük Can İksiri', icon: '💖', type: 'potion', heal: 100, price: 50 },
+    { name: 'Büyük Mana İksiri', icon: '💙', type: 'potion', mana: 100, price: 40 },
+    ...EQUIPMENT_TYPES
 ];
 
 class Game {
@@ -84,14 +111,34 @@ class Game {
         this.mobs = [];
         this.projectiles = [];
         this.drops = [];
-        this.inventory = Array(5).fill(null);
+        this.inventory = Array(20).fill(null); // Increased from 5 to 20
+        this.equipment = {
+            weapon: null,
+            head: null,
+            chest: null,
+            gloves: null,
+            boots: null
+        };
 
         this.keys = {};
         this.joystickActive = false;
         this.joystickAngle = 0;
         this.joystickPower = 0;
 
+        this.shopOpen = false;
+        this.equipmentPanelOpen = false;
+
         this.setupControls();
+        this.setupAutoSave();
+    }
+
+    setupAutoSave() {
+        // Auto-save every 30 seconds
+        setInterval(() => {
+            if (this.player) {
+                this.saveGame();
+            }
+        }, 30000);
     }
 
     resizeCanvas() {
@@ -126,7 +173,11 @@ class Game {
             skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
 
             gold: 0,
-            attackCooldown: 0
+            attackCooldown: 0,
+            attackSpeed: 1000, // Base attack speed in ms
+            critChance: 0.1,
+            dodgeChance: 0.05,
+            lastAutoAttack: 0
         };
 
         this.updateHUD();
@@ -137,6 +188,279 @@ class Game {
 
         this.spawnMobs();
         this.gameLoop();
+    }
+
+    // Save/Load System
+    saveGame(slot = 'auto') {
+        if (!this.player) return;
+
+        const saveData = {
+            timestamp: Date.now(),
+            player: {
+                class: this.player.class,
+                level: this.player.level,
+                xp: this.player.xp,
+                xpToLevel: this.player.xpToLevel,
+                hp: this.player.hp,
+                maxHP: this.player.maxHP,
+                mp: this.player.mp,
+                maxMP: this.player.maxMP,
+                damage: this.player.damage,
+                defense: this.player.defense,
+                speed: this.player.speed,
+                gold: this.player.gold,
+                attackSpeed: this.player.attackSpeed,
+                critChance: this.player.critChance,
+                dodgeChance: this.player.dodgeChance
+            },
+            inventory: this.inventory,
+            equipment: this.equipment
+        };
+
+        localStorage.setItem(`rpg_save_${slot}`, JSON.stringify(saveData));
+
+        if (slot === 'auto') {
+            this.showNotification('💾 Oyun otomatik kaydedildi');
+        } else {
+            this.showNotification(`💾 Slot ${slot}'a kaydedildi`);
+        }
+    }
+
+    loadGame(slot = 'auto') {
+        const saveData = localStorage.getItem(`rpg_save_${slot}`);
+        if (!saveData) {
+            this.showNotification('❌ Kayıt bulunamadı');
+            return false;
+        }
+
+        try {
+            const data = JSON.parse(saveData);
+
+            // Load character
+            this.selectCharacter(data.player.class);
+
+            // Restore player stats
+            Object.assign(this.player, data.player);
+
+            // Restore inventory and equipment
+            this.inventory = data.inventory || Array(20).fill(null);
+            this.equipment = data.equipment || { weapon: null, head: null, chest: null, gloves: null, boots: null };
+
+            this.updateHUD();
+            this.updateInventory();
+            this.updateEquipmentDisplay();
+            this.recalculateStats();
+
+            this.showNotification('✅ Oyun yüklendi');
+            return true;
+        } catch (e) {
+            this.showNotification('❌ Yükleme hatası');
+            console.error(e);
+            return false;
+        }
+    }
+
+    deleteSave(slot) {
+        localStorage.removeItem(`rpg_save_${slot}`);
+        this.showNotification(`🗑️ Slot ${slot} silindi`);
+    }
+
+    getSaveSlots() {
+        const slots = [];
+        for (let i = 1; i <= 3; i++) {
+            const saveData = localStorage.getItem(`rpg_save_${i}`);
+            if (saveData) {
+                const data = JSON.parse(saveData);
+                slots.push({
+                    slot: i,
+                    ...data
+                });
+            } else {
+                slots.push({ slot: i, empty: true });
+            }
+        }
+        return slots;
+    }
+
+    // Equipment System
+    equipItem(item, fromInventorySlot) {
+        if (!item || !item.slot) return;
+
+        const slot = item.slot;
+
+        // Unequip current item in that slot
+        if (this.equipment[slot]) {
+            this.addToInventory(this.equipment[slot]);
+        }
+
+        // Equip new item
+        this.equipment[slot] = { ...item, upgrade: item.upgrade || 0 };
+
+        // Remove from inventory
+        if (fromInventorySlot !== undefined) {
+            this.inventory[fromInventorySlot] = null;
+        }
+
+        this.recalculateStats();
+        this.updateEquipmentDisplay();
+        this.updateInventory();
+        this.showNotification(`✅ ${item.name} giyildi`);
+    }
+
+    unequipItem(slot) {
+        if (!this.equipment[slot]) return;
+
+        const item = this.equipment[slot];
+
+        // Add to inventory
+        if (this.addToInventory(item)) {
+            this.equipment[slot] = null;
+            this.recalculateStats();
+            this.updateEquipmentDisplay();
+            this.showNotification(`✅ ${item.name} çıkarıldı`);
+        } else {
+            this.showNotification('❌ Envanter dolu');
+        }
+    }
+
+    upgradeEquipment(slot) {
+        const item = this.equipment[slot];
+        if (!item) return;
+
+        const upgrade = item.upgrade || 0;
+        const rarity = RARITIES[item.rarity || 'normal'];
+        const cost = rarity.upgradeCost * (upgrade + 1);
+
+        if (this.player.gold < cost) {
+            this.showNotification('❌ Yetersiz altın');
+            return;
+        }
+
+        this.player.gold -= cost;
+
+        if (Math.random() < rarity.upgradeChance) {
+            item.upgrade = upgrade + 1;
+            this.showNotification(`✅ ${item.name} +${item.upgrade} oldu!`);
+        } else {
+            this.showNotification('❌ Geliştirme başarısız');
+        }
+
+        this.recalculateStats();
+        this.updateEquipmentDisplay();
+        this.updateHUD();
+    }
+
+    recalculateStats() {
+        if (!this.player) return;
+
+        // Reset to base stats
+        const classData = CLASSES[this.player.class];
+        const levelBonus = this.player.level - 1;
+
+        this.player.damage = classData.baseDamage + (levelBonus * 3);
+        this.player.defense = classData.baseDefense + (levelBonus * 2);
+        this.player.speed = 3;
+        this.player.critChance = 0.1;
+        this.player.dodgeChance = 0.05;
+
+        // Apply equipment bonuses
+        Object.values(this.equipment).forEach(item => {
+            if (!item) return;
+
+            const upgrade = item.upgrade || 0;
+            const multiplier = 1 + (upgrade * 0.1);
+
+            if (item.damage) this.player.damage += Math.floor(item.damage * multiplier);
+            if (item.defense) this.player.defense += Math.floor(item.defense * multiplier);
+            if (item.hp) this.player.maxHP += Math.floor(item.hp * multiplier);
+            if (item.mp) this.player.maxMP += Math.floor(item.mp * multiplier);
+            if (item.speed) this.player.speed += item.speed;
+        });
+
+        this.player.hp = Math.min(this.player.hp, this.player.maxHP);
+        this.player.mp = Math.min(this.player.mp, this.player.maxMP);
+
+        this.updateHUD();
+    }
+
+    addToInventory(item) {
+        for (let i = 0; i < this.inventory.length; i++) {
+            if (!this.inventory[i]) {
+                this.inventory[i] = { ...item };
+                this.updateInventory();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    sellItem(inventorySlot) {
+        const item = this.inventory[inventorySlot];
+        if (!item) return;
+
+        const sellPrice = Math.floor((item.price || 10) * 0.5);
+        this.player.gold += sellPrice;
+        this.inventory[inventorySlot] = null;
+
+        this.updateInventory();
+        this.updateHUD();
+        this.showNotification(`💰 ${item.name} satıldı (+${sellPrice} altın)`);
+    }
+
+    // Shop System
+    openShop() {
+        this.shopOpen = true;
+        this.renderShop();
+        document.getElementById('shopModal').style.display = 'flex';
+    }
+
+    closeShop() {
+        this.shopOpen = false;
+        document.getElementById('shopModal').style.display = 'none';
+    }
+
+    buyItem(itemIndex) {
+        const item = SHOP_ITEMS[itemIndex];
+        if (!item) return;
+
+        if (this.player.gold < item.price) {
+            this.showNotification('❌ Yetersiz altın');
+            return;
+        }
+
+        if (this.addToInventory(item)) {
+            this.player.gold -= item.price;
+            this.updateHUD();
+            this.showNotification(`✅ ${item.name} satın alındı`);
+        } else {
+            this.showNotification('❌ Envanter dolu');
+        }
+    }
+
+    renderShop() {
+        const shopContent = document.getElementById('shopContent');
+        shopContent.innerHTML = '';
+
+        SHOP_ITEMS.forEach((item, index) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'shop-item';
+            const rarity = item.rarity ? RARITIES[item.rarity].name : '';
+            itemDiv.innerHTML = `
+                <div class="shop-item-icon">${item.icon}</div>
+                <div class="shop-item-info">
+                    <div class="shop-item-name">${item.name} ${rarity}</div>
+                    <div class="shop-item-stats">
+                        ${item.damage ? `⚔️ +${item.damage} ` : ''}
+                        ${item.defense ? `🛡️ +${item.defense} ` : ''}
+                        ${item.heal ? `❤️ +${item.heal} ` : ''}
+                        ${item.mana ? `💙 +${item.mana} ` : ''}
+                    </div>
+                    <div class="shop-item-price">💰 ${item.price} altın</div>
+                </div>
+                <button onclick="game.buyItem(${index})" class="shop-buy-btn">Satın Al</button>
+            `;
+            shopContent.appendChild(itemDiv);
+        });
     }
 
     createSkillButtons() {
@@ -334,9 +658,22 @@ class Game {
         return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
     }
 
-    damageEnemy(enemy, damage) {
+    performAutoAttack(enemy) {
+        let damage = this.player.damage;
+        let isCrit = false;
+
+        // Check for critical hit
+        if (Math.random() < this.player.critChance) {
+            damage = Math.floor(damage * 1.5);
+            isCrit = true;
+        }
+
+        this.damageEnemy(enemy, damage, isCrit);
+    }
+
+    damageEnemy(enemy, damage, isCrit = false) {
         enemy.hp -= damage;
-        this.showDamage(enemy.x, enemy.y, damage);
+        this.showDamage(enemy.x, enemy.y, damage, isCrit ? '#ffff00' : '#ff4444', isCrit);
 
         if (enemy.hp <= 0) {
             this.killEnemy(enemy);
@@ -355,12 +692,23 @@ class Game {
             this.levelUp();
         }
 
-        // Drop
+        // Drop items
         if (Math.random() < 0.4) {
             const item = ITEMS[Math.floor(Math.random() * ITEMS.length)];
             this.drops.push({
                 ...item,
                 x: enemy.x,
+                y: enemy.y,
+                size: 25
+            });
+        }
+
+        // Drop equipment (lower chance)
+        if (Math.random() < 0.15) {
+            const equipment = EQUIPMENT_TYPES[Math.floor(Math.random() * EQUIPMENT_TYPES.length)];
+            this.drops.push({
+                ...equipment,
+                x: enemy.x + 20,
                 y: enemy.y,
                 size: 25
             });
@@ -388,13 +736,20 @@ class Game {
         this.updateHUD();
     }
 
-    showDamage(x, y, damage) {
+    showDamage(x, y, damage, color = '#ff4444', isCrit = false) {
         const dmg = document.createElement('div');
         dmg.className = 'damage-number';
-        dmg.textContent = '-' + damage;
+        dmg.textContent = typeof damage === 'number' ? '-' + damage : damage;
         dmg.style.left = x + 'px';
         dmg.style.top = y + 'px';
-        dmg.style.color = '#ff4444';
+        dmg.style.color = color;
+
+        if (isCrit) {
+            dmg.style.fontSize = '32px';
+            dmg.style.fontWeight = 'bold';
+            dmg.textContent = 'KRİTİK! -' + damage;
+        }
+
         document.body.appendChild(dmg);
 
         setTimeout(() => dmg.remove(), 1000);
@@ -416,14 +771,19 @@ class Game {
             this.drops.splice(index, 1);
         }
 
+        // Handle gold directly
+        if (drop.type === 'gold') {
+            this.player.gold += drop.value || 10;
+            this.updateHUD();
+            this.showNotification(`+${drop.value || 10} Altın 💰`);
+            return;
+        }
+
         // Add to inventory
-        for (let i = 0; i < this.inventory.length; i++) {
-            if (!this.inventory[i]) {
-                this.inventory[i] = drop;
-                this.updateInventory();
-                this.showNotification(`+1 ${drop.name} ${drop.icon}`);
-                break;
-            }
+        if (this.addToInventory(drop)) {
+            this.showNotification(`+1 ${drop.name} ${drop.icon}`);
+        } else {
+            this.showNotification('❌ Envanter dolu');
         }
     }
 
@@ -448,12 +808,59 @@ class Game {
     updateInventory() {
         this.inventory.forEach((item, i) => {
             const slot = document.getElementById(`slot${i}`);
+            if (!slot) return;
+
             if (item) {
-                slot.innerHTML = `${item.icon}`;
+                const upgrade = item.upgrade > 0 ? `+${item.upgrade}` : '';
+                slot.innerHTML = `${item.icon}${upgrade}`;
                 slot.classList.add('has-item');
+
+                // Add click handler for equipping
+                slot.onclick = () => {
+                    if (item.type === 'weapon' || item.type === 'armor') {
+                        this.equipItem(item, i);
+                    } else if (item.type === 'potion') {
+                        this.useItem(i);
+                    }
+                };
+
+                // Add right-click handler for selling
+                slot.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    if (confirm(`${item.name}'i satmak istiyor musun?`)) {
+                        this.sellItem(i);
+                    }
+                };
             } else {
                 slot.innerHTML = '';
                 slot.classList.remove('has-item');
+                slot.onclick = null;
+                slot.oncontextmenu = null;
+            }
+        });
+    }
+
+    updateEquipmentDisplay() {
+        const slots = ['weapon', 'head', 'chest', 'gloves', 'boots'];
+
+        slots.forEach(slot => {
+            const slotEl = document.getElementById(`equip_${slot}`);
+            if (!slotEl) return;
+
+            const item = this.equipment[slot];
+
+            if (item) {
+                const upgrade = item.upgrade > 0 ? `+${item.upgrade}` : '';
+                slotEl.innerHTML = `${item.icon}${upgrade}`;
+                slotEl.classList.add('has-item');
+
+                slotEl.onclick = () => this.unequipItem(slot);
+                slotEl.ondblclick = () => this.upgradeEquipment(slot);
+            } else {
+                slotEl.innerHTML = '';
+                slotEl.classList.remove('has-item');
+                slotEl.onclick = null;
+                slotEl.ondblclick = null;
             }
         });
     }
@@ -484,6 +891,21 @@ class Game {
             this.player.y = Math.max(20, Math.min(this.canvas.height - 20, this.player.y + dy));
         }
 
+        // Auto-attack system
+        const nearestMob = this.findNearestMob();
+        if (nearestMob) {
+            const dist = this.getDistance(this.player, nearestMob);
+            const attackRange = 200;
+
+            if (dist < attackRange) {
+                const now = Date.now();
+                if (now - this.player.lastAutoAttack >= this.player.attackSpeed) {
+                    this.performAutoAttack(nearestMob);
+                    this.player.lastAutoAttack = now;
+                }
+            }
+        }
+
         // Update mobs
         this.mobs.forEach(mob => {
             const dist = this.getDistance(this.player, mob);
@@ -496,9 +918,15 @@ class Game {
                 // Attack player
                 if (dist < 50) {
                     if (mob.targetCooldown <= 0) {
-                        const damage = Math.max(1, mob.damage - this.player.defense);
-                        this.player.hp -= damage;
-                        this.showDamage(this.player.x, this.player.y - 40, damage);
+                        // Player can dodge
+                        if (Math.random() < this.player.dodgeChance) {
+                            this.showDamage(this.player.x, this.player.y - 40, 'KAÇTI', '#00ff00');
+                        } else {
+                            const damage = Math.max(1, mob.damage - this.player.defense);
+                            this.player.hp -= damage;
+                            this.showDamage(this.player.x, this.player.y - 40, damage);
+                        }
+
                         mob.targetCooldown = 1000;
 
                         if (this.player.hp <= 0) {
@@ -631,6 +1059,22 @@ class Game {
             `MP: ${Math.floor(this.player.mp)}/${this.player.maxMP}`;
         document.getElementById('xpText').textContent =
             `XP: ${this.player.xp}/${this.player.xpToLevel}`;
+
+        // Update gold display
+        const goldEl = document.getElementById('goldAmount');
+        if (goldEl) {
+            goldEl.textContent = this.player.gold;
+        }
+
+        // Update stats display
+        const statsEl = document.getElementById('statsDisplay');
+        if (statsEl) {
+            statsEl.innerHTML = `
+                ⚔️ ${this.player.damage} |
+                🛡️ ${this.player.defense} |
+                ⚡ ${Math.floor(this.player.speed * 10) / 10}
+            `;
+        }
     }
 
     gameOver() {
