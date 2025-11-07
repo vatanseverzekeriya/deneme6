@@ -172,6 +172,23 @@ class Game {
             maxCombo: 0
         };
 
+        // Achievements
+        this.achievements = [];
+        this.unlockedAchievements = [];
+
+        // Settings
+        this.settings = {
+            sfxVolume: 50,
+            musicVolume: 30,
+            particleDensity: 100,
+            screenShake: true,
+            showDamage: true
+        };
+
+        // UI state
+        this.screenShakeAmount = 0;
+        this.toasts = [];
+
         this.keys = {};
         this.joystickActive = false;
         this.joystickAngle = 0;
@@ -179,6 +196,7 @@ class Game {
 
         this.setupControls();
         this.initQuests();
+        this.initAchievements();
     }
 
     resizeCanvas() {
@@ -236,6 +254,48 @@ class Game {
         this.activeQuest = this.quests[0];
     }
 
+    initAchievements() {
+        this.achievements = [
+            { id: 'first_blood', name: 'İlk Kan', desc: 'İlk düşmanını öldür', icon: '🩸', condition: () => this.stats.mobsKilled >= 1 },
+            { id: 'monster_hunter', name: 'Canavar Avcısı', desc: '50 düşman öldür', icon: '⚔️', condition: () => this.stats.mobsKilled >= 50 },
+            { id: 'boss_killer', name: 'Boss Katili', desc: 'İlk boss\'u öldür', icon: '👹', condition: () => this.stats.bossesKilled >= 1 },
+            { id: 'collector', name: 'Koleksiyoncu', desc: '25 item topla', icon: '💎', condition: () => this.stats.itemsCollected >= 25 },
+            { id: 'critical_master', name: 'Kritik Ustası', desc: '100 kritik vuruş', icon: '🔥', condition: () => this.stats.criticalHits >= 100 },
+            { id: 'combo_king', name: 'Combo Kralı', desc: '10x combo yap', icon: '⭐', condition: () => this.stats.maxCombo >= 10 },
+            { id: 'skill_master', name: 'Yetenek Ustası', desc: '200 yetenek kullan', icon: '✨', condition: () => this.stats.skillsUsed >= 200 },
+            { id: 'level_5', name: 'Yükseliş', desc: 'Seviye 5\'e ulaş', icon: '📈', condition: () => this.player && this.player.level >= 5 },
+            { id: 'level_10', name: 'Güç', desc: 'Seviye 10\'a ulaş', icon: '💪', condition: () => this.player && this.player.level >= 10 },
+            { id: 'rich', name: 'Zengin', desc: '500 altın biriktir', icon: '💰', condition: () => this.player && this.player.gold >= 500 }
+        ];
+    }
+
+    checkAchievements() {
+        this.achievements.forEach(achievement => {
+            if (!this.unlockedAchievements.includes(achievement.id) && achievement.condition()) {
+                this.unlockAchievement(achievement);
+            }
+        });
+    }
+
+    unlockAchievement(achievement) {
+        this.unlockedAchievements.push(achievement.id);
+        this.showAchievement(achievement);
+        this.playSoundEffect('achievement');
+    }
+
+    showAchievement(achievement) {
+        const popup = document.getElementById('achievementPopup');
+        document.getElementById('achievementIcon').textContent = achievement.icon;
+        document.getElementById('achievementTitle').textContent = achievement.name;
+        document.getElementById('achievementDesc').textContent = achievement.desc;
+
+        popup.classList.add('active');
+
+        setTimeout(() => {
+            popup.classList.remove('active');
+        }, 4000);
+    }
+
     createSkillButtons() {
         const skillsDiv = document.getElementById('skills');
         skillsDiv.innerHTML = '';
@@ -272,6 +332,12 @@ class Game {
             // Target nearest enemy
             if (e.key.toLowerCase() === 't') {
                 this.targetNearestEnemy();
+            }
+
+            // Settings
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                this.toggleSettings();
             }
 
             // Use potion
@@ -386,7 +452,10 @@ class Game {
         });
 
         this.showNotification('⚠️ BOSS GÖRÜNDÜ: ' + boss.name + ' ⚠️');
+        this.showToast('BOSS GÖRÜNDÜ!', `${boss.name} ortaya çıktı! Dikkatli ol!`, '⚠️');
         this.createParticles(x, y, 20, '#ff0000');
+        this.screenShake(20);
+        this.playSoundEffect('boss');
     }
 
     useSkill(index) {
@@ -499,7 +568,14 @@ class Game {
         const finalDamage = Math.floor(damage);
         enemy.hp -= finalDamage;
 
-        this.showDamage(enemy.x, enemy.y, finalDamage, isCritical);
+        if (this.settings.showDamage) {
+            this.showDamage(enemy.x, enemy.y, finalDamage, isCritical);
+        }
+
+        // Screen shake on critical or big damage
+        if (isCritical || finalDamage > 50) {
+            this.screenShake(isCritical ? 8 : 5);
+        }
 
         if (enemy.hp <= 0) {
             this.killEnemy(enemy);
@@ -529,7 +605,10 @@ class Game {
     }
 
     createParticles(x, y, count, color) {
-        for (let i = 0; i < count; i++) {
+        // Apply particle density setting
+        const actualCount = Math.floor(count * (this.settings.particleDensity / 100));
+
+        for (let i = 0; i < actualCount; i++) {
             const angle = Math.random() * Math.PI * 2;
             const speed = 2 + Math.random() * 3;
 
@@ -561,14 +640,19 @@ class Game {
         this.completedQuests.push(quest.id);
 
         // Give rewards
+        let rewardText = '';
         if (quest.reward.xp) {
             this.player.xp += quest.reward.xp;
+            rewardText += `+${quest.reward.xp} XP `;
         }
         if (quest.reward.gold) {
             this.player.gold += quest.reward.gold;
+            rewardText += `+${quest.reward.gold} Altın`;
         }
 
         this.showNotification('✅ GÖREV TAMAMLANDI: ' + quest.name + '!');
+        this.showToast('Görev Tamamlandı!', `${quest.name} - ${rewardText}`, '✅');
+        this.createParticles(this.player.x, this.player.y, 20, '#00ff00');
 
         // Load next quest
         const nextQuestIndex = this.completedQuests.length;
@@ -593,6 +677,8 @@ class Game {
         if (enemy.isBoss) {
             this.stats.bossesKilled++;
             this.updateQuestProgress('boss', 1);
+            this.showToast('BOSS YENİLDİ!', `${enemy.name} öldürüldü! +${enemy.xp} XP, +${enemy.gold} Altın`, '👑');
+            this.screenShake(25);
         }
 
         // XP and Gold
@@ -613,6 +699,9 @@ class Game {
 
         // Particle effects
         this.createParticles(enemy.x, enemy.y, 15, enemy.isBoss ? '#ff8000' : '#ffff00');
+
+        // Check achievements
+        this.checkAchievements();
 
         // Spawn new mob
         setTimeout(() => this.spawnMob(), 3000);
@@ -693,7 +782,11 @@ class Game {
         }
 
         this.showNotification('🎉 LEVEL UP! Seviye ' + this.player.level);
+        this.showToast('LEVEL UP!', `Seviye ${this.player.level} oldun! +20 HP, +10 MP, +3 DMG`, '🎉');
         this.createParticles(this.player.x, this.player.y, 30, '#ffd700');
+        this.screenShake(15);
+        this.playSoundEffect('levelup');
+        this.checkAchievements();
         this.updateHUD();
     }
 
@@ -730,6 +823,7 @@ class Game {
     }
 
     showNotification(text) {
+        // Use old notification for backward compatibility
         const notif = document.getElementById('lootNotif');
         notif.textContent = text;
         notif.style.display = 'flex';
@@ -737,6 +831,77 @@ class Game {
         setTimeout(() => {
             notif.style.display = 'none';
         }, 2000);
+    }
+
+    showToast(title, message, icon = '📢') {
+        const container = document.getElementById('toastContainer');
+
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerHTML = `
+            <div class="toast-icon">${icon}</div>
+            <div class="toast-content">
+                <div class="toast-title">${title}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+        `;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.animation = 'slideInRight 0.3s ease-out reverse';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    playSoundEffect(type) {
+        // Placeholder for sound effects
+        // In a full game, this would play actual sounds
+        const volume = this.settings.sfxVolume / 100;
+
+        if (volume === 0) return;
+
+        // You can add actual audio playback here
+        // For now, just log for debugging
+        if (type === 'achievement') {
+            // Play achievement sound
+        } else if (type === 'levelup') {
+            // Play level up sound
+        } else if (type === 'critical') {
+            // Play critical hit sound
+        }
+    }
+
+    screenShake(intensity = 10) {
+        if (!this.settings.screenShake) return;
+        this.screenShakeAmount = intensity;
+    }
+
+    toggleSettings() {
+        const panel = document.getElementById('settingsPanel');
+        panel.classList.toggle('active');
+    }
+
+    toggleHelp() {
+        const panel = document.getElementById('helpPanel');
+        panel.classList.toggle('active');
+    }
+
+    updateSetting(key, value) {
+        if (key === 'sfx') {
+            this.settings.sfxVolume = parseInt(value);
+            document.getElementById('sfxValue').textContent = value + '%';
+        } else if (key === 'music') {
+            this.settings.musicVolume = parseInt(value);
+            document.getElementById('musicValue').textContent = value + '%';
+        } else if (key === 'particles') {
+            this.settings.particleDensity = parseInt(value);
+            document.getElementById('particleValue').textContent = value + '%';
+        } else if (key === 'screenShake') {
+            this.settings.screenShake = value;
+        } else if (key === 'showDamage') {
+            this.settings.showDamage = value;
+        }
     }
 
     pickupDrop(drop) {
@@ -750,6 +915,7 @@ class Game {
             this.player.gold += drop.value;
             this.showNotification(`+${drop.value} Altın ${drop.icon}`);
             this.updateHUD();
+            this.checkAchievements();
             return;
         }
 
@@ -765,8 +931,19 @@ class Game {
 
                 const rarityColor = ITEM_RARITIES[drop.rarity]?.color || '#ffffff';
                 const upgradeTxt = drop.upgrade ? ` +${drop.upgrade}` : '';
+                const rarityName = drop.rarity === 'legendary' ? 'Efsanevi' :
+                                 drop.rarity === 'epic' ? 'Epik' :
+                                 drop.rarity === 'rare' ? 'Nadir' : 'Normal';
+
                 this.showNotification(`${drop.icon} ${drop.name}${upgradeTxt}`);
+
+                // Special toast for rare items
+                if (drop.rarity === 'legendary' || drop.rarity === 'epic') {
+                    this.showToast(`${rarityName} Item!`, `${drop.name}${upgradeTxt} buldun!`, drop.icon);
+                }
+
                 this.createParticles(this.player.x, this.player.y, 5, rarityColor);
+                this.checkAchievements();
                 break;
             }
         }
@@ -964,6 +1141,12 @@ class Game {
             this.player.mp = Math.min(this.player.maxMP, this.player.mp + 0.1);
             if (Math.random() < 0.1) this.updateHUD();
         }
+
+        // Update screen shake
+        if (this.screenShakeAmount > 0) {
+            this.screenShakeAmount *= 0.9;
+            if (this.screenShakeAmount < 0.1) this.screenShakeAmount = 0;
+        }
     }
 
     performAutoAttack(target) {
@@ -997,6 +1180,14 @@ class Game {
     }
 
     draw() {
+        // Apply screen shake
+        if (this.screenShakeAmount > 0) {
+            const shakeX = (Math.random() - 0.5) * this.screenShakeAmount;
+            const shakeY = (Math.random() - 0.5) * this.screenShakeAmount;
+            this.ctx.save();
+            this.ctx.translate(shakeX, shakeY);
+        }
+
         this.ctx.fillStyle = '#1a1a2e';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -1119,6 +1310,11 @@ class Game {
                 this.ctx.textAlign = 'center';
                 this.ctx.fillText(this.comboCount + 'x', this.player.x, this.player.y - 50);
             }
+        }
+
+        // Restore screen shake
+        if (this.screenShakeAmount > 0) {
+            this.ctx.restore();
         }
     }
 

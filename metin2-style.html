@@ -300,8 +300,195 @@
         }
 
         @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(-100px); }
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            50% { transform: translateY(-50px) scale(1.2); }
+            100% { opacity: 0; transform: translateY(-100px) scale(0.8); }
+        }
+
+        /* Modern Toast Notification */
+        .toast {
+            position: fixed;
+            top: 140px;
+            right: 20px;
+            background: linear-gradient(135deg, rgba(0,0,0,0.95), rgba(30,30,60,0.95));
+            border: 2px solid #ffd700;
+            border-radius: 15px;
+            padding: 15px 20px;
+            min-width: 250px;
+            max-width: 350px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(255,215,0,0.3);
+            animation: slideInRight 0.3s ease-out;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast-icon {
+            font-size: 28px;
+            filter: drop-shadow(0 0 5px currentColor);
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: bold;
+            font-size: 14px;
+            color: #ffd700;
+            margin-bottom: 3px;
+        }
+
+        .toast-message {
+            font-size: 12px;
+            color: #fff;
+        }
+
+        /* Settings Panel */
+        .settings-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(20,20,40,0.98), rgba(40,40,80,0.98));
+            border: 3px solid #ffd700;
+            border-radius: 20px;
+            padding: 30px;
+            min-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(255,215,0,0.2);
+            z-index: 2000;
+            display: none;
+        }
+
+        .settings-panel.active {
+            display: block;
+            animation: popIn 0.3s ease-out;
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        .settings-header {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(255,215,0,0.5);
+        }
+
+        .settings-option {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+        }
+
+        .settings-label {
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .settings-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.2);
+            outline: none;
+            appearance: none;
+        }
+
+        .settings-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ffd700;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255,215,0,0.5);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 24px;
+            color: #000;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,215,0,0.5);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Achievement Popup */
+        .achievement-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(255,215,0,0.95), rgba(255,165,0,0.95));
+            border: 3px solid #fff;
+            border-radius: 20px;
+            padding: 30px 40px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(255,215,0,0.6);
+            animation: achievementPop 0.6s ease-out;
+            z-index: 3000;
+            display: none;
+        }
+
+        .achievement-popup.active {
+            display: block;
+        }
+
+        @keyframes achievementPop {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(-180deg); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.1) rotate(10deg); }
+            100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .achievement-icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+            animation: bounce 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+
+        .achievement-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.5);
+        }
+
+        .achievement-desc {
+            font-size: 14px;
+            color: #333;
         }
 
         /* Loot notification */
@@ -443,6 +630,95 @@
 
         <!-- Loot Notification -->
         <div id="lootNotif"></div>
+
+        <!-- Settings Button -->
+        <button onclick="game.toggleSettings()" style="position: fixed; top: 10px; right: 10px; width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.7); border: 2px solid rgba(255,255,255,0.3); color: white; font-size: 20px; cursor: pointer; pointer-events: auto; z-index: 100;">
+            ⚙️
+        </button>
+
+        <!-- Help Button -->
+        <button onclick="game.toggleHelp()" style="position: fixed; top: 60px; right: 10px; width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.7); border: 2px solid rgba(255,255,255,0.3); color: white; font-size: 20px; cursor: pointer; pointer-events: auto; z-index: 100;">
+            ❓
+        </button>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+    <!-- Achievement Popup -->
+    <div id="achievementPopup" class="achievement-popup">
+        <div class="achievement-icon" id="achievementIcon">🏆</div>
+        <div class="achievement-title" id="achievementTitle">Achievement Unlocked!</div>
+        <div class="achievement-desc" id="achievementDesc">Description</div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div id="settingsPanel" class="settings-panel">
+        <div class="settings-header">⚙️ AYARLAR</div>
+
+        <div class="settings-option">
+            <label class="settings-label">Ses Efektleri: <span id="sfxValue">50%</span></label>
+            <input type="range" class="settings-slider" min="0" max="100" value="50" oninput="game.updateSetting('sfx', this.value)">
+        </div>
+
+        <div class="settings-option">
+            <label class="settings-label">Müzik: <span id="musicValue">30%</span></label>
+            <input type="range" class="settings-slider" min="0" max="100" value="30" oninput="game.updateSetting('music', this.value)">
+        </div>
+
+        <div class="settings-option">
+            <label class="settings-label">Particle Yoğunluğu: <span id="particleValue">100%</span></label>
+            <input type="range" class="settings-slider" min="0" max="100" value="100" oninput="game.updateSetting('particles', this.value)">
+        </div>
+
+        <div class="settings-option">
+            <label class="settings-label">
+                <input type="checkbox" checked onchange="game.updateSetting('screenShake', this.checked)">
+                Ekran Sarsıntısı
+            </label>
+        </div>
+
+        <div class="settings-option">
+            <label class="settings-label">
+                <input type="checkbox" checked onchange="game.updateSetting('showDamage', this.checked)">
+                Hasar Gösterimi
+            </label>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <button class="btn" onclick="game.toggleSettings()">Kapat</button>
+        </div>
+    </div>
+
+    <!-- Help Panel -->
+    <div id="helpPanel" class="settings-panel">
+        <div class="settings-header">❓ YARDIM</div>
+
+        <div style="color: #fff; font-size: 13px; line-height: 1.8;">
+            <h3 style="color: #ffd700; margin-bottom: 10px;">🎮 Kontroller</h3>
+            <p><strong>WASD/Ok Tuşları:</strong> Hareket</p>
+            <p><strong>Q, W, E:</strong> Yetenekler</p>
+            <p><strong>1-5:</strong> Envanter kullan</p>
+            <p><strong>SPACE:</strong> Auto-Attack</p>
+            <p><strong>T:</strong> Hedef seç</p>
+            <p><strong>ESC:</strong> Ayarlar</p>
+
+            <h3 style="color: #ffd700; margin: 15px 0 10px;">⚔️ Oyun Mekanikleri</h3>
+            <p><strong>Combo:</strong> 2 saniye içinde art arda vuruş yap!</p>
+            <p><strong>Kritik:</strong> Şanslıysan %60 fazla hasar!</p>
+            <p><strong>Boss:</strong> Her 5 seviyede bir!</p>
+            <p><strong>Item Nadirlikleri:</strong> Beyaz → Mavi → Mor → Turuncu</p>
+
+            <h3 style="color: #ffd700; margin: 15px 0 10px;">💎 İpuçları</h3>
+            <p>• İyi ekipman düşmanları daha kolay öldürür</p>
+            <p>• Görevleri tamamla bonus ödül kazan</p>
+            <p>• Combo yaparak daha fazla hasar ver</p>
+            <p>• Boss'lara karşı potionlarını sakla</p>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <button class="btn" onclick="game.toggleHelp()">Anladım!</button>
+        </div>
     </div>
 
     <script src="rpg-game.js"></script>
