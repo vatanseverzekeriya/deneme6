@@ -2,6 +2,10 @@
 
 PC oyunlarını mobil cihazlarda gerçek zamanlı olarak test etmek için geliştirilmiş profesyonel önizleme aracı.
 
+## 📖 Dokümantasyon
+
+- **[Metin2 AI Prompt Engineering Guide](METIN2_AI_PROMPT_GUIDE.md)** - AI kullanarak Metin2-tarzı oyun varlıkları (monster, environment, items) oluşturmak için kapsamlı rehber
+
 ## ✨ Özellikler
 
 - 🔴 **Canlı Yayın**: Dosyalarınızı düzenleyin, değişiklikler anında tüm cihazlara yansır
