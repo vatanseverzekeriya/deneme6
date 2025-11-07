@@ -54,14 +54,182 @@ const CLASSES = {
     }
 };
 
-// Mob types
-const MOB_TYPES = [
-    { name: 'Kurt', icon: '🐺', hp: 50, damage: 8, xp: 25, gold: 10, speed: 1.5 },
-    { name: 'Goblin', icon: '👹', hp: 60, damage: 10, xp: 30, gold: 15, speed: 1.2 },
-    { name: 'Ork', icon: '👾', hp: 80, damage: 12, xp: 40, gold: 20, speed: 1.0 },
-    { name: 'Troll', icon: '🧟', hp: 120, damage: 15, xp: 60, gold: 30, speed: 0.8 },
-    { name: 'Ejderha', icon: '🐉', hp: 200, damage: 25, xp: 100, gold: 50, speed: 0.6 }
+// Starter Zone Monsters - Forest & Village Outskirts Theme
+// Levels 1-9 progression with detailed descriptions
+const STARTER_ZONE_MONSTERS = [
+    // === LEVEL 1-2: Wild Dogs (Yabani Köpekler) ===
+    {
+        name: 'Başıboş Köpek',
+        nameEN: 'Stray Dog',
+        icon: '🐕',
+        level: 1,
+        hp: 30,
+        damage: 4,
+        defense: 1,
+        xp: 10,
+        gold: 3,
+        speed: 1.3,
+        description: 'Açlıktan bitkin, kahverengi tüylü küçük bir köpek. Ürkek ama köşeye sıkışınca ısırır.',
+        attackStyle: 'Hızlı ve çevik ısırma saldırıları',
+        attackPattern: 'bite',
+        aggressionLevel: 'low'
+    },
+    {
+        name: 'Vahşi Köpek',
+        nameEN: 'Wild Dog',
+        icon: '🐕',
+        level: 2,
+        hp: 45,
+        damage: 6,
+        defense: 2,
+        xp: 15,
+        gold: 5,
+        speed: 1.4,
+        description: 'Gri-kahverengi tüylü, orta boy saldırgan köpek. Gözlerinde vahşi bir parıltı var.',
+        attackStyle: 'Agresif ısırma ve çarpma kombinasyonu',
+        attackPattern: 'bite-charge',
+        aggressionLevel: 'medium'
+    },
+
+    // === LEVEL 3-4: Wolves Begin (Kurtlar Başlıyor) ===
+    {
+        name: 'Aç Köpek',
+        nameEN: 'Hungry Dog',
+        icon: '🦮',
+        level: 3,
+        hp: 60,
+        damage: 8,
+        defense: 3,
+        xp: 20,
+        gold: 7,
+        speed: 1.5,
+        description: 'Kaburga kemikleri belli olan zayıf köpek. Daha büyük ve çaresiz, son derece saldırgan.',
+        attackStyle: 'Çılgınca ısırma saldırıları, öngörülemez hareketler',
+        attackPattern: 'frenzy-bite',
+        aggressionLevel: 'high'
+    },
+    {
+        name: 'Genç Kurt',
+        nameEN: 'Young Wolf',
+        icon: '🐺',
+        level: 4,
+        hp: 75,
+        damage: 10,
+        defense: 4,
+        xp: 25,
+        gold: 10,
+        speed: 1.6,
+        description: 'Gri tüylü, henüz tam gelişmemiş genç kurt. Hızlı ve çevik ama tecrübesiz.',
+        attackStyle: 'Hızlı dalış saldırıları ve geri çekilme',
+        attackPattern: 'dash-bite',
+        aggressionLevel: 'medium'
+    },
+
+    // === LEVEL 5-6: Mature Wolves (Olgun Kurtlar) ===
+    {
+        name: 'Orman Kurdu',
+        nameEN: 'Forest Wolf',
+        icon: '🐺',
+        level: 5,
+        hp: 95,
+        damage: 12,
+        defense: 5,
+        xp: 35,
+        gold: 15,
+        speed: 1.7,
+        description: 'Koyu gri tüylü, orta boy yetişkin kurt. Ormanda yaşamaya alışkın, sessiz ve ölümcül.',
+        attackStyle: 'Taktiksel yaklaşma ve güçlü ısırma',
+        attackPattern: 'stalk-bite',
+        aggressionLevel: 'medium'
+    },
+    {
+        name: 'Kızıl Kurt',
+        nameEN: 'Red Wolf',
+        icon: '🦊',
+        level: 6,
+        hp: 110,
+        damage: 14,
+        defense: 6,
+        xp: 45,
+        gold: 20,
+        speed: 1.8,
+        description: 'Kızılımsı-kahverengi tüylü nadir bir kurt türü. Daha büyük ve güçlü, son derece territorial.',
+        attackStyle: 'Güçlü çarpma ve ardından ısırma kombinasyonu',
+        attackPattern: 'charge-maul',
+        aggressionLevel: 'high'
+    },
+
+    // === LEVEL 7-8: Wild Boars (Yaban Domuzları) ===
+    {
+        name: 'Yaban Domuzu Yavrusu',
+        nameEN: 'Young Boar',
+        icon: '🐗',
+        level: 7,
+        hp: 130,
+        damage: 16,
+        defense: 8,
+        xp: 55,
+        gold: 25,
+        speed: 1.2,
+        description: 'Çizgili desenli kahverengi tüylü domuz yavrusu. Küçük ama şaşırtıcı derecede agresif.',
+        attackStyle: 'Kafa ile sert çarpma ve dönüp tekrar vuruş',
+        attackPattern: 'ram-turn',
+        aggressionLevel: 'medium'
+    },
+    {
+        name: 'Yaban Domuzu',
+        nameEN: 'Wild Boar',
+        icon: '🐗',
+        level: 8,
+        hp: 160,
+        damage: 20,
+        defense: 10,
+        xp: 70,
+        gold: 35,
+        speed: 1.1,
+        description: 'Siyah-kahverengi tüylü, iri yapılı yetişkin yaban domuzu. Keskin dişleri ve kalın derisi var.',
+        attackStyle: 'Ağır ama yıkıcı돌진 saldırısı, dişlerle parçalama',
+        attackPattern: 'heavy-charge-gore',
+        aggressionLevel: 'high'
+    },
+
+    // === LEVEL 9: Elite Variants (Seçkin Varyantlar) ===
+    {
+        name: 'Alpha Mavi Kurt',
+        nameEN: 'Alpha Blue Wolf',
+        icon: '🐺',
+        level: 9,
+        hp: 200,
+        damage: 25,
+        defense: 12,
+        xp: 90,
+        gold: 50,
+        speed: 1.9,
+        description: 'Mavimsi gri tüylü, sürünün lideri. Çelik gibi kaslar ve keskin zeka. Gözleri buzul mavisi.',
+        attackStyle: 'Koordineli saldırı: çember çizme, ani dalış, boğaza saldırı',
+        attackPattern: 'alpha-combo',
+        aggressionLevel: 'very-high'
+    },
+    {
+        name: 'Kızgın Yaban Domuzu',
+        nameEN: 'Enraged Boar',
+        icon: '🐗',
+        level: 9,
+        hp: 220,
+        damage: 28,
+        defense: 14,
+        xp: 100,
+        gold: 55,
+        speed: 1.3,
+        description: 'Kırmızı gözlü, tüyleri diken diken olmuş dev domuz. Yaralarla dolu vücudu savaş tecrübesini gösteriyor.',
+        attackStyle: 'Öfkeli돌진, sert baş vuruşu ve ayakla ezme',
+        attackPattern: 'rage-trample',
+        aggressionLevel: 'very-high'
+    }
 ];
+
+// Legacy mob types for backward compatibility
+const MOB_TYPES = STARTER_ZONE_MONSTERS;
 
 // Items
 const ITEMS = [
@@ -221,6 +389,50 @@ class Game {
         joystick.addEventListener('mousedown', handleJoystickStart);
         document.addEventListener('mousemove', handleJoystickMove);
         document.addEventListener('mouseup', handleJoystickEnd);
+
+        // Canvas click for monster info
+        this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
+    }
+
+    handleCanvasClick(e) {
+        if (!this.player) return;
+
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        const clickX = (e.clientX - rect.left) * scaleX;
+        const clickY = (e.clientY - rect.top) * scaleY;
+
+        // Check if clicked on any mob
+        for (let mob of this.mobs) {
+            const dist = Math.sqrt((clickX - mob.x) ** 2 + (clickY - mob.y) ** 2);
+            if (dist < mob.size) {
+                this.showMonsterInfo(mob);
+                return;
+            }
+        }
+    }
+
+    showMonsterInfo(mob) {
+        const panel = document.getElementById('monsterInfo');
+
+        document.getElementById('mobInfoIcon').textContent = mob.icon;
+        document.getElementById('mobInfoName').textContent = mob.name;
+        document.getElementById('mobInfoLevel').textContent = `Seviye: ${mob.level}`;
+        document.getElementById('mobInfoHP').textContent = mob.maxHP;
+        document.getElementById('mobInfoDamage').textContent = mob.damage;
+        document.getElementById('mobInfoDefense').textContent = mob.defense || 0;
+        document.getElementById('mobInfoSpeed').textContent = mob.speed.toFixed(1);
+        document.getElementById('mobInfoXP').textContent = mob.xp;
+        document.getElementById('mobInfoGold').textContent = mob.gold;
+        document.getElementById('mobInfoDesc').textContent = mob.description || 'Açıklama yok';
+        document.getElementById('mobInfoAttack').textContent = `🗡️ ${mob.attackStyle || 'Saldırı stili bilinmiyor'}`;
+
+        panel.classList.add('active');
+    }
+
+    closeMonsterInfo() {
+        document.getElementById('monsterInfo').classList.remove('active');
     }
 
     spawnMobs() {
@@ -232,11 +444,17 @@ class Game {
     }
 
     spawnMob() {
-        const typeIndex = Math.min(
-            Math.floor(this.player.level / 3),
-            MOB_TYPES.length - 1
+        // Smart spawning: spawn monsters within player level ±2
+        const minLevel = Math.max(1, this.player.level - 1);
+        const maxLevel = Math.min(9, this.player.level + 2);
+
+        // Filter monsters within level range
+        const availableMobs = STARTER_ZONE_MONSTERS.filter(
+            mob => mob.level >= minLevel && mob.level <= maxLevel
         );
-        const type = MOB_TYPES[Math.floor(Math.random() * (typeIndex + 1))];
+
+        // Select random monster from available pool
+        const type = availableMobs[Math.floor(Math.random() * availableMobs.length)];
 
         const margin = 100;
         const x = Math.random() < 0.5
@@ -251,7 +469,8 @@ class Game {
             x, y,
             maxHP: type.hp,
             size: 35,
-            targetCooldown: 0
+            targetCooldown: 0,
+            showInfo: false
         });
     }
 
@@ -577,6 +796,20 @@ class Game {
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
             this.ctx.fillText(mob.icon, mob.x, mob.y);
+
+            // Mob name and level
+            this.ctx.font = '11px Arial';
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeText(mob.name, mob.x, mob.y - mob.size - 15);
+            this.ctx.fillText(mob.name, mob.x, mob.y - mob.size - 15);
+
+            // Level indicator
+            this.ctx.font = 'bold 10px Arial';
+            this.ctx.fillStyle = mob.level <= 3 ? '#4ade80' : mob.level <= 6 ? '#fbbf24' : '#ef4444';
+            this.ctx.strokeText(`Lv.${mob.level}`, mob.x, mob.y - mob.size - 28);
+            this.ctx.fillText(`Lv.${mob.level}`, mob.x, mob.y - mob.size - 28);
 
             // HP bar
             const barWidth = 40;

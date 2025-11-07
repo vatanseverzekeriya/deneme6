@@ -346,6 +346,110 @@
             font-weight: bold;
             z-index: 1000;
         }
+
+        /* Monster Info Panel */
+        #monsterInfo {
+            position: fixed;
+            bottom: 250px;
+            right: 20px;
+            width: 280px;
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #ffd700;
+            border-radius: 15px;
+            padding: 15px;
+            display: none;
+            animation: slideIn 0.3s;
+            pointer-events: auto;
+        }
+
+        #monsterInfo.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .monster-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+            padding-bottom: 10px;
+        }
+
+        .monster-icon-large {
+            font-size: 36px;
+        }
+
+        .monster-title {
+            flex: 1;
+        }
+
+        .monster-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .monster-level {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .monster-stats {
+            margin: 10px 0;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .monster-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+        }
+
+        .monster-desc {
+            font-size: 11px;
+            color: #bbb;
+            font-style: italic;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            line-height: 1.4;
+        }
+
+        .monster-attack {
+            font-size: 11px;
+            color: #ff6666;
+            margin-top: 5px;
+            padding: 5px;
+            background: rgba(255, 0, 0, 0.1);
+            border-left: 3px solid #ff4444;
+            border-radius: 3px;
+        }
+
+        .close-monster-info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: rgba(255, 0, 0, 0.7);
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .close-monster-info:hover {
+            background: rgba(255, 0, 0, 0.9);
+        }
     </style>
 </head>
 <body>
@@ -425,6 +529,50 @@
 
         <!-- Loot Notification -->
         <div id="lootNotif"></div>
+
+        <!-- Monster Info Panel -->
+        <div id="monsterInfo">
+            <button class="close-monster-info" onclick="game.closeMonsterInfo()">×</button>
+            <div class="monster-header">
+                <div class="monster-icon-large" id="mobInfoIcon">🐺</div>
+                <div class="monster-title">
+                    <div class="monster-name" id="mobInfoName">Canavar Adı</div>
+                    <div class="monster-level" id="mobInfoLevel">Seviye: 1</div>
+                </div>
+            </div>
+            <div class="monster-stats">
+                <div class="monster-stat">
+                    <span>❤️ Can:</span>
+                    <span id="mobInfoHP">100</span>
+                </div>
+                <div class="monster-stat">
+                    <span>⚔️ Saldırı:</span>
+                    <span id="mobInfoDamage">10</span>
+                </div>
+                <div class="monster-stat">
+                    <span>🛡️ Savunma:</span>
+                    <span id="mobInfoDefense">5</span>
+                </div>
+                <div class="monster-stat">
+                    <span>⚡ Hız:</span>
+                    <span id="mobInfoSpeed">1.5</span>
+                </div>
+                <div class="monster-stat">
+                    <span>✨ XP:</span>
+                    <span id="mobInfoXP">25</span>
+                </div>
+                <div class="monster-stat">
+                    <span>💰 Altın:</span>
+                    <span id="mobInfoGold">10</span>
+                </div>
+            </div>
+            <div class="monster-desc" id="mobInfoDesc">
+                Canavar açıklaması...
+            </div>
+            <div class="monster-attack" id="mobInfoAttack">
+                🗡️ Saldırı Stili: ...
+            </div>
+        </div>
     </div>
 
     <script src="rpg-game.js"></script>
