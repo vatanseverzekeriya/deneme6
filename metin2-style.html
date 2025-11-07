@@ -325,6 +325,73 @@
             to { top: 120px; opacity: 1; }
         }
 
+        /* Game Over Modal */
+        #gameOverModal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s;
+        }
+
+        #gameOverModal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 3px solid #ffd700;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.5);
+        }
+
+        .modal-title {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .modal-stats {
+            font-size: 18px;
+            margin: 20px 0;
+            line-height: 1.8;
+        }
+
+        .modal-stat {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .modal-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 2px solid #ffd700;
+            border-radius: 15px;
+            padding: 15px 40px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+
+        .modal-btn:hover, .modal-btn:active {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
         @media (max-width: 768px) {
             .char-grid {
                 grid-template-columns: 1fr;
@@ -332,6 +399,11 @@
 
             .select-title {
                 font-size: 24px;
+            }
+
+            .modal-content {
+                padding: 30px 20px;
+                margin: 20px;
             }
         }
 
@@ -425,6 +497,29 @@
 
         <!-- Loot Notification -->
         <div id="lootNotif"></div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal">
+        <div class="modal-content">
+            <div class="modal-title">😵</div>
+            <h2 style="color: #ffd700; margin-bottom: 20px;">ÖLDÜN!</h2>
+            <div class="modal-stats">
+                <div class="modal-stat">
+                    <span style="color: #ffd700;">Seviye:</span>
+                    <span id="finalLevel">1</span>
+                </div>
+                <div class="modal-stat">
+                    <span style="color: #ffd700;">Toplam XP:</span>
+                    <span id="finalXP">0</span>
+                </div>
+                <div class="modal-stat">
+                    <span style="color: #ffd700;">Öldürülen Düşman:</span>
+                    <span id="killCount">0</span>
+                </div>
+            </div>
+            <button class="modal-btn" onclick="window.location.reload()">🔄 Tekrar Oyna</button>
+        </div>
     </div>
 
     <script src="rpg-game.js"></script>

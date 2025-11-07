@@ -77,19 +77,31 @@ class Game {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
 
+        // Off-screen canvas for grid (performance optimization)
+        this.gridCanvas = document.createElement('canvas');
+        this.gridCtx = this.gridCanvas.getContext('2d');
+
         this.resizeCanvas();
         window.addEventListener('resize', () => this.resizeCanvas());
 
         this.player = null;
         this.mobs = [];
-        this.projectiles = [];
         this.drops = [];
         this.inventory = Array(5).fill(null);
+        this.particles = [];
 
         this.keys = {};
         this.joystickActive = false;
         this.joystickAngle = 0;
         this.joystickPower = 0;
+
+        // Frame timing
+        this.lastTime = 0;
+
+        // Combo system
+        this.combo = 0;
+        this.comboTimer = 0;
+        this.comboTimeout = 3000; // 3 seconds to continue combo
 
         this.setupControls();
     }
@@ -97,6 +109,28 @@ class Game {
     resizeCanvas() {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
+
+        // Render grid to off-screen canvas (performance optimization)
+        this.gridCanvas.width = this.canvas.width;
+        this.gridCanvas.height = this.canvas.height;
+
+        this.gridCtx.fillStyle = '#1a1a2e';
+        this.gridCtx.fillRect(0, 0, this.gridCanvas.width, this.gridCanvas.height);
+
+        this.gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        this.gridCtx.lineWidth = 1;
+        for (let x = 0; x < this.gridCanvas.width; x += 50) {
+            this.gridCtx.beginPath();
+            this.gridCtx.moveTo(x, 0);
+            this.gridCtx.lineTo(x, this.gridCanvas.height);
+            this.gridCtx.stroke();
+        }
+        for (let y = 0; y < this.gridCanvas.height; y += 50) {
+            this.gridCtx.beginPath();
+            this.gridCtx.moveTo(0, y);
+            this.gridCtx.lineTo(this.gridCanvas.width, y);
+            this.gridCtx.stroke();
+        }
     }
 
     selectCharacter(className) {
@@ -126,7 +160,8 @@ class Game {
             skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
 
             gold: 0,
-            attackCooldown: 0
+            attackCooldown: 0,
+            killCount: 0
         };
 
         this.updateHUD();
@@ -266,6 +301,11 @@ class Game {
         this.player.mp -= skill.mpCost;
         skill.cooldownRemaining = skill.cooldown;
 
+        // Haptic feedback on skill use
+        if (navigator.vibrate) {
+            navigator.vibrate(30);
+        }
+
         // Skill effects
         if (skill.damage) {
             const nearestMob = this.findNearestMob();
@@ -298,19 +338,25 @@ class Game {
 
         btn.classList.add('cooldown');
 
+        // Clear any existing interval to prevent memory leaks
+        if (skill.cooldownInterval) {
+            clearInterval(skill.cooldownInterval);
+        }
+
         const overlay = document.createElement('div');
         overlay.className = 'cooldown-overlay';
         overlay.textContent = Math.ceil(skill.cooldownRemaining / 1000);
         btn.appendChild(overlay);
 
-        const interval = setInterval(() => {
+        skill.cooldownInterval = setInterval(() => {
             const remaining = Math.ceil(skill.cooldownRemaining / 1000);
             overlay.textContent = remaining;
 
             if (remaining <= 0) {
                 btn.classList.remove('cooldown');
                 overlay.remove();
-                clearInterval(interval);
+                clearInterval(skill.cooldownInterval);
+                skill.cooldownInterval = null;
             }
         }, 100);
     }
@@ -334,9 +380,27 @@ class Game {
         return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
     }
 
+    createParticles(x, y, count, color) {
+        for (let i = 0; i < count; i++) {
+            const angle = (Math.PI * 2 * i) / count;
+            const speed = 2 + Math.random() * 3;
+            this.particles.push({
+                x, y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: 1.0,
+                color: color || '#ffd700',
+                size: 3 + Math.random() * 3
+            });
+        }
+    }
+
     damageEnemy(enemy, damage) {
         enemy.hp -= damage;
         this.showDamage(enemy.x, enemy.y, damage);
+
+        // Create hit particles
+        this.createParticles(enemy.x, enemy.y, 8, '#ff6b6b');
 
         if (enemy.hp <= 0) {
             this.killEnemy(enemy);
@@ -349,8 +413,22 @@ class Game {
             this.mobs.splice(index, 1);
         }
 
-        // XP
-        this.player.xp += enemy.xp;
+        // Increment kill count
+        this.player.killCount++;
+
+        // Combo system
+        this.combo++;
+        this.comboTimer = this.comboTimeout;
+        if (this.combo > 1) {
+            this.showNotification(`🔥 ${this.combo}x COMBO!`);
+        }
+
+        // Create death particles
+        this.createParticles(enemy.x, enemy.y, 20, '#ffd700');
+
+        // XP (with combo bonus)
+        const comboBonus = Math.floor(this.combo / 5);
+        this.player.xp += enemy.xp * (1 + comboBonus * 0.1);
         if (this.player.xp >= this.player.xpToLevel) {
             this.levelUp();
         }
@@ -383,6 +461,14 @@ class Game {
         this.player.mp = this.player.maxMP;
         this.player.damage += 3;
         this.player.defense += 2;
+
+        // Create level up particles
+        this.createParticles(this.player.x, this.player.y, 30, '#00ff00');
+
+        // Haptic feedback for level up
+        if (navigator.vibrate) {
+            navigator.vibrate([100, 50, 100, 50, 100]);
+        }
 
         this.showNotification('🎉 LEVEL UP! ' + this.player.level);
         this.updateHUD();
@@ -458,8 +544,11 @@ class Game {
         });
     }
 
-    update() {
+    update(deltaTime) {
         if (!this.player) return;
+
+        // Cap deltaTime to prevent huge jumps
+        deltaTime = Math.min(deltaTime, 100);
 
         // Player movement
         let dx = 0, dy = 0;
@@ -477,8 +566,9 @@ class Game {
 
         if (dx || dy) {
             const magnitude = Math.sqrt(dx * dx + dy * dy);
-            dx = (dx / magnitude) * this.player.speed;
-            dy = (dy / magnitude) * this.player.speed;
+            const speedMultiplier = deltaTime / 16; // Normalize to 60fps
+            dx = (dx / magnitude) * this.player.speed * speedMultiplier;
+            dy = (dy / magnitude) * this.player.speed * speedMultiplier;
 
             this.player.x = Math.max(20, Math.min(this.canvas.width - 20, this.player.x + dx));
             this.player.y = Math.max(20, Math.min(this.canvas.height - 20, this.player.y + dy));
@@ -489,9 +579,10 @@ class Game {
             const dist = this.getDistance(this.player, mob);
 
             if (dist < 400) {
+                const speedMultiplier = deltaTime / 16;
                 const angle = Math.atan2(this.player.y - mob.y, this.player.x - mob.x);
-                mob.x += Math.cos(angle) * mob.speed;
-                mob.y += Math.sin(angle) * mob.speed;
+                mob.x += Math.cos(angle) * mob.speed * speedMultiplier;
+                mob.y += Math.sin(angle) * mob.speed * speedMultiplier;
 
                 // Attack player
                 if (dist < 50) {
@@ -500,6 +591,11 @@ class Game {
                         this.player.hp -= damage;
                         this.showDamage(this.player.x, this.player.y - 40, damage);
                         mob.targetCooldown = 1000;
+
+                        // Haptic feedback when taking damage
+                        if (navigator.vibrate) {
+                            navigator.vibrate(50);
+                        }
 
                         if (this.player.hp <= 0) {
                             this.gameOver();
@@ -511,9 +607,21 @@ class Game {
             }
 
             if (mob.targetCooldown > 0) {
-                mob.targetCooldown -= 16;
+                mob.targetCooldown -= deltaTime;
             }
         });
+
+        // Auto-attack nearest enemy
+        if (this.player.attackCooldown <= 0) {
+            const nearestMob = this.findNearestMob();
+            if (nearestMob && this.getDistance(this.player, nearestMob) < 100) {
+                this.damageEnemy(nearestMob, this.player.damage);
+                this.player.attackCooldown = 1000; // 1 second cooldown
+            }
+        }
+        if (this.player.attackCooldown > 0) {
+            this.player.attackCooldown -= deltaTime;
+        }
 
         // Update drops
         this.drops.forEach(drop => {
@@ -525,36 +633,48 @@ class Game {
         // Update cooldowns
         this.player.skills.forEach(skill => {
             if (skill.cooldownRemaining > 0) {
-                skill.cooldownRemaining -= 16;
+                skill.cooldownRemaining -= deltaTime;
             }
         });
 
-        // MP regen
+        // MP regen (frame-rate independent)
         if (this.player.mp < this.player.maxMP) {
-            this.player.mp = Math.min(this.player.maxMP, this.player.mp + 0.1);
+            const regenAmount = (0.1 * deltaTime) / 16; // Normalize to 60fps
+            this.player.mp = Math.min(this.player.maxMP, this.player.mp + regenAmount);
             if (Math.random() < 0.1) this.updateHUD();
+        }
+
+        // Update particles
+        this.particles = this.particles.filter(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.1; // Gravity
+            p.life -= deltaTime / 1000;
+            return p.life > 0;
+        });
+
+        // Update combo timer
+        if (this.comboTimer > 0) {
+            this.comboTimer -= deltaTime;
+            if (this.comboTimer <= 0) {
+                this.combo = 0;
+            }
         }
     }
 
     draw() {
-        this.ctx.fillStyle = '#1a1a2e';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        // Draw pre-rendered grid from off-screen canvas (performance optimization)
+        this.ctx.drawImage(this.gridCanvas, 0, 0);
 
-        // Grid
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-        this.ctx.lineWidth = 1;
-        for (let x = 0; x < this.canvas.width; x += 50) {
+        // Particles
+        this.particles.forEach(p => {
+            this.ctx.globalAlpha = p.life;
+            this.ctx.fillStyle = p.color;
             this.ctx.beginPath();
-            this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.canvas.height);
-            this.ctx.stroke();
-        }
-        for (let y = 0; y < this.canvas.height; y += 50) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.canvas.width, y);
-            this.ctx.stroke();
-        }
+            this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+        this.ctx.globalAlpha = 1.0;
 
         // Drops
         this.drops.forEach(drop => {
@@ -608,6 +728,57 @@ class Game {
             this.ctx.shadowColor = '#ffd700';
             this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
             this.ctx.shadowBlur = 0;
+
+            // Draw minimap
+            this.drawMinimap();
+        }
+    }
+
+    drawMinimap() {
+        const miniSize = 150;
+        const miniX = this.canvas.width - miniSize - 10;
+        const miniY = 100;
+        const scale = miniSize / Math.max(this.canvas.width, this.canvas.height);
+
+        // Background
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        this.ctx.fillRect(miniX, miniY, miniSize, miniSize);
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(miniX, miniY, miniSize, miniSize);
+
+        // Draw player
+        const playerMiniX = miniX + (this.player.x * scale);
+        const playerMiniY = miniY + (this.player.y * scale);
+        this.ctx.fillStyle = '#00ff00';
+        this.ctx.beginPath();
+        this.ctx.arc(playerMiniX, playerMiniY, 3, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // Draw mobs
+        this.ctx.fillStyle = '#ff0000';
+        this.mobs.forEach(mob => {
+            const mobMiniX = miniX + (mob.x * scale);
+            const mobMiniY = miniY + (mob.y * scale);
+            this.ctx.beginPath();
+            this.ctx.arc(mobMiniX, mobMiniY, 2, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+
+        // Draw drops
+        this.ctx.fillStyle = '#ffd700';
+        this.drops.forEach(drop => {
+            const dropMiniX = miniX + (drop.x * scale);
+            const dropMiniY = miniY + (drop.y * scale);
+            this.ctx.fillRect(dropMiniX - 1, dropMiniY - 1, 2, 2);
+        });
+
+        // Combo counter overlay
+        if (this.combo > 1) {
+            this.ctx.fillStyle = 'rgba(255, 100, 0, 0.8)';
+            this.ctx.font = 'bold 20px Arial';
+            this.ctx.textAlign = 'left';
+            this.ctx.fillText(`🔥 ${this.combo}x COMBO`, miniX, miniY - 10);
         }
     }
 
@@ -634,14 +805,26 @@ class Game {
     }
 
     gameOver() {
-        alert('😵 Öldün!\n\nSeviye: ' + this.player.level + '\nXP: ' + this.player.xp);
-        window.location.reload();
+        // Show custom modal instead of alert
+        document.getElementById('finalLevel').textContent = this.player.level;
+        document.getElementById('finalXP').textContent = this.player.xp;
+        document.getElementById('killCount').textContent = this.player.killCount;
+        document.getElementById('gameOverModal').classList.add('active');
+
+        // Add haptic feedback on mobile
+        if (navigator.vibrate) {
+            navigator.vibrate([200, 100, 200]);
+        }
     }
 
-    gameLoop() {
-        this.update();
+    gameLoop(currentTime = 0) {
+        // Calculate delta time for frame-rate independent updates
+        const deltaTime = this.lastTime ? currentTime - this.lastTime : 16;
+        this.lastTime = currentTime;
+
+        this.update(deltaTime);
         this.draw();
-        requestAnimationFrame(() => this.gameLoop());
+        requestAnimationFrame((time) => this.gameLoop(time));
     }
 }
 
