@@ -65,11 +65,13 @@ const MOB_TYPES = [
 
 // Items
 const ITEMS = [
-    { name: 'Can İksiri', icon: '❤️', type: 'potion', heal: 50 },
-    { name: 'Mana İksiri', icon: '💙', type: 'potion', mana: 50 },
-    { name: 'Altın', icon: '💰', type: 'gold', value: 10 },
-    { name: 'Kılıç', icon: '⚔️', type: 'weapon', damage: 5 },
-    { name: 'Zırh', icon: '🛡️', type: 'armor', defense: 5 }
+    { name: 'Kırmızı İksir', icon: '❤️', type: 'potion', heal: 50, stackable: true },
+    { name: 'Mavi İksir', icon: '💙', type: 'potion', mana: 50, stackable: true },
+    { name: 'Mor İksir', icon: '💜', type: 'potion', speedBoost: 2, duration: 10000, stackable: true },
+    { name: 'Yeşil İksir', icon: '💚', type: 'potion', attackSpeedBoost: 0.5, duration: 10000, stackable: true },
+    { name: 'Altın', icon: '💰', type: 'gold', value: 10, stackable: true },
+    { name: 'Başlangıç Kılıcı', icon: '⚔️', type: 'weapon', damage: 5, level: 1, stackable: false },
+    { name: 'Zırh', icon: '🛡️', type: 'armor', defense: 5, stackable: false }
 ];
 
 class Game {
@@ -84,7 +86,12 @@ class Game {
         this.mobs = [];
         this.projectiles = [];
         this.drops = [];
-        this.inventory = Array(5).fill(null);
+        this.inventory = []; // Will be initialized with starting items
+        this.equipment = {
+            weapon: null,
+            armor: null
+        };
+        this.activeBuffs = [];
 
         this.keys = {};
         this.joystickActive = false;
@@ -102,12 +109,16 @@ class Game {
     selectCharacter(className) {
         const classData = CLASSES[className];
 
+        // Spawn at village 1 (left side of map)
+        const villageX = 200;
+        const villageY = this.canvas.height / 2;
+
         this.player = {
             class: className,
             name: classData.name,
             icon: classData.icon,
-            x: this.canvas.width / 2,
-            y: this.canvas.height / 2,
+            x: villageX,
+            y: villageY,
             size: 40,
 
             level: 1,
@@ -121,22 +132,41 @@ class Game {
 
             damage: classData.baseDamage,
             defense: classData.baseDefense,
-
+            baseSpeed: 3,
             speed: 3,
+            attackSpeed: 1.0,
+
             skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
 
             gold: 0,
             attackCooldown: 0
         };
 
+        // Initialize starting inventory
+        this.initStartingInventory();
+
         this.updateHUD();
         this.createSkillButtons();
+        this.setupInventoryListeners();
 
         document.getElementById('charSelect').classList.add('hidden');
         document.getElementById('gameScreen').classList.add('active');
 
         this.spawnMobs();
         this.gameLoop();
+    }
+
+    initStartingInventory() {
+        // Add starting potions and sword
+        this.inventory = [
+            { ...ITEMS[0], count: 20 }, // 20 Kırmızı İksir (HP)
+            { ...ITEMS[1], count: 20 }, // 20 Mavi İksir (Mana)
+            { ...ITEMS[2], count: 5 },  // 5 Mor İksir (Speed)
+            { ...ITEMS[3], count: 5 },  // 5 Yeşil İksir (Attack Speed)
+            { ...ITEMS[5], count: 1 }   // 1 Başlangıç Kılıcı
+        ];
+
+        this.updateInventory();
     }
 
     createSkillButtons() {
@@ -221,6 +251,16 @@ class Game {
         joystick.addEventListener('mousedown', handleJoystickStart);
         document.addEventListener('mousemove', handleJoystickMove);
         document.addEventListener('mouseup', handleJoystickEnd);
+    }
+
+    setupInventoryListeners() {
+        // Inventory slots click
+        for (let i = 0; i < 5; i++) {
+            const slot = document.getElementById(`slot${i}`);
+            if (slot) {
+                slot.addEventListener('click', () => this.useItem(i));
+            }
+        }
     }
 
     spawnMobs() {
@@ -381,8 +421,10 @@ class Game {
         this.player.hp = this.player.maxHP;
         this.player.maxMP += 10;
         this.player.mp = this.player.maxMP;
-        this.player.damage += 3;
         this.player.defense += 2;
+
+        // Update damage with weapon bonus
+        this.updatePlayerStats();
 
         this.showNotification('🎉 LEVEL UP! ' + this.player.level);
         this.updateHUD();
@@ -416,15 +458,31 @@ class Game {
             this.drops.splice(index, 1);
         }
 
-        // Add to inventory
-        for (let i = 0; i < this.inventory.length; i++) {
-            if (!this.inventory[i]) {
-                this.inventory[i] = drop;
-                this.updateInventory();
-                this.showNotification(`+1 ${drop.name} ${drop.icon}`);
-                break;
+        // Try to stack with existing items first
+        if (drop.stackable) {
+            for (let i = 0; i < this.inventory.length; i++) {
+                const item = this.inventory[i];
+                if (item && item.name === drop.name && item.stackable) {
+                    item.count = (item.count || 1) + 1;
+                    this.updateInventory();
+                    this.showNotification(`+1 ${drop.name} ${drop.icon}`);
+                    return;
+                }
             }
         }
+
+        // Add to empty slot
+        for (let i = 0; i < 5; i++) {
+            if (!this.inventory[i]) {
+                this.inventory[i] = { ...drop, count: drop.count || 1 };
+                this.updateInventory();
+                this.showNotification(`+1 ${drop.name} ${drop.icon}`);
+                return;
+            }
+        }
+
+        // Inventory full
+        this.showNotification('⚠️ Envanter dolu!');
     }
 
     useItem(slot) {
@@ -434,32 +492,131 @@ class Game {
         if (item.type === 'potion') {
             if (item.heal) {
                 this.player.hp = Math.min(this.player.maxHP, this.player.hp + item.heal);
+                this.showNotification(`+${item.heal} HP 💊`);
             }
             if (item.mana) {
                 this.player.mp = Math.min(this.player.maxMP, this.player.mp + item.mana);
+                this.showNotification(`+${item.mana} MP 💊`);
+            }
+            if (item.speedBoost) {
+                this.applyBuff('speed', item.speedBoost, item.duration);
+                this.showNotification(`⚡ Hız Artışı! +${item.speedBoost}`);
+            }
+            if (item.attackSpeedBoost) {
+                this.applyBuff('attackSpeed', item.attackSpeedBoost, item.duration);
+                this.showNotification(`⚔️ Saldırı Hızı Artışı!`);
             }
 
-            this.inventory[slot] = null;
+            // Decrease count or remove item
+            if (item.stackable && item.count > 1) {
+                item.count--;
+            } else {
+                this.inventory[slot] = null;
+            }
+
             this.updateInventory();
             this.updateHUD();
+        } else if (item.type === 'weapon') {
+            this.equipWeapon(slot);
         }
     }
 
+    applyBuff(type, value, duration) {
+        // Remove existing buff of same type
+        this.activeBuffs = this.activeBuffs.filter(b => b.type !== type);
+
+        // Apply buff
+        const buff = {
+            type: type,
+            value: value,
+            endTime: Date.now() + duration
+        };
+        this.activeBuffs.push(buff);
+
+        // Update player stats
+        if (type === 'speed') {
+            this.player.speed = this.player.baseSpeed + value;
+        } else if (type === 'attackSpeed') {
+            this.player.attackSpeed = 1.0 + value;
+        }
+    }
+
+    equipWeapon(slot) {
+        const item = this.inventory[slot];
+        if (!item || item.type !== 'weapon') return;
+
+        // Unequip current weapon if any
+        if (this.equipment.weapon) {
+            // Add old weapon back to inventory
+            const emptySlot = this.inventory.findIndex(i => !i);
+            if (emptySlot !== -1) {
+                this.inventory[emptySlot] = this.equipment.weapon;
+            }
+        }
+
+        // Equip new weapon
+        this.equipment.weapon = { ...item };
+        this.inventory[slot] = null;
+
+        // Apply weapon stats
+        this.updatePlayerStats();
+        this.updateInventory();
+        this.showNotification(`⚔️ ${item.name} Kuşanıldı!`);
+    }
+
+    updatePlayerStats() {
+        // Reset to base
+        const classData = CLASSES[this.player.class];
+        let totalDamage = classData.baseDamage + (this.player.level - 1) * 3;
+
+        // Add weapon damage
+        if (this.equipment.weapon) {
+            totalDamage += this.equipment.weapon.damage;
+        }
+
+        this.player.damage = totalDamage;
+    }
+
     updateInventory() {
-        this.inventory.forEach((item, i) => {
+        for (let i = 0; i < 5; i++) {
             const slot = document.getElementById(`slot${i}`);
+            if (!slot) continue; // Skip if slot element not found
+
+            const item = this.inventory[i];
+
             if (item) {
-                slot.innerHTML = `${item.icon}`;
+                let content = item.icon;
+                if (item.stackable && item.count > 1) {
+                    content += `<span class="item-count">${item.count}</span>`;
+                }
+                slot.innerHTML = content;
                 slot.classList.add('has-item');
             } else {
                 slot.innerHTML = '';
                 slot.classList.remove('has-item');
             }
-        });
+        }
     }
 
     update() {
         if (!this.player) return;
+
+        // Update buffs
+        const now = Date.now();
+        this.activeBuffs = this.activeBuffs.filter(buff => {
+            if (now >= buff.endTime) {
+                // Buff expired, reset stat
+                if (buff.type === 'speed') {
+                    this.player.speed = this.player.baseSpeed;
+                    this.showNotification('⏱️ Hız artışı bitti');
+                } else if (buff.type === 'attackSpeed') {
+                    this.player.attackSpeed = 1.0;
+                    this.showNotification('⏱️ Saldırı hızı artışı bitti');
+                }
+                return false;
+            }
+            return true;
+        });
 
         // Player movement
         let dx = 0, dy = 0;
@@ -555,6 +712,22 @@ class Game {
             this.ctx.lineTo(this.canvas.width, y);
             this.ctx.stroke();
         }
+
+        // Draw Village 1
+        const villageX = 200;
+        const villageY = this.canvas.height / 2;
+        this.ctx.font = '60px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+
+        // Village name
+        this.ctx.fillStyle = '#ffd700';
+        this.ctx.font = 'bold 16px Arial';
+        this.ctx.fillText('🏘️ 1. Köy', villageX, villageY - 50);
+
+        // Village building
+        this.ctx.font = '50px Arial';
+        this.ctx.fillText('🏠', villageX, villageY);
 
         // Drops
         this.drops.forEach(drop => {
