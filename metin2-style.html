@@ -14,11 +14,19 @@
         }
 
         body {
-            background: #0a0e27;
+            background: linear-gradient(135deg, #0a0e27 0%, #16213e 50%, #0f3460 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
             font-family: 'Arial', sans-serif;
             overflow: hidden;
             touch-action: none;
             color: white;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         #gameScreen {
@@ -110,11 +118,19 @@
         }
 
         .stat-bar {
-            background: rgba(0, 0, 0, 0.7);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(30, 30, 60, 0.8));
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 10px;
             padding: 10px;
             margin-bottom: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            animation: statBarFadeIn 0.5s ease;
+        }
+
+        @keyframes statBarFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .player-info {
@@ -143,9 +159,26 @@
             font-weight: bold;
         }
 
-        .hp-bar { background: linear-gradient(90deg, #ff4444, #cc0000); }
-        .mp-bar { background: linear-gradient(90deg, #4444ff, #0000cc); }
-        .xp-bar { background: linear-gradient(90deg, #44ff44, #00cc00); }
+        .hp-bar {
+            background: linear-gradient(90deg, #ff4444, #cc0000, #ff4444);
+            background-size: 200% 100%;
+            animation: barShine 3s ease infinite;
+        }
+        .mp-bar {
+            background: linear-gradient(90deg, #4444ff, #0000cc, #4444ff);
+            background-size: 200% 100%;
+            animation: barShine 3s ease infinite 0.5s;
+        }
+        .xp-bar {
+            background: linear-gradient(90deg, #44ff44, #00cc00, #44ff44);
+            background-size: 200% 100%;
+            animation: barShine 3s ease infinite 1s;
+        }
+
+        @keyframes barShine {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
 
         .bar-text {
             position: absolute;
@@ -171,7 +204,7 @@
             height: 60px;
             border-radius: 50%;
             border: 3px solid rgba(255, 255, 255, 0.5);
-            background: rgba(100, 50, 150, 0.8);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
             color: white;
             font-size: 12px;
             font-weight: bold;
@@ -183,11 +216,19 @@
             transition: all 0.3s;
             pointer-events: auto;
             position: relative;
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.5);
+            animation: skillPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes skillPulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(102, 126, 234, 0.5); }
+            50% { box-shadow: 0 0 25px rgba(102, 126, 234, 0.8); }
         }
 
         .skill-btn:active {
             transform: scale(0.9);
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
+            animation: none;
         }
 
         .skill-btn.cooldown {
@@ -229,21 +270,23 @@
             width: 120px;
             height: 120px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15), rgba(102, 126, 234, 0.2));
             border: 3px solid rgba(255, 255, 255, 0.3);
             position: relative;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
         }
 
         .joystick-stick {
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.5);
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.8), rgba(102, 126, 234, 0.6));
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             transition: all 0.1s;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
         }
 
         /* Inventory */
@@ -252,13 +295,15 @@
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(30, 30, 60, 0.9));
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 10px;
             padding: 10px;
             display: flex;
             gap: 5px;
             pointer-events: auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
         }
 
         .inv-slot {
@@ -272,11 +317,24 @@
             justify-content: center;
             font-size: 24px;
             position: relative;
+            transition: all 0.3s;
+        }
+
+        .inv-slot:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
         }
 
         .inv-slot.has-item {
             border-color: #ffd700;
             background: rgba(255, 215, 0, 0.2);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+            animation: itemGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes itemGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.8); }
         }
 
         .item-count {
@@ -296,12 +354,14 @@
             font-size: 24px;
             pointer-events: none;
             animation: floatUp 1s ease-out forwards;
-            text-shadow: 2px 2px 4px black;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8), 2px 2px 4px black;
+            filter: drop-shadow(0 0 5px currentColor);
         }
 
         @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(-100px); }
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            20% { transform: translateY(-20px) scale(1.3); }
+            100% { opacity: 0; transform: translateY(-120px) scale(0.8); }
         }
 
         /* Loot notification */
@@ -310,7 +370,7 @@
             top: 120px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.9);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(40, 40, 80, 0.95));
             border: 2px solid #ffd700;
             border-radius: 10px;
             padding: 10px 20px;
@@ -318,11 +378,15 @@
             align-items: center;
             gap: 10px;
             animation: slideDown 0.3s;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+            backdrop-filter: blur(10px);
+            font-weight: bold;
+            font-size: 16px;
         }
 
         @keyframes slideDown {
-            from { top: -50px; opacity: 0; }
-            to { top: 120px; opacity: 1; }
+            from { top: -50px; opacity: 0; transform: translateX(-50%) scale(0.5); }
+            to { top: 120px; opacity: 1; transform: translateX(-50%) scale(1); }
         }
 
         /* Game Over Modal */

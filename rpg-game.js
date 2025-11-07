@@ -103,7 +103,108 @@ class Game {
         this.comboTimer = 0;
         this.comboTimeout = 3000; // 3 seconds to continue combo
 
+        // Camera shake
+        this.cameraShake = 0;
+        this.cameraX = 0;
+        this.cameraY = 0;
+
+        // Character animation
+        this.playerBobOffset = 0;
+        this.playerTrail = [];
+
+        // Audio context
+        this.audioContext = null;
+        this.initAudio();
+
         this.setupControls();
+    }
+
+    initAudio() {
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            console.log('Web Audio API not supported');
+        }
+    }
+
+    playSound(type) {
+        if (!this.audioContext) return;
+
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        switch(type) {
+            case 'hit':
+                const hitOsc = ctx.createOscillator();
+                const hitGain = ctx.createGain();
+                hitOsc.connect(hitGain);
+                hitGain.connect(ctx.destination);
+                hitOsc.frequency.setValueAtTime(200, now);
+                hitOsc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
+                hitGain.gain.setValueAtTime(0.3, now);
+                hitGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                hitOsc.start(now);
+                hitOsc.stop(now + 0.1);
+                break;
+
+            case 'skill':
+                const skillOsc = ctx.createOscillator();
+                const skillGain = ctx.createGain();
+                skillOsc.connect(skillGain);
+                skillGain.connect(ctx.destination);
+                skillOsc.type = 'sawtooth';
+                skillOsc.frequency.setValueAtTime(400, now);
+                skillOsc.frequency.exponentialRampToValueAtTime(800, now + 0.2);
+                skillGain.gain.setValueAtTime(0.2, now);
+                skillGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                skillOsc.start(now);
+                skillOsc.stop(now + 0.2);
+                break;
+
+            case 'levelup':
+                for (let i = 0; i < 3; i++) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.setValueAtTime(440 * (i + 1), now + i * 0.1);
+                    gain.gain.setValueAtTime(0.2, now + i * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.3);
+                    osc.start(now + i * 0.1);
+                    osc.stop(now + i * 0.1 + 0.3);
+                }
+                break;
+
+            case 'pickup':
+                const pickOsc = ctx.createOscillator();
+                const pickGain = ctx.createGain();
+                pickOsc.connect(pickGain);
+                pickGain.connect(ctx.destination);
+                pickOsc.frequency.setValueAtTime(800, now);
+                pickOsc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+                pickGain.gain.setValueAtTime(0.15, now);
+                pickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                pickOsc.start(now);
+                pickOsc.stop(now + 0.1);
+                break;
+
+            case 'death':
+                const deathOsc = ctx.createOscillator();
+                const deathGain = ctx.createGain();
+                deathOsc.connect(deathGain);
+                deathGain.connect(ctx.destination);
+                deathOsc.frequency.setValueAtTime(400, now);
+                deathOsc.frequency.exponentialRampToValueAtTime(100, now + 0.5);
+                deathGain.gain.setValueAtTime(0.3, now);
+                deathGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                deathOsc.start(now);
+                deathOsc.stop(now + 0.5);
+                break;
+        }
+    }
+
+    shakeCamera(intensity) {
+        this.cameraShake = intensity;
     }
 
     resizeCanvas() {
@@ -301,10 +402,26 @@ class Game {
         this.player.mp -= skill.mpCost;
         skill.cooldownRemaining = skill.cooldown;
 
-        // Haptic feedback on skill use
+        // Haptic feedback and sound on skill use
         if (navigator.vibrate) {
             navigator.vibrate(30);
         }
+        this.playSound('skill');
+
+        // Skill visual effects based on skill type
+        let skillColor = '#667eea';
+        if (skill.name.includes('Karanlık') || skill.name.includes('Kara') || skill.name.includes('Ruh')) {
+            skillColor = '#9333ea'; // Purple for dark magic
+        } else if (skill.name.includes('İyileştirme')) {
+            skillColor = '#10b981'; // Green for healing
+        } else if (skill.name.includes('Yıldırım') || skill.name.includes('Işın')) {
+            skillColor = '#3b82f6'; // Blue for magic
+        } else if (skill.name.includes('Kalkan')) {
+            skillColor = '#f59e0b'; // Orange for shield
+        }
+
+        // Create skill cast particles
+        this.createParticles(this.player.x, this.player.y, 15, skillColor);
 
         // Skill effects
         if (skill.damage) {
@@ -312,6 +429,17 @@ class Game {
             if (nearestMob) {
                 const distance = this.getDistance(this.player, nearestMob);
                 if (distance < 300) {
+                    // Create projectile trail particles
+                    const steps = 10;
+                    for (let i = 0; i < steps; i++) {
+                        const t = i / steps;
+                        const x = this.player.x + (nearestMob.x - this.player.x) * t;
+                        const y = this.player.y + (nearestMob.y - this.player.y) * t;
+                        setTimeout(() => {
+                            this.createParticles(x, y, 3, skillColor);
+                        }, i * 20);
+                    }
+
                     this.damageEnemy(nearestMob, skill.damage + this.player.damage);
 
                     if (skill.lifesteal) {
@@ -319,6 +447,8 @@ class Game {
                             this.player.maxHP,
                             this.player.hp + skill.damage * skill.lifesteal
                         );
+                        // Lifesteal visual effect
+                        this.createParticles(this.player.x, this.player.y, 10, '#10b981');
                     }
                 }
             }
@@ -326,6 +456,9 @@ class Game {
 
         if (skill.heal) {
             this.player.hp = Math.min(this.player.maxHP, this.player.hp + skill.heal);
+            // Healing visual effect
+            this.createParticles(this.player.x, this.player.y, 20, '#10b981');
+            this.shakeCamera(2);
         }
 
         this.updateHUD();
@@ -380,17 +513,20 @@ class Game {
         return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
     }
 
-    createParticles(x, y, count, color) {
+    createParticles(x, y, count, color, type = 'circle') {
         for (let i = 0; i < count; i++) {
-            const angle = (Math.PI * 2 * i) / count;
+            const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
             const speed = 2 + Math.random() * 3;
             this.particles.push({
                 x, y,
                 vx: Math.cos(angle) * speed,
-                vy: Math.sin(angle) * speed,
+                vy: Math.sin(angle) * speed - 1, // Slight upward bias
                 life: 1.0,
                 color: color || '#ffd700',
-                size: 3 + Math.random() * 3
+                size: 3 + Math.random() * 3,
+                type: type,
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.2
             });
         }
     }
@@ -401,6 +537,10 @@ class Game {
 
         // Create hit particles
         this.createParticles(enemy.x, enemy.y, 8, '#ff6b6b');
+
+        // Play hit sound and shake camera
+        this.playSound('hit');
+        this.shakeCamera(3);
 
         if (enemy.hp <= 0) {
             this.killEnemy(enemy);
@@ -423,8 +563,13 @@ class Game {
             this.showNotification(`🔥 ${this.combo}x COMBO!`);
         }
 
-        // Create death particles
-        this.createParticles(enemy.x, enemy.y, 20, '#ffd700');
+        // Create death particles with mixed shapes
+        this.createParticles(enemy.x, enemy.y, 10, '#ffd700', 'star');
+        this.createParticles(enemy.x, enemy.y, 10, '#ff6b6b', 'circle');
+
+        // Play death sound and bigger shake
+        this.playSound('death');
+        this.shakeCamera(5);
 
         // XP (with combo bonus)
         const comboBonus = Math.floor(this.combo / 5);
@@ -462,13 +607,17 @@ class Game {
         this.player.damage += 3;
         this.player.defense += 2;
 
-        // Create level up particles
-        this.createParticles(this.player.x, this.player.y, 30, '#00ff00');
+        // Create level up particles - spectacular effect!
+        this.createParticles(this.player.x, this.player.y, 20, '#00ff00', 'star');
+        this.createParticles(this.player.x, this.player.y, 15, '#ffd700', 'square');
+        this.createParticles(this.player.x, this.player.y, 15, '#00ffff', 'circle');
 
-        // Haptic feedback for level up
+        // Haptic feedback and sound for level up
         if (navigator.vibrate) {
             navigator.vibrate([100, 50, 100, 50, 100]);
         }
+        this.playSound('levelup');
+        this.shakeCamera(8);
 
         this.showNotification('🎉 LEVEL UP! ' + this.player.level);
         this.updateHUD();
@@ -501,6 +650,9 @@ class Game {
         if (index > -1) {
             this.drops.splice(index, 1);
         }
+
+        // Play pickup sound
+        this.playSound('pickup');
 
         // Add to inventory
         for (let i = 0; i < this.inventory.length; i++) {
@@ -550,6 +702,16 @@ class Game {
         // Cap deltaTime to prevent huge jumps
         deltaTime = Math.min(deltaTime, 100);
 
+        // Update camera shake
+        if (this.cameraShake > 0) {
+            this.cameraShake -= deltaTime / 100;
+            this.cameraX = (Math.random() - 0.5) * this.cameraShake;
+            this.cameraY = (Math.random() - 0.5) * this.cameraShake;
+        } else {
+            this.cameraX = 0;
+            this.cameraY = 0;
+        }
+
         // Player movement
         let dx = 0, dy = 0;
 
@@ -572,6 +734,21 @@ class Game {
 
             this.player.x = Math.max(20, Math.min(this.canvas.width - 20, this.player.x + dx));
             this.player.y = Math.max(20, Math.min(this.canvas.height - 20, this.player.y + dy));
+
+            // Update player bob animation
+            this.playerBobOffset = Math.sin(Date.now() / 100) * 3;
+
+            // Add trail effect
+            if (Math.random() < 0.3) {
+                this.playerTrail.push({
+                    x: this.player.x,
+                    y: this.player.y,
+                    alpha: 0.5,
+                    icon: this.player.icon
+                });
+            }
+        } else {
+            this.playerBobOffset = 0;
         }
 
         // Update mobs
@@ -650,6 +827,7 @@ class Game {
             p.y += p.vy;
             p.vy += 0.1; // Gravity
             p.life -= deltaTime / 1000;
+            p.rotation += p.rotationSpeed;
             return p.life > 0;
         });
 
@@ -660,28 +838,83 @@ class Game {
                 this.combo = 0;
             }
         }
+
+        // Update player trail
+        this.playerTrail = this.playerTrail.filter(t => {
+            t.alpha -= deltaTime / 500;
+            return t.alpha > 0;
+        });
     }
 
     draw() {
-        // Draw pre-rendered grid from off-screen canvas (performance optimization)
-        this.ctx.drawImage(this.gridCanvas, 0, 0);
+        // Apply camera shake
+        this.ctx.save();
+        this.ctx.translate(this.cameraX, this.cameraY);
 
-        // Particles
-        this.particles.forEach(p => {
-            this.ctx.globalAlpha = p.life;
-            this.ctx.fillStyle = p.color;
-            this.ctx.beginPath();
-            this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            this.ctx.fill();
+        // Draw pre-rendered grid from off-screen canvas (performance optimization)
+        this.ctx.drawImage(this.gridCanvas, -this.cameraX, -this.cameraY);
+
+        // Draw player trail
+        this.playerTrail.forEach(t => {
+            this.ctx.globalAlpha = t.alpha * 0.3;
+            this.ctx.font = this.player.size + 'px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillStyle = '#667eea';
+            this.ctx.fillText(t.icon, t.x, t.y);
         });
         this.ctx.globalAlpha = 1.0;
 
-        // Drops
-        this.drops.forEach(drop => {
+        // Particles with glow and different shapes
+        this.particles.forEach(p => {
+            this.ctx.save();
+            this.ctx.globalAlpha = p.life;
+            this.ctx.fillStyle = p.color;
+            this.ctx.shadowBlur = 15;
+            this.ctx.shadowColor = p.color;
+
+            this.ctx.translate(p.x, p.y);
+            this.ctx.rotate(p.rotation);
+
+            this.ctx.beginPath();
+            if (p.type === 'star') {
+                // Draw star
+                for (let i = 0; i < 5; i++) {
+                    const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+                    const x = Math.cos(angle) * p.size;
+                    const y = Math.sin(angle) * p.size;
+                    if (i === 0) this.ctx.moveTo(x, y);
+                    else this.ctx.lineTo(x, y);
+                }
+            } else if (p.type === 'square') {
+                this.ctx.rect(-p.size/2, -p.size/2, p.size, p.size);
+            } else {
+                // Default circle
+                this.ctx.arc(0, 0, p.size, 0, Math.PI * 2);
+            }
+            this.ctx.fill();
+            this.ctx.closePath();
+
+            this.ctx.shadowBlur = 0;
+            this.ctx.restore();
+        });
+        this.ctx.globalAlpha = 1.0;
+
+        // Drops with floating animation and glow
+        const time = Date.now() / 1000;
+        this.drops.forEach((drop, i) => {
+            const floatOffset = Math.sin(time * 2 + i) * 5;
+
+            // Glow effect
+            this.ctx.shadowBlur = 15;
+            this.ctx.shadowColor = '#ffd700';
+
             this.ctx.font = drop.size + 'px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(drop.icon, drop.x, drop.y);
+            this.ctx.fillText(drop.icon, drop.x, drop.y + floatOffset);
+
+            this.ctx.shadowBlur = 0;
         });
 
         // Mobs
@@ -718,18 +951,27 @@ class Game {
             this.ctx.ellipse(this.player.x, this.player.y + this.player.size/2, this.player.size/2, this.player.size/4, 0, 0, Math.PI * 2);
             this.ctx.fill();
 
-            // Player icon
+            // Player icon with bob animation
             this.ctx.font = this.player.size + 'px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
 
-            // Glow effect
-            this.ctx.shadowBlur = 10;
+            // Enhanced glow effect
+            this.ctx.shadowBlur = 20;
             this.ctx.shadowColor = '#ffd700';
-            this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
-            this.ctx.shadowBlur = 0;
 
-            // Draw minimap
+            // Apply bobbing animation
+            const playerY = this.player.y + this.playerBobOffset;
+            this.ctx.fillText(this.player.icon, this.player.x, playerY);
+
+            this.ctx.shadowBlur = 0;
+        }
+
+        // Restore context (remove camera shake)
+        this.ctx.restore();
+
+        // Draw minimap (not affected by camera shake)
+        if (this.player) {
             this.drawMinimap();
         }
     }
