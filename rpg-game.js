@@ -85,11 +85,15 @@ class Game {
         this.projectiles = [];
         this.drops = [];
         this.inventory = Array(5).fill(null);
+        this.npcs = [];
 
         this.keys = {};
         this.joystickActive = false;
         this.joystickAngle = 0;
         this.joystickPower = 0;
+
+        // Quest System
+        this.questManager = new QuestManager();
 
         this.setupControls();
     }
@@ -135,8 +139,33 @@ class Game {
         document.getElementById('charSelect').classList.add('hidden');
         document.getElementById('gameScreen').classList.add('active');
 
+        this.spawnNPCs();
         this.spawnMobs();
+        this.updateQuestUI();
         this.gameLoop();
+    }
+
+    spawnNPCs() {
+        // Spawn NPCs in different locations
+        const npcPositions = [
+            { npcId: 'elder', x: 200, y: 200 },
+            { npcId: 'guard', x: 400, y: 300 },
+            { npcId: 'merchant', x: 600, y: 250 },
+            { npcId: 'farmer', x: 300, y: 500 },
+            { npcId: 'priest', x: 500, y: 150 }
+        ];
+
+        npcPositions.forEach(pos => {
+            const npcData = NPCS[pos.npcId];
+            if (npcData) {
+                this.npcs.push({
+                    ...npcData,
+                    x: pos.x,
+                    y: pos.y,
+                    size: 40
+                });
+            }
+        });
     }
 
     createSkillButtons() {
@@ -349,6 +378,10 @@ class Game {
             this.mobs.splice(index, 1);
         }
 
+        // Quest tracking - kill objective
+        this.questManager.updateObjective('kill', enemy.name, 1);
+        this.questManager.updateObjective('kill', 'any', 1);
+
         // XP
         this.player.xp += enemy.xp;
         if (this.player.xp >= this.player.xpToLevel) {
@@ -370,6 +403,7 @@ class Game {
         setTimeout(() => this.spawnMob(), 3000);
 
         this.updateHUD();
+        this.updateQuestUI();
     }
 
     levelUp() {
@@ -384,8 +418,12 @@ class Game {
         this.player.damage += 3;
         this.player.defense += 2;
 
+        // Unlock new quests based on level
+        this.questManager.unlockSideQuests(this.player.level);
+
         this.showNotification('🎉 LEVEL UP! ' + this.player.level);
         this.updateHUD();
+        this.updateQuestUI();
     }
 
     showDamage(x, y, damage) {
@@ -522,6 +560,17 @@ class Game {
             }
         });
 
+        // Check NPC interaction (press F to interact)
+        if (this.keys['f']) {
+            this.npcs.forEach(npc => {
+                const dist = this.getDistance(this.player, npc);
+                if (dist < 60) {
+                    this.interactWithNPC(npc);
+                    this.keys['f'] = false; // Prevent multiple interactions
+                }
+            });
+        }
+
         // Update cooldowns
         this.player.skills.forEach(skill => {
             if (skill.cooldownRemaining > 0) {
@@ -534,6 +583,9 @@ class Game {
             this.player.mp = Math.min(this.player.maxMP, this.player.mp + 0.1);
             if (Math.random() < 0.1) this.updateHUD();
         }
+
+        // Daily quest reset
+        this.questManager.resetDailyQuests();
     }
 
     draw() {
@@ -562,6 +614,43 @@ class Game {
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
             this.ctx.fillText(drop.icon, drop.x, drop.y);
+        });
+
+        // NPCs
+        this.npcs.forEach(npc => {
+            // Shadow
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            this.ctx.beginPath();
+            this.ctx.ellipse(npc.x, npc.y + npc.size/2, npc.size/2, npc.size/4, 0, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // NPC icon
+            this.ctx.font = npc.size + 'px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(npc.icon, npc.x, npc.y);
+
+            // NPC name
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = '12px Arial';
+            this.ctx.fillText(npc.name, npc.x, npc.y - npc.size);
+
+            // Quest indicator if NPC has quest
+            if (this.player) {
+                const quests = this.questManager.getQuestsByNPC(npc.id);
+                if (quests.available.length > 0 || quests.active.length > 0) {
+                    this.ctx.font = '24px Arial';
+                    this.ctx.fillText(quests.active.length > 0 ? '❗' : '❓', npc.x, npc.y - npc.size - 20);
+                }
+
+                // Show 'F' prompt when near
+                const dist = this.getDistance(this.player, npc);
+                if (dist < 60) {
+                    this.ctx.fillStyle = '#ffd700';
+                    this.ctx.font = 'bold 14px Arial';
+                    this.ctx.fillText('[F] Konuş', npc.x, npc.y + npc.size + 10);
+                }
+            }
         });
 
         // Mobs
@@ -643,6 +732,95 @@ class Game {
         this.draw();
         requestAnimationFrame(() => this.gameLoop());
     }
+
+    // Quest System Integration
+    interactWithNPC(npc) {
+        const interaction = this.questManager.interactWithNPC(npc.id, this.player);
+
+        if (interaction.type === 'complete') {
+            // Complete quest
+            showDialogue(npc, interaction.dialogue.text, interaction.quest, 'complete');
+        } else if (interaction.type === 'available') {
+            // Offer quest
+            showDialogue(npc, interaction.dialogue.text, interaction.quest, 'available');
+        } else {
+            // Just greeting
+            showDialogue(npc, interaction.dialogue.text);
+        }
+    }
+
+    updateQuestUI() {
+        // Update quest tracker
+        const questList = document.getElementById('questList');
+        if (!questList) return;
+
+        const activeQuests = this.questManager.getAllProgress();
+        const dailyQuests = this.questManager.dailyQuests;
+
+        let html = '';
+
+        // Active quests
+        activeQuests.forEach(quest => {
+            const questData = this.questManager.activeQuests.find(q => q.id === quest.id);
+            html += `
+                <div class="quest-item">
+                    <div class="quest-item-header">
+                        <div class="quest-title">${questData.title}</div>
+                        <div class="quest-type ${questData.type}">${questData.type.toUpperCase()}</div>
+                    </div>
+                    <div class="quest-description">${questData.description}</div>
+            `;
+
+            quest.objectives.forEach(obj => {
+                html += `
+                    <div class="quest-objective ${obj.completed ? 'completed' : ''}">
+                        ${obj.completed ? '✓' : '○'} ${obj.description}
+                        <span class="quest-progress">(${obj.current}/${obj.required})</span>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+        });
+
+        // Daily quests
+        if (dailyQuests.length > 0) {
+            html += '<div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid rgba(255, 215, 0, 0.3);"><div class="quest-tracker-title" style="margin-bottom: 10px;">📅 GÜNLÜK GÖREVLER</div>';
+
+            dailyQuests.forEach(quest => {
+                html += `
+                    <div class="quest-item">
+                        <div class="quest-item-header">
+                            <div class="quest-title">${quest.title}</div>
+                            <div class="quest-type daily">GÜNLÜK</div>
+                        </div>
+                        <div class="quest-description">${quest.description}</div>
+                `;
+
+                quest.objectives.forEach(obj => {
+                    const completed = obj.count ? obj.current >= obj.count : obj.current === true;
+                    html += `
+                        <div class="quest-objective ${completed ? 'completed' : ''}">
+                            ${completed ? '✓' : '○'} ${obj.description}
+                            <span class="quest-progress">(${obj.current}/${obj.count || 1})</span>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+            });
+
+            html += '</div>';
+        }
+
+        questList.innerHTML = html || '<div style="color: #888; text-align: center;">Aktif görev yok</div>';
+
+        // Update quest count
+        const questCount = document.getElementById('questCount');
+        if (questCount) {
+            questCount.textContent = activeQuests.length;
+        }
+    }
 }
 
 // Initialize game
@@ -650,4 +828,78 @@ const game = new Game();
 
 function selectCharacter(className) {
     game.selectCharacter(className);
+}
+
+// Quest UI Functions
+function toggleQuestTracker() {
+    const tracker = document.getElementById('questTracker');
+    tracker.classList.toggle('visible');
+}
+
+function showDialogue(npc, text, quest = null, type = 'greeting') {
+    const dialogueBox = document.getElementById('dialogueBox');
+    const npcIcon = document.getElementById('dialogueNpcIcon');
+    const npcName = document.getElementById('dialogueNpcName');
+    const dialogueText = document.getElementById('dialogueText');
+    const questInfo = document.getElementById('dialogueQuestInfo');
+    const questTitle = document.getElementById('dialogueQuestTitle');
+    const questDesc = document.getElementById('dialogueQuestDesc');
+    const questRewards = document.getElementById('dialogueQuestRewards');
+    const buttons = document.getElementById('dialogueButtons');
+
+    npcIcon.textContent = npc.icon;
+    npcName.textContent = npc.name;
+    dialogueText.textContent = text;
+
+    if (quest) {
+        questInfo.style.display = 'block';
+        questTitle.textContent = quest.title;
+        questDesc.textContent = quest.description;
+        questRewards.textContent = `Ödüller: ${quest.rewards.xp} XP, ${quest.rewards.gold} Altın`;
+
+        if (type === 'available') {
+            buttons.innerHTML = `
+                <button class="dialogue-btn decline" onclick="closeDialogue()">Reddet</button>
+                <button class="dialogue-btn accept" onclick="acceptQuest('${quest.id}')">Kabul Et</button>
+            `;
+        } else if (type === 'complete') {
+            buttons.innerHTML = `
+                <button class="dialogue-btn accept" onclick="completeQuest('${quest.id}')">Tamamla</button>
+            `;
+        }
+    } else {
+        questInfo.style.display = 'none';
+        buttons.innerHTML = `
+            <button class="dialogue-btn" onclick="closeDialogue()">Kapat</button>
+        `;
+    }
+
+    dialogueBox.classList.add('visible');
+}
+
+function closeDialogue() {
+    const dialogueBox = document.getElementById('dialogueBox');
+    dialogueBox.classList.remove('visible');
+}
+
+function acceptQuest(questId) {
+    game.questManager.acceptQuest(questId);
+    game.updateQuestUI();
+    closeDialogue();
+    game.showNotification('✅ Görev kabul edildi!');
+}
+
+function completeQuest(questId) {
+    const rewards = game.questManager.completeQuest(questId, game.player);
+    if (rewards) {
+        game.updateHUD();
+        game.updateQuestUI();
+        closeDialogue();
+        game.showNotification(`🎉 Görev tamamlandı! +${rewards.xp} XP, +${rewards.gold} Altın`);
+
+        // Check for level up after quest XP
+        if (game.player.xp >= game.player.xpToLevel) {
+            game.levelUp();
+        }
+    }
 }
