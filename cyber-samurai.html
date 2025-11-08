@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Cyber-Samurai RPG - Professional Pixel Art</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #0a0e27;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            touch-action: none;
+            color: #00d9ff;
+        }
+
+        #gameScreen {
+            display: none;
+        }
+
+        #gameScreen.active {
+            display: block;
+        }
+
+        /* Character Selection Screen */
+        #charSelect {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #0a0e27 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        #charSelect.hidden {
+            display: none;
+        }
+
+        .select-title {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow:
+                0 0 10px #00d9ff,
+                0 0 20px #00d9ff,
+                0 0 30px #00d9ff,
+                2px 2px 4px rgba(0,0,0,0.8);
+            color: #00d9ff;
+            animation: glow 2s ease-in-out infinite;
+            letter-spacing: 4px;
+        }
+
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 10px #00d9ff, 0 0 20px #00d9ff, 0 0 30px #00d9ff; }
+            50% { text-shadow: 0 0 20px #00d9ff, 0 0 30px #00d9ff, 0 0 40px #00d9ff, 0 0 50px #b537f2; }
+        }
+
+        .select-subtitle {
+            font-size: 16px;
+            margin-bottom: 40px;
+            color: #b537f2;
+            text-shadow: 0 0 10px #b537f2;
+        }
+
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            max-width: 800px;
+        }
+
+        .char-card {
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.1) 0%, rgba(181, 55, 242, 0.1) 100%);
+            border: 2px solid rgba(0, 217, 255, 0.5);
+            border-radius: 15px;
+            padding: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .char-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(0, 217, 255, 0.1),
+                transparent
+            );
+            transform: rotate(45deg);
+            transition: all 0.5s;
+        }
+
+        .char-card:hover::before, .char-card:active::before {
+            left: 100%;
+        }
+
+        .char-card:hover, .char-card:active {
+            transform: translateY(-10px) scale(1.05);
+            border-color: #00d9ff;
+            box-shadow:
+                0 0 20px rgba(0, 217, 255, 0.5),
+                0 0 40px rgba(0, 217, 255, 0.3),
+                inset 0 0 20px rgba(0, 217, 255, 0.1);
+        }
+
+        .char-icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 0 10px #00d9ff);
+        }
+
+        .char-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #00d9ff;
+            text-shadow: 0 0 10px #00d9ff;
+        }
+
+        .char-desc {
+            font-size: 13px;
+            color: #b537f2;
+            margin-bottom: 15px;
+        }
+
+        .char-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            font-size: 11px;
+            margin-top: 15px;
+            text-align: left;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid rgba(0, 217, 255, 0.3);
+        }
+
+        /* Game Canvas */
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        /* HUD */
+        #hud {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .stat-bar {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(10, 14, 39, 0.9) 100%);
+            border: 2px solid rgba(0, 217, 255, 0.5);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+        }
+
+        .player-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #00d9ff;
+            text-shadow: 0 0 5px #00d9ff;
+        }
+
+        .bar-container {
+            height: 24px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 6px;
+            position: relative;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), transparent);
+            border-radius: 12px 12px 0 0;
+        }
+
+        .hp-bar {
+            background: linear-gradient(90deg, #ff0040, #ff4466);
+            box-shadow: 0 0 10px #ff0040;
+        }
+        .mp-bar {
+            background: linear-gradient(90deg, #0088ff, #00d9ff);
+            box-shadow: 0 0 10px #00d9ff;
+        }
+        .xp-bar {
+            background: linear-gradient(90deg, #b537f2, #d084ff);
+            box-shadow: 0 0 10px #b537f2;
+        }
+
+        .bar-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-size: 11px;
+            line-height: 24px;
+            text-shadow: 1px 1px 2px black;
+            font-weight: bold;
+            color: white;
+            z-index: 1;
+        }
+
+        /* Skills */
+        #skills {
+            position: fixed;
+            bottom: 120px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 100;
+        }
+
+        .skill-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 3px solid rgba(0, 217, 255, 0.8);
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.3), rgba(181, 55, 242, 0.3));
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            pointer-events: auto;
+            position: relative;
+            box-shadow:
+                0 0 15px rgba(0, 217, 255, 0.5),
+                inset 0 0 10px rgba(0, 217, 255, 0.2);
+        }
+
+        .skill-btn:active {
+            transform: scale(0.9);
+            box-shadow:
+                0 0 30px rgba(0, 217, 255, 0.8),
+                0 0 50px rgba(181, 55, 242, 0.6);
+        }
+
+        .skill-btn.cooldown {
+            opacity: 0.4;
+            pointer-events: none;
+            border-color: rgba(100, 100, 100, 0.5);
+        }
+
+        .skill-icon {
+            font-size: 28px;
+            filter: drop-shadow(0 0 5px #00d9ff);
+        }
+
+        .skill-key {
+            font-size: 10px;
+            margin-top: 4px;
+            color: #00d9ff;
+            text-shadow: 0 0 5px #00d9ff;
+        }
+
+        .cooldown-overlay {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #00d9ff;
+            text-shadow: 0 0 10px #00d9ff;
+        }
+
+        /* Joystick */
+        #joystick {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 140px;
+            height: 140px;
+            pointer-events: auto;
+            z-index: 100;
+        }
+
+        .joystick-base {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 217, 255, 0.2), rgba(0, 217, 255, 0.05));
+            border: 3px solid rgba(0, 217, 255, 0.5);
+            position: relative;
+            box-shadow:
+                0 0 20px rgba(0, 217, 255, 0.3),
+                inset 0 0 20px rgba(0, 217, 255, 0.1);
+        }
+
+        .joystick-stick {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 217, 255, 0.8), rgba(0, 217, 255, 0.4));
+            border: 2px solid #00d9ff;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s;
+            box-shadow:
+                0 0 15px rgba(0, 217, 255, 0.8),
+                inset 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Inventory */
+        #inventory {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(10, 14, 39, 0.9));
+            border: 2px solid rgba(0, 217, 255, 0.5);
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            gap: 8px;
+            pointer-events: auto;
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+            z-index: 100;
+        }
+
+        .inv-slot {
+            width: 55px;
+            height: 55px;
+            background: rgba(0, 217, 255, 0.1);
+            border: 2px solid rgba(0, 217, 255, 0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .inv-slot:hover {
+            background: rgba(0, 217, 255, 0.2);
+            border-color: #00d9ff;
+        }
+
+        .inv-slot.has-item {
+            border-color: #00d9ff;
+            background: rgba(0, 217, 255, 0.2);
+            box-shadow: inset 0 0 10px rgba(0, 217, 255, 0.3);
+        }
+
+        .item-count {
+            position: absolute;
+            bottom: 3px;
+            right: 5px;
+            font-size: 11px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 2px 5px;
+            border-radius: 4px;
+            border: 1px solid #00d9ff;
+            color: #00d9ff;
+        }
+
+        /* Damage Numbers */
+        .damage-number {
+            position: fixed;
+            font-weight: bold;
+            font-size: 28px;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+            text-shadow:
+                0 0 5px currentColor,
+                2px 2px 4px black;
+            z-index: 1000;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-50px) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-120px) scale(0.8);
+            }
+        }
+
+        /* Loot notification */
+        #lootNotif {
+            position: fixed;
+            top: 150px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(0, 217, 255, 0.2));
+            border: 2px solid #00d9ff;
+            border-radius: 10px;
+            padding: 12px 25px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: slideDown 0.3s;
+            box-shadow: 0 0 30px rgba(0, 217, 255, 0.5);
+            font-weight: bold;
+            color: #00d9ff;
+            text-shadow: 0 0 10px #00d9ff;
+            z-index: 1000;
+        }
+
+        @keyframes slideDown {
+            from { top: -50px; opacity: 0; }
+            to { top: 150px; opacity: 1; }
+        }
+
+        .live-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #00d9ff, #b537f2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+            color: white;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 217, 255, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(181, 55, 242, 0.8); }
+        }
+
+        @media (max-width: 768px) {
+            .char-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .select-title {
+                font-size: 32px;
+            }
+
+            .skill-btn {
+                width: 60px;
+                height: 60px;
+            }
+
+            #joystick {
+                width: 120px;
+                height: 120px;
+            }
+
+            .joystick-base {
+                width: 120px;
+                height: 120px;
+            }
+        }
+
+        /* Scanlines effect */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.1),
+                rgba(0, 0, 0, 0.1) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="live-indicator">◉ CYBER-SAMURAI RPG</div>
+
+    <!-- Character Selection -->
+    <div id="charSelect">
+        <div class="select-title">⚡ CYBER-SAMURAI ⚡</div>
+        <div class="select-subtitle">Select Your Warrior // Neural Link Established</div>
+        <div class="char-grid">
+            <div class="char-card" onclick="selectCharacter('warrior')">
+                <div class="char-icon">⚔️</div>
+                <div class="char-name">CYBER SAMURAI</div>
+                <div class="char-desc">Master of the Energy Blade</div>
+                <div class="char-stats">
+                    <div class="stat-item">HP: 150</div>
+                    <div class="stat-item">MP: 50</div>
+                    <div class="stat-item">DMG: 15</div>
+                    <div class="stat-item">DEF: 10</div>
+                </div>
+            </div>
+            <div class="char-card" onclick="selectCharacter('ninja')">
+                <div class="char-icon">🗡️</div>
+                <div class="char-name">SHADOW RUNNER</div>
+                <div class="char-desc">Lightning-Fast Assassin</div>
+                <div class="char-stats">
+                    <div class="stat-item">HP: 100</div>
+                    <div class="stat-item">MP: 80</div>
+                    <div class="stat-item">DMG: 25</div>
+                    <div class="stat-item">DEF: 5</div>
+                </div>
+            </div>
+            <div class="char-card" onclick="selectCharacter('shaman')">
+                <div class="char-icon">🔮</div>
+                <div class="char-name">TECH PRIEST</div>
+                <div class="char-desc">Plasma & Nano Technology</div>
+                <div class="char-stats">
+                    <div class="stat-item">HP: 120</div>
+                    <div class="stat-item">MP: 120</div>
+                    <div class="stat-item">DMG: 18</div>
+                    <div class="stat-item">DEF: 7</div>
+                </div>
+            </div>
+            <div class="char-card" onclick="selectCharacter('sura')">
+                <div class="char-icon">💀</div>
+                <div class="char-name">DARK RONIN</div>
+                <div class="char-desc">Void Energy Specialist</div>
+                <div class="char-stats">
+                    <div class="stat-item">HP: 130</div>
+                    <div class="stat-item">MP: 100</div>
+                    <div class="stat-item">DMG: 20</div>
+                    <div class="stat-item">DEF: 8</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- HUD -->
+        <div id="hud">
+            <div class="stat-bar">
+                <div class="player-info">
+                    <span id="playerName">Character</span>
+                    <span id="playerLevel">Level: 1</span>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-fill hp-bar" id="hpBar" style="width: 100%"></div>
+                    <div class="bar-text" id="hpText">HP: 100/100</div>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-fill mp-bar" id="mpBar" style="width: 100%"></div>
+                    <div class="bar-text" id="mpText">MP: 100/100</div>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-fill xp-bar" id="xpBar" style="width: 0%"></div>
+                    <div class="bar-text" id="xpText">XP: 0/100</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skills -->
+        <div id="skills"></div>
+
+        <!-- Joystick -->
+        <div id="joystick">
+            <div class="joystick-base">
+                <div class="joystick-stick" id="joystickStick"></div>
+            </div>
+        </div>
+
+        <!-- Inventory -->
+        <div id="inventory">
+            <div class="inv-slot" id="slot0"></div>
+            <div class="inv-slot" id="slot1"></div>
+            <div class="inv-slot" id="slot2"></div>
+            <div class="inv-slot" id="slot3"></div>
+            <div class="inv-slot" id="slot4"></div>
+        </div>
+
+        <!-- Loot Notification -->
+        <div id="lootNotif"></div>
+    </div>
+
+    <script src="cyber-samurai-rpg.js"></script>
+
+    <script>
+        // Live reload
+        if (typeof WebSocket !== 'undefined') {
+            const ws = new WebSocket('ws://' + window.location.host);
+            ws.onmessage = function(event) {
+                if (event.data === 'reload') {
+                    window.location.reload();
+                }
+            };
+        }
+    </script>
+</body>
+</html>

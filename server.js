@@ -73,6 +73,7 @@ app.get('/', (req, res) => {
 app.get('/dashboard', (req, res) => {
     const gameUrl = `http://${localIP}:${PORT}/game.html`;
     const rpgUrl = `http://${localIP}:${PORT}/metin2-style.html`;
+    const cyberSamuraiUrl = `http://${localIP}:${PORT}/cyber-samurai.html`;
 
     res.send(`
 <!DOCTYPE html>
@@ -273,7 +274,7 @@ app.get('/dashboard', (req, res) => {
 
         .game-selector {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 15px;
             margin-bottom: 20px;
         }
@@ -343,7 +344,7 @@ app.get('/dashboard', (req, res) => {
             <div class="card">
                 <h2>🎮 Oyun Seç</h2>
                 <div class="game-selector">
-                    <div class="game-option active" onclick="selectGame('game')">
+                    <div class="game-option" onclick="selectGame('game')">
                         <div class="game-icon">🎯</div>
                         <div class="game-title">Basit Oyun</div>
                         <div class="game-desc">Engellerden kaçma oyunu</div>
@@ -353,6 +354,11 @@ app.get('/dashboard', (req, res) => {
                         <div class="game-title">RPG Oyunu</div>
                         <div class="game-desc">Metin2-style RPG</div>
                     </div>
+                    <div class="game-option active" onclick="selectGame('cybersamurai')">
+                        <div class="game-icon">⚡</div>
+                        <div class="game-title">Cyber-Samurai RPG</div>
+                        <div class="game-desc">Professional pixel art assets</div>
+                    </div>
                 </div>
 
                 <h2>📱 QR Kod ile Bağlan</h2>
@@ -360,7 +366,7 @@ app.get('/dashboard', (req, res) => {
 
                 <div class="info-item">
                     <div class="info-label">📍 Oyun URL'si:</div>
-                    <div class="info-value" id="gameUrlText">${gameUrl}</div>
+                    <div class="info-value" id="gameUrlText">${cyberSamuraiUrl}</div>
                 </div>
 
                 <button class="btn" onclick="copyUrl()">📋 URL'yi Kopyala</button>
@@ -386,7 +392,7 @@ app.get('/dashboard', (req, res) => {
             <div class="card">
                 <h2>🖥️ PC Önizleme</h2>
                 <div class="device-frame">
-                    <iframe src="/game.html" class="preview-frame" id="previewFrame"></iframe>
+                    <iframe src="/cyber-samurai.html" class="preview-frame" id="previewFrame"></iframe>
                 </div>
                 <button class="btn" onclick="openInNewTab()">
                     🚀 Yeni Sekmede Aç
@@ -399,14 +405,15 @@ app.get('/dashboard', (req, res) => {
         // Game URLs
         const games = {
             game: '${gameUrl}',
-            rpg: '${rpgUrl}'
+            rpg: '${rpgUrl}',
+            cybersamurai: '${cyberSamuraiUrl}'
         };
 
-        let currentGame = 'game';
+        let currentGame = 'cybersamurai';
         let qrCanvas = null;
 
         // Initialize with default game
-        updateQRCode(games.game);
+        updateQRCode(games.cybersamurai);
 
         function updateQRCode(url) {
             const qrcodeDiv = document.getElementById('qrcode');
