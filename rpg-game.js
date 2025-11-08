@@ -1,75 +1,146 @@
-// Character Classes
+// ============================================================================
+// CRYSTAL-THEMED CHARACTER CLASSES
+// ============================================================================
+
 const CLASSES = {
     warrior: {
-        name: 'Savaşçı',
-        icon: '🛡️',
+        name: 'Obsidian Knight',
+        displayName: 'Obsidian Şövalye',
+        description: 'Karanlık kristal zırhı ile korunan güçlü savaşçı',
+        spriteType: 'knight',
         baseHP: 150,
         baseMP: 50,
         baseDamage: 15,
         baseDefense: 10,
+        baseSpeed: 3,
         skills: [
-            { name: 'Güçlü Vuruş', icon: '⚔️', damage: 30, mpCost: 15, cooldown: 3000, key: 'Q' },
-            { name: 'Kalkan', icon: '🛡️', defense: 20, mpCost: 20, cooldown: 5000, key: 'W' },
-            { name: 'Savaş Çığlığı', icon: '💥', damage: 50, mpCost: 30, cooldown: 8000, key: 'E' }
+            { name: 'Crystal Slash', displayName: 'Kristal Kılıç', damage: 30, mpCost: 15, cooldown: 3000, key: 'Q', color: '#7c3aed' },
+            { name: 'Obsidian Shield', displayName: 'Obsidian Kalkan', defense: 20, mpCost: 20, cooldown: 5000, key: 'W', color: '#1a0f2e' },
+            { name: 'Dark Eruption', displayName: 'Karanlık Patlama', damage: 50, mpCost: 30, cooldown: 8000, key: 'E', color: '#4a1fb8' }
         ]
     },
     ninja: {
-        name: 'Ninja',
-        icon: '🗡️',
+        name: 'Shadow Assassin',
+        displayName: 'Gölge Suikastçi',
+        description: 'Hızlı ve ölümcül kristal kılıç ustası',
+        spriteType: 'knight',
         baseHP: 100,
         baseMP: 80,
         baseDamage: 25,
         baseDefense: 5,
+        baseSpeed: 4,
         skills: [
-            { name: 'Hızlı Saldırı', icon: '⚡', damage: 20, mpCost: 10, cooldown: 2000, key: 'Q' },
-            { name: 'Gölge Adımı', icon: '💨', dodge: true, mpCost: 15, cooldown: 4000, key: 'W' },
-            { name: 'Kritik Vuruş', icon: '🗡️', damage: 60, mpCost: 25, cooldown: 6000, key: 'E' }
+            { name: 'Swift Strike', displayName: 'Hızlı Darbe', damage: 20, mpCost: 10, cooldown: 2000, key: 'Q', color: '#a78bfa' },
+            { name: 'Shadow Step', displayName: 'Gölge Adımı', dodge: true, mpCost: 15, cooldown: 4000, key: 'W', color: '#0d0717' },
+            { name: 'Fatal Blow', displayName: 'Öldürücü Darbe', damage: 60, mpCost: 25, cooldown: 6000, key: 'E', color: '#c4b5fd' }
         ]
     },
     shaman: {
-        name: 'Şaman',
-        icon: '🔮',
+        name: 'Crystal Mage',
+        displayName: 'Kristal Büyücü',
+        description: 'Büyülü kristal gücünü kontrol eden sihirbaz',
+        spriteType: 'knight',
         baseHP: 120,
         baseMP: 120,
         baseDamage: 18,
         baseDefense: 7,
+        baseSpeed: 2.5,
         skills: [
-            { name: 'Işın', icon: '✨', damage: 25, mpCost: 12, cooldown: 2500, key: 'Q' },
-            { name: 'İyileştirme', icon: '💚', heal: 40, mpCost: 20, cooldown: 5000, key: 'W' },
-            { name: 'Yıldırım', icon: '⚡', damage: 45, mpCost: 28, cooldown: 7000, key: 'E' }
+            { name: 'Crystal Beam', displayName: 'Kristal Işını', damage: 25, mpCost: 12, cooldown: 2500, key: 'Q', color: '#3b82f6' },
+            { name: 'Restoration', displayName: 'İyileştirme', heal: 40, mpCost: 20, cooldown: 5000, key: 'W', color: '#10b981' },
+            { name: 'Lightning Storm', displayName: 'Yıldırım Fırtınası', damage: 45, mpCost: 28, cooldown: 7000, key: 'E', color: '#fbbf24' }
         ]
     },
     sura: {
-        name: 'Sura',
-        icon: '⚡',
+        name: 'Void Sorcerer',
+        displayName: 'Boşluk Büyücüsü',
+        description: 'Karanlık kristal enerjisini kullanan güçlü büyücü',
+        spriteType: 'knight',
         baseHP: 130,
         baseMP: 100,
         baseDamage: 20,
         baseDefense: 8,
+        baseSpeed: 3,
         skills: [
-            { name: 'Karanlık Kılıç', icon: '🌑', damage: 28, mpCost: 14, cooldown: 2500, key: 'Q' },
-            { name: 'Ruh Emme', icon: '👻', damage: 20, lifesteal: 0.5, mpCost: 18, cooldown: 4500, key: 'W' },
-            { name: 'Kara Büyü', icon: '💀', damage: 55, mpCost: 32, cooldown: 8000, key: 'E' }
+            { name: 'Void Blade', displayName: 'Boşluk Kılıcı', damage: 28, mpCost: 14, cooldown: 2500, key: 'Q', color: '#2d1b69' },
+            { name: 'Soul Drain', displayName: 'Ruh Emme', damage: 20, lifesteal: 0.5, mpCost: 18, cooldown: 4500, key: 'W', color: '#7c3aed' },
+            { name: 'Dark Magic', displayName: 'Kara Büyü', damage: 55, mpCost: 32, cooldown: 8000, key: 'E', color: '#4a1fb8' }
         ]
     }
 };
 
-// Mob types
+// ============================================================================
+// CRYSTAL CREATURE ENEMIES
+// ============================================================================
+
 const MOB_TYPES = [
-    { name: 'Kurt', icon: '🐺', hp: 50, damage: 8, xp: 25, gold: 10, speed: 1.5 },
-    { name: 'Goblin', icon: '👹', hp: 60, damage: 10, xp: 30, gold: 15, speed: 1.2 },
-    { name: 'Ork', icon: '👾', hp: 80, damage: 12, xp: 40, gold: 20, speed: 1.0 },
-    { name: 'Troll', icon: '🧟', hp: 120, damage: 15, xp: 60, gold: 30, speed: 0.8 },
-    { name: 'Ejderha', icon: '🐉', hp: 200, damage: 25, xp: 100, gold: 50, speed: 0.6 }
+    {
+        name: 'Amethyst Sprite',
+        displayName: 'Ametist Ruhu',
+        spriteType: 'amethystSprite',
+        hp: 50,
+        damage: 8,
+        xp: 25,
+        gold: 10,
+        speed: 1.8,
+        size: 24
+    },
+    {
+        name: 'Emerald Golem',
+        displayName: 'Zümrüt Golem',
+        spriteType: 'emeraldGolem',
+        hp: 70,
+        damage: 10,
+        xp: 35,
+        gold: 15,
+        speed: 1.0,
+        size: 32
+    },
+    {
+        name: 'Ruby Beast',
+        displayName: 'Yakut Canavar',
+        spriteType: 'rubyBeast',
+        hp: 90,
+        damage: 14,
+        xp: 45,
+        gold: 25,
+        speed: 1.3,
+        size: 28
+    },
+    {
+        name: 'Sapphire Wraith',
+        displayName: 'Safir Hayalet',
+        spriteType: 'sapphireWraith',
+        hp: 120,
+        damage: 16,
+        xp: 65,
+        gold: 35,
+        speed: 0.9,
+        size: 26
+    },
+    {
+        name: 'Diamond Titan',
+        displayName: 'Elmas Titan',
+        spriteType: 'diamondTitan',
+        hp: 250,
+        damage: 28,
+        xp: 120,
+        gold: 60,
+        speed: 0.6,
+        size: 48
+    }
 ];
 
-// Items
+// ============================================================================
+// CRYSTAL ITEMS
+// ============================================================================
+
 const ITEMS = [
-    { name: 'Can İksiri', icon: '❤️', type: 'potion', heal: 50 },
-    { name: 'Mana İksiri', icon: '💙', type: 'potion', mana: 50 },
-    { name: 'Altın', icon: '💰', type: 'gold', value: 10 },
-    { name: 'Kılıç', icon: '⚔️', type: 'weapon', damage: 5 },
-    { name: 'Zırh', icon: '🛡️', type: 'armor', defense: 5 }
+    { name: 'Crystal Vial', displayName: 'Kristal Can İksiri', icon: '❤️', type: 'potion', heal: 50, color: '#ef4444' },
+    { name: 'Mana Crystal', displayName: 'Mana Kristali', icon: '💙', type: 'potion', mana: 50, color: '#3b82f6' },
+    { name: 'Gold Crystal', displayName: 'Altın Kristal', icon: '💰', type: 'gold', value: 10, color: '#fbbf24' },
+    { name: 'Crystal Blade', displayName: 'Kristal Kılıç', icon: '⚔️', type: 'weapon', damage: 5, color: '#a78bfa' },
+    { name: 'Crystal Armor', displayName: 'Kristal Zırh', icon: '🛡️', type: 'armor', defense: 5, color: '#7c3aed' }
 ];
 
 class Game {
@@ -80,7 +151,12 @@ class Game {
         this.resizeCanvas();
         window.addEventListener('resize', () => this.resizeCanvas());
 
+        // Initialize sprite system
+        this.spriteAssets = new SpriteAssets();
+        this.particleSystem = new ParticleSystem();
+
         this.player = null;
+        this.playerAnimator = null;
         this.mobs = [];
         this.projectiles = [];
         this.drops = [];
@@ -90,6 +166,8 @@ class Game {
         this.joystickActive = false;
         this.joystickAngle = 0;
         this.joystickPower = 0;
+
+        this.lastTimestamp = 0;
 
         this.setupControls();
     }
@@ -105,7 +183,8 @@ class Game {
         this.player = {
             class: className,
             name: classData.name,
-            icon: classData.icon,
+            displayName: classData.displayName,
+            spriteType: classData.spriteType,
             x: this.canvas.width / 2,
             y: this.canvas.height / 2,
             size: 40,
@@ -122,12 +201,19 @@ class Game {
             damage: classData.baseDamage,
             defense: classData.baseDefense,
 
-            speed: 3,
+            speed: classData.baseSpeed,
+            lastAngle: 270, // facing down
+            isMoving: false,
             skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
 
             gold: 0,
             attackCooldown: 0
         };
+
+        // Create sprite animator for player
+        this.playerAnimator = new SpriteAnimator(
+            this.spriteAssets.sprites[this.player.spriteType]
+        );
 
         this.updateHUD();
         this.createSkillButtons();
@@ -147,8 +233,9 @@ class Game {
             const btn = document.createElement('div');
             btn.className = 'skill-btn';
             btn.id = `skill${index}`;
+            btn.style.background = `linear-gradient(135deg, ${skill.color}dd, ${skill.color}88)`;
             btn.innerHTML = `
-                <div class="skill-icon">${skill.icon}</div>
+                <div class="skill-icon">${skill.displayName.substring(0, 2)}</div>
                 <div class="skill-key">${skill.key}</div>
             `;
             btn.onclick = () => this.useSkill(index);
@@ -246,13 +333,20 @@ class Game {
             ? Math.random() * margin
             : this.canvas.height - Math.random() * margin;
 
-        this.mobs.push({
+        const mob = {
             ...type,
             x, y,
             maxHP: type.hp,
-            size: 35,
-            targetCooldown: 0
-        });
+            targetCooldown: 0,
+            lastAngle: 270
+        };
+
+        // Create sprite animator for mob
+        mob.animator = new SpriteAnimator(
+            this.spriteAssets.sprites[type.spriteType]
+        );
+
+        this.mobs.push(mob);
     }
 
     useSkill(index) {
@@ -266,6 +360,19 @@ class Game {
         this.player.mp -= skill.mpCost;
         skill.cooldownRemaining = skill.cooldown;
 
+        // Trigger attack animation
+        if (this.playerAnimator) {
+            this.playerAnimator.attack();
+        }
+
+        // Particle effects
+        this.particleSystem.emit(this.player.x, this.player.y, {
+            count: 15,
+            color: skill.color,
+            speed: 3,
+            life: 800
+        });
+
         // Skill effects
         if (skill.damage) {
             const nearestMob = this.findNearestMob();
@@ -274,11 +381,27 @@ class Game {
                 if (distance < 300) {
                     this.damageEnemy(nearestMob, skill.damage + this.player.damage);
 
+                    // Particle effect on hit
+                    this.particleSystem.emit(nearestMob.x, nearestMob.y, {
+                        count: 20,
+                        color: skill.color,
+                        speed: 4,
+                        life: 600
+                    });
+
                     if (skill.lifesteal) {
                         this.player.hp = Math.min(
                             this.player.maxHP,
                             this.player.hp + skill.damage * skill.lifesteal
                         );
+
+                        // Healing particles
+                        this.particleSystem.emit(this.player.x, this.player.y, {
+                            count: 10,
+                            color: '#10b981',
+                            speed: 2,
+                            life: 1000
+                        });
                     }
                 }
             }
@@ -286,6 +409,14 @@ class Game {
 
         if (skill.heal) {
             this.player.hp = Math.min(this.player.maxHP, this.player.hp + skill.heal);
+
+            // Healing particles
+            this.particleSystem.emit(this.player.x, this.player.y, {
+                count: 25,
+                color: '#10b981',
+                speed: 2,
+                life: 1200
+            });
         }
 
         this.updateHUD();
@@ -349,6 +480,17 @@ class Game {
             this.mobs.splice(index, 1);
         }
 
+        // Death explosion particles
+        const enemyConfig = this.spriteAssets.sprites[enemy.spriteType]?.config;
+        const deathColor = enemyConfig?.glow || '#ffffff';
+
+        this.particleSystem.emit(enemy.x, enemy.y, {
+            count: 40,
+            color: deathColor,
+            speed: 6,
+            life: 1000
+        });
+
         // XP
         this.player.xp += enemy.xp;
         if (this.player.xp >= this.player.xpToLevel) {
@@ -384,6 +526,14 @@ class Game {
         this.player.damage += 3;
         this.player.defense += 2;
 
+        // Epic level up particle effect
+        this.particleSystem.emit(this.player.x, this.player.y, {
+            count: 50,
+            color: '#ffd700',
+            speed: 5,
+            life: 1500
+        });
+
         this.showNotification('🎉 LEVEL UP! ' + this.player.level);
         this.updateHUD();
     }
@@ -416,12 +566,20 @@ class Game {
             this.drops.splice(index, 1);
         }
 
+        // Pickup particle effect
+        this.particleSystem.emit(drop.x, drop.y, {
+            count: 15,
+            color: drop.color || '#fbbf24',
+            speed: 3,
+            life: 600
+        });
+
         // Add to inventory
         for (let i = 0; i < this.inventory.length; i++) {
             if (!this.inventory[i]) {
                 this.inventory[i] = drop;
                 this.updateInventory();
-                this.showNotification(`+1 ${drop.name} ${drop.icon}`);
+                this.showNotification(`+1 ${drop.displayName || drop.name} ${drop.icon}`);
                 break;
             }
         }
@@ -475,6 +633,8 @@ class Game {
             dy = Math.sin(this.joystickAngle) * this.joystickPower;
         }
 
+        this.player.isMoving = false;
+
         if (dx || dy) {
             const magnitude = Math.sqrt(dx * dx + dy * dy);
             dx = (dx / magnitude) * this.player.speed;
@@ -482,6 +642,17 @@ class Game {
 
             this.player.x = Math.max(20, Math.min(this.canvas.width - 20, this.player.x + dx));
             this.player.y = Math.max(20, Math.min(this.canvas.height - 20, this.player.y + dy));
+
+            // Update player direction
+            this.player.lastAngle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+            if (this.player.lastAngle < 0) this.player.lastAngle += 360;
+
+            this.player.isMoving = true;
+
+            // Update animator direction
+            if (this.playerAnimator) {
+                this.playerAnimator.setDirection(this.player.lastAngle);
+            }
         }
 
         // Update mobs
@@ -493,6 +664,14 @@ class Game {
                 mob.x += Math.cos(angle) * mob.speed;
                 mob.y += Math.sin(angle) * mob.speed;
 
+                // Update mob direction
+                mob.lastAngle = angle * 180 / Math.PI + 90;
+                if (mob.lastAngle < 0) mob.lastAngle += 360;
+
+                if (mob.animator) {
+                    mob.animator.setDirection(mob.lastAngle);
+                }
+
                 // Attack player
                 if (dist < 50) {
                     if (mob.targetCooldown <= 0) {
@@ -500,6 +679,14 @@ class Game {
                         this.player.hp -= damage;
                         this.showDamage(this.player.x, this.player.y - 40, damage);
                         mob.targetCooldown = 1000;
+
+                        // Hit particles
+                        this.particleSystem.emit(this.player.x, this.player.y, {
+                            count: 10,
+                            color: '#ef4444',
+                            speed: 2,
+                            life: 500
+                        });
 
                         if (this.player.hp <= 0) {
                             this.gameOver();
@@ -534,87 +721,149 @@ class Game {
             this.player.mp = Math.min(this.player.maxMP, this.player.mp + 0.1);
             if (Math.random() < 0.1) this.updateHUD();
         }
+
+        // Update particle system
+        this.particleSystem.update(16);
+
+        // Update animators
+        if (this.playerAnimator) {
+            this.playerAnimator.update(this.lastTimestamp);
+        }
+
+        this.mobs.forEach(mob => {
+            if (mob.animator) {
+                mob.animator.update(this.lastTimestamp);
+            }
+        });
     }
 
     draw() {
-        this.ctx.fillStyle = '#1a1a2e';
+        // Dark crystal-themed background
+        const gradient = this.ctx.createLinearGradient(0, 0, this.canvas.width, this.canvas.height);
+        gradient.addColorStop(0, '#0a0e27');
+        gradient.addColorStop(0.5, '#1a1a2e');
+        gradient.addColorStop(1, '#16213e');
+        this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Grid
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        // Animated grid with crystal energy
+        this.ctx.strokeStyle = 'rgba(124, 58, 237, 0.1)';
         this.ctx.lineWidth = 1;
-        for (let x = 0; x < this.canvas.width; x += 50) {
+        const gridOffset = (Date.now() / 50) % 50;
+
+        for (let x = -gridOffset; x < this.canvas.width; x += 50) {
             this.ctx.beginPath();
             this.ctx.moveTo(x, 0);
             this.ctx.lineTo(x, this.canvas.height);
             this.ctx.stroke();
         }
-        for (let y = 0; y < this.canvas.height; y += 50) {
+        for (let y = -gridOffset; y < this.canvas.height; y += 50) {
             this.ctx.beginPath();
             this.ctx.moveTo(0, y);
             this.ctx.lineTo(this.canvas.width, y);
             this.ctx.stroke();
         }
 
-        // Drops
+        // Drops with crystal glow
         this.drops.forEach(drop => {
+            // Glow effect
+            this.ctx.shadowBlur = 15;
+            this.ctx.shadowColor = drop.color || '#a78bfa';
+
+            // Floating animation
+            const floatY = drop.y + Math.sin(Date.now() / 300 + drop.x) * 3;
+
             this.ctx.font = drop.size + 'px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(drop.icon, drop.x, drop.y);
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.fillText(drop.icon, drop.x, floatY);
+
+            this.ctx.shadowBlur = 0;
         });
 
-        // Mobs
+        // Mobs with sprite rendering
         this.mobs.forEach(mob => {
-            // Shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            this.ctx.beginPath();
-            this.ctx.ellipse(mob.x, mob.y + mob.size/2, mob.size/2, mob.size/4, 0, 0, Math.PI * 2);
-            this.ctx.fill();
-
-            // Mob icon
-            this.ctx.font = mob.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(mob.icon, mob.x, mob.y);
+            // Draw sprite
+            if (mob.animator) {
+                mob.animator.draw(this.ctx, mob.x, mob.y, 1.2);
+            }
 
             // HP bar
-            const barWidth = 40;
-            const barHeight = 4;
+            const barWidth = 45;
+            const barHeight = 5;
             const hpPercent = mob.hp / mob.maxHP;
 
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth, barHeight);
+            // HP bar background
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size/2 - 8, barWidth, barHeight);
 
-            this.ctx.fillStyle = hpPercent > 0.5 ? '#4ade80' : hpPercent > 0.25 ? '#fbbf24' : '#ef4444';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth * hpPercent, barHeight);
+            // HP bar fill with gradient
+            const hpGradient = this.ctx.createLinearGradient(
+                mob.x - barWidth/2, 0,
+                mob.x + barWidth/2, 0
+            );
+
+            if (hpPercent > 0.5) {
+                hpGradient.addColorStop(0, '#4ade80');
+                hpGradient.addColorStop(1, '#22c55e');
+            } else if (hpPercent > 0.25) {
+                hpGradient.addColorStop(0, '#fbbf24');
+                hpGradient.addColorStop(1, '#f59e0b');
+            } else {
+                hpGradient.addColorStop(0, '#ef4444');
+                hpGradient.addColorStop(1, '#dc2626');
+            }
+
+            this.ctx.fillStyle = hpGradient;
+            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size/2 - 8, barWidth * hpPercent, barHeight);
+
+            // HP bar border
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(mob.x - barWidth/2, mob.y - mob.size/2 - 8, barWidth, barHeight);
+
+            // Mob name
+            this.ctx.font = '10px Arial';
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(mob.displayName, mob.x, mob.y - mob.size/2 - 15);
         });
 
-        // Player
-        if (this.player) {
-            // Shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            this.ctx.beginPath();
-            this.ctx.ellipse(this.player.x, this.player.y + this.player.size/2, this.player.size/2, this.player.size/4, 0, 0, Math.PI * 2);
-            this.ctx.fill();
+        // Player with sprite rendering
+        if (this.player && this.playerAnimator) {
+            // Character glow
+            this.ctx.shadowBlur = 20;
+            this.ctx.shadowColor = '#a78bfa';
 
-            // Player icon
-            this.ctx.font = this.player.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
+            // Draw player sprite
+            this.playerAnimator.draw(this.ctx, this.player.x, this.player.y, 1.3);
 
-            // Glow effect
-            this.ctx.shadowBlur = 10;
-            this.ctx.shadowColor = '#ffd700';
-            this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
             this.ctx.shadowBlur = 0;
+
+            // Player name tag
+            this.ctx.font = 'bold 12px Arial';
+            this.ctx.fillStyle = '#ffd700';
+            this.ctx.textAlign = 'center';
+            this.ctx.strokeStyle = '#000000';
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeText(this.player.displayName, this.player.x, this.player.y - 30);
+            this.ctx.fillText(this.player.displayName, this.player.x, this.player.y - 30);
+
+            // Level indicator
+            this.ctx.font = '10px Arial';
+            this.ctx.fillStyle = '#c4b5fd';
+            this.ctx.fillText(`Lv.${this.player.level}`, this.player.x, this.player.y - 40);
         }
+
+        // Particle effects
+        this.particleSystem.draw(this.ctx);
     }
 
     updateHUD() {
         if (!this.player) return;
 
-        document.getElementById('playerName').textContent = this.player.name;
+        document.getElementById('playerName').textContent = this.player.displayName;
         document.getElementById('playerLevel').textContent = `Seviye: ${this.player.level}`;
 
         const hpPercent = (this.player.hp / this.player.maxHP) * 100;
@@ -638,10 +887,11 @@ class Game {
         window.location.reload();
     }
 
-    gameLoop() {
+    gameLoop(timestamp = 0) {
+        this.lastTimestamp = timestamp;
         this.update();
         this.draw();
-        requestAnimationFrame(() => this.gameLoop());
+        requestAnimationFrame((ts) => this.gameLoop(ts));
     }
 }
 
