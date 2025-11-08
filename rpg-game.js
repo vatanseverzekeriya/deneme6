@@ -1,8 +1,12 @@
-// Character Classes
+// Load sprite renderer
+const spriteRenderer = new DragonSpriteRenderer();
+
+// Character Classes (now with sprite types)
 const CLASSES = {
     warrior: {
         name: 'Savaşçı',
         icon: '🛡️',
+        spriteType: 'player',
         baseHP: 150,
         baseMP: 50,
         baseDamage: 15,
@@ -16,6 +20,7 @@ const CLASSES = {
     ninja: {
         name: 'Ninja',
         icon: '🗡️',
+        spriteType: 'player',
         baseHP: 100,
         baseMP: 80,
         baseDamage: 25,
@@ -29,6 +34,7 @@ const CLASSES = {
     shaman: {
         name: 'Şaman',
         icon: '🔮',
+        spriteType: 'player',
         baseHP: 120,
         baseMP: 120,
         baseDamage: 18,
@@ -42,6 +48,7 @@ const CLASSES = {
     sura: {
         name: 'Sura',
         icon: '⚡',
+        spriteType: 'player',
         baseHP: 130,
         baseMP: 100,
         baseDamage: 20,
@@ -54,13 +61,13 @@ const CLASSES = {
     }
 };
 
-// Mob types
+// Mob types (with sprite types)
 const MOB_TYPES = [
-    { name: 'Kurt', icon: '🐺', hp: 50, damage: 8, xp: 25, gold: 10, speed: 1.5 },
-    { name: 'Goblin', icon: '👹', hp: 60, damage: 10, xp: 30, gold: 15, speed: 1.2 },
-    { name: 'Ork', icon: '👾', hp: 80, damage: 12, xp: 40, gold: 20, speed: 1.0 },
-    { name: 'Troll', icon: '🧟', hp: 120, damage: 15, xp: 60, gold: 30, speed: 0.8 },
-    { name: 'Ejderha', icon: '🐉', hp: 200, damage: 25, xp: 100, gold: 50, speed: 0.6 }
+    { name: 'Kurt', icon: '🐺', spriteType: 'wolf', hp: 50, damage: 8, xp: 25, gold: 10, speed: 1.5 },
+    { name: 'Goblin', icon: '👹', spriteType: 'goblin', hp: 60, damage: 10, xp: 30, gold: 15, speed: 1.2 },
+    { name: 'Ork', icon: '👾', spriteType: 'orc', hp: 80, damage: 12, xp: 40, gold: 20, speed: 1.0 },
+    { name: 'Troll', icon: '🧟', spriteType: 'troll', hp: 120, damage: 15, xp: 60, gold: 30, speed: 0.8 },
+    { name: 'Ejderha', icon: '🐉', spriteType: 'dragon', hp: 200, damage: 25, xp: 100, gold: 50, speed: 0.6 }
 ];
 
 // Items
@@ -106,9 +113,10 @@ class Game {
             class: className,
             name: classData.name,
             icon: classData.icon,
+            spriteType: classData.spriteType,
             x: this.canvas.width / 2,
             y: this.canvas.height / 2,
-            size: 40,
+            size: 80, // Increased for detailed sprite
 
             level: 1,
             xp: 0,
@@ -126,7 +134,14 @@ class Game {
             skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
 
             gold: 0,
-            attackCooldown: 0
+            attackCooldown: 0,
+
+            // Animation properties
+            direction: 'S',
+            animation: 'idle',
+            animationFrame: 0,
+            animationTimer: 0,
+            lastVelocity: { x: 0, y: 0 }
         };
 
         this.updateHUD();
@@ -250,8 +265,13 @@ class Game {
             ...type,
             x, y,
             maxHP: type.hp,
-            size: 35,
-            targetCooldown: 0
+            size: type.spriteType === 'dragon' ? 100 : (type.spriteType === 'troll' ? 90 : 70),
+            targetCooldown: 0,
+            // Animation properties
+            direction: 'S',
+            animation: 'idle',
+            animationFrame: 0,
+            animationTimer: 0
         });
     }
 
@@ -266,12 +286,27 @@ class Game {
         this.player.mp -= skill.mpCost;
         skill.cooldownRemaining = skill.cooldown;
 
+        // Trigger attack animation
+        this.player.animation = 'attack';
+        this.player.animationFrame = 0;
+
+        // Reset animation after attack completes
+        setTimeout(() => {
+            if (this.player && this.player.animation === 'attack') {
+                this.player.animation = 'idle';
+            }
+        }, 600);
+
         // Skill effects
         if (skill.damage) {
             const nearestMob = this.findNearestMob();
             if (nearestMob) {
                 const distance = this.getDistance(this.player, nearestMob);
                 if (distance < 300) {
+                    // Face the mob
+                    const angle = Math.atan2(nearestMob.y - this.player.y, nearestMob.x - this.player.x) * 180 / Math.PI;
+                    this.player.direction = spriteRenderer.getDirection(angle);
+
                     this.damageEnemy(nearestMob, skill.damage + this.player.damage);
 
                     if (skill.lifesteal) {
@@ -336,10 +371,19 @@ class Game {
 
     damageEnemy(enemy, damage) {
         enemy.hp -= damage;
+        enemy.animation = 'hurt';
+
+        setTimeout(() => {
+            if (enemy.hp > 0 && enemy.animation === 'hurt') {
+                enemy.animation = 'idle';
+            }
+        }, 300);
+
         this.showDamage(enemy.x, enemy.y, damage);
 
         if (enemy.hp <= 0) {
-            this.killEnemy(enemy);
+            enemy.animation = 'death';
+            setTimeout(() => this.killEnemy(enemy), 800);
         }
     }
 
@@ -482,7 +526,26 @@ class Game {
 
             this.player.x = Math.max(20, Math.min(this.canvas.width - 20, this.player.x + dx));
             this.player.y = Math.max(20, Math.min(this.canvas.height - 20, this.player.y + dy));
+
+            // Update direction based on movement
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            this.player.direction = spriteRenderer.getDirection(angle);
+
+            // Set walking animation
+            if (this.player.animation !== 'attack' && this.player.animation !== 'hurt') {
+                this.player.animation = 'walk';
+            }
+
+            this.player.lastVelocity = { x: dx, y: dy };
+        } else {
+            // Idle when not moving and not attacking
+            if (this.player.animation !== 'attack' && this.player.animation !== 'hurt') {
+                this.player.animation = 'idle';
+            }
         }
+
+        // Update player animation frame
+        this.updateAnimation(this.player);
 
         // Update mobs
         this.mobs.forEach(mob => {
@@ -490,25 +553,55 @@ class Game {
 
             if (dist < 400) {
                 const angle = Math.atan2(this.player.y - mob.y, this.player.x - mob.x);
-                mob.x += Math.cos(angle) * mob.speed;
-                mob.y += Math.sin(angle) * mob.speed;
+                const moveX = Math.cos(angle) * mob.speed;
+                const moveY = Math.sin(angle) * mob.speed;
+
+                mob.x += moveX;
+                mob.y += moveY;
+
+                // Update mob direction
+                const mobAngle = Math.atan2(moveY, moveX) * 180 / Math.PI;
+                mob.direction = spriteRenderer.getDirection(mobAngle);
+
+                // Set walking animation
+                if (mob.animation !== 'attack') {
+                    mob.animation = 'walk';
+                }
 
                 // Attack player
                 if (dist < 50) {
+                    mob.animation = 'attack';
+
                     if (mob.targetCooldown <= 0) {
                         const damage = Math.max(1, mob.damage - this.player.defense);
                         this.player.hp -= damage;
+                        this.player.animation = 'hurt';
+                        setTimeout(() => {
+                            if (this.player && this.player.animation === 'hurt') {
+                                this.player.animation = 'idle';
+                            }
+                        }, 300);
+
                         this.showDamage(this.player.x, this.player.y - 40, damage);
                         mob.targetCooldown = 1000;
 
                         if (this.player.hp <= 0) {
-                            this.gameOver();
+                            this.player.animation = 'death';
+                            setTimeout(() => this.gameOver(), 1000);
                         }
 
                         this.updateHUD();
                     }
                 }
+            } else {
+                // Idle when far from player
+                if (mob.animation !== 'hurt') {
+                    mob.animation = 'idle';
+                }
             }
+
+            // Update mob animation
+            this.updateAnimation(mob);
 
             if (mob.targetCooldown > 0) {
                 mob.targetCooldown -= 16;
@@ -566,48 +659,60 @@ class Game {
 
         // Mobs
         this.mobs.forEach(mob => {
-            // Shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            this.ctx.beginPath();
-            this.ctx.ellipse(mob.x, mob.y + mob.size/2, mob.size/2, mob.size/4, 0, 0, Math.PI * 2);
-            this.ctx.fill();
-
-            // Mob icon
-            this.ctx.font = mob.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(mob.icon, mob.x, mob.y);
+            // Draw sprite
+            spriteRenderer.drawDragon(
+                this.ctx,
+                mob.x,
+                mob.y,
+                mob.size,
+                mob.direction,
+                mob.animation,
+                mob.animationFrame,
+                mob.spriteType
+            );
 
             // HP bar
-            const barWidth = 40;
-            const barHeight = 4;
+            const barWidth = mob.size * 0.8;
+            const barHeight = 6;
             const hpPercent = mob.hp / mob.maxHP;
 
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth, barHeight);
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size/2 - 15, barWidth, barHeight);
 
             this.ctx.fillStyle = hpPercent > 0.5 ? '#4ade80' : hpPercent > 0.25 ? '#fbbf24' : '#ef4444';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth * hpPercent, barHeight);
+            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size/2 - 15, barWidth * hpPercent, barHeight);
+
+            // Mob name
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = '12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'bottom';
+            this.ctx.fillText(mob.name, mob.x, mob.y - mob.size/2 - 20);
         });
 
         // Player
         if (this.player) {
-            // Shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            this.ctx.beginPath();
-            this.ctx.ellipse(this.player.x, this.player.y + this.player.size/2, this.player.size/2, this.player.size/4, 0, 0, Math.PI * 2);
-            this.ctx.fill();
+            // Draw player sprite
+            spriteRenderer.drawDragon(
+                this.ctx,
+                this.player.x,
+                this.player.y,
+                this.player.size,
+                this.player.direction,
+                this.player.animation,
+                this.player.animationFrame,
+                this.player.spriteType
+            );
 
-            // Player icon
-            this.ctx.font = this.player.size + 'px Arial';
+            // Player name (above head)
+            this.ctx.fillStyle = '#FFD700';
+            this.ctx.font = 'bold 14px Arial';
             this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-
-            // Glow effect
-            this.ctx.shadowBlur = 10;
-            this.ctx.shadowColor = '#ffd700';
-            this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
-            this.ctx.shadowBlur = 0;
+            this.ctx.textBaseline = 'bottom';
+            this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeText(this.player.name, this.player.x, this.player.y - this.player.size/2 - 25);
+            this.ctx.fillText(this.player.name, this.player.x, this.player.y - this.player.size/2 - 25);
         }
     }
 
@@ -631,6 +736,19 @@ class Game {
             `MP: ${Math.floor(this.player.mp)}/${this.player.maxMP}`;
         document.getElementById('xpText').textContent =
             `XP: ${this.player.xp}/${this.player.xpToLevel}`;
+    }
+
+    // Update animation frames
+    updateAnimation(entity) {
+        const animData = spriteRenderer.animations[entity.animation];
+        if (!animData) return;
+
+        entity.animationTimer++;
+
+        if (entity.animationTimer >= animData.speed) {
+            entity.animationTimer = 0;
+            entity.animationFrame = (entity.animationFrame + 1) % animData.frames;
+        }
     }
 
     gameOver() {
