@@ -1,33 +1,50 @@
-# 🎮 Mobil Oyun Önizleme Aracı
+# 🎮 Mobile Game Preview Tool
 
-PC oyunlarını mobil cihazlarda gerçek zamanlı olarak test etmek için geliştirilmiş profesyonel önizleme aracı.
+Professional preview tool for testing PC games on mobile devices in real-time, built with TypeScript, Express.js, and Phaser 3.
 
-## ✨ Özellikler
+## ✨ Features
 
-- 🔴 **Canlı Yayın**: Dosyalarınızı düzenleyin, değişiklikler anında tüm cihazlara yansır
-- 📱 **QR Kod Desteği**: Mobil cihazınızla QR kod okutarak hızlıca bağlanın
-- 🎯 **Responsive Tasarım**: Oyununuz tüm ekran boyutlarına otomatik uyum sağlar
-- 🎮 **Mobil Kontroller**: Touch kontroller ile mobilde mükemmel oyun deneyimi
-- 📊 **Dashboard**: Bağlı cihazları takip edin ve önizleme yapın
-- ⚡ **WebSocket**: Gerçek zamanlı iletişim ve hızlı güncelleme
+- 🔴 **Live Reload**: Edit your files, changes instantly reflect on all devices
+- 📱 **QR Code Support**: Quickly connect with your mobile device by scanning QR code
+- 🎯 **Responsive Design**: Your game automatically adapts to all screen sizes
+- 🎮 **Mobile Controls**: Perfect gaming experience on mobile with touch controls
+- 📊 **Dashboard**: Track connected devices and preview games
+- ⚡ **WebSocket**: Real-time communication and fast updates
+- 🔷 **TypeScript**: Full type safety and modern development experience
+- 🎨 **Asset Pipeline**: Automated sprite sheet generation
+- 🧩 **Modular Architecture**: Clean, maintainable codebase
+- ⚙️ **Phaser 3**: Professional game engine integration
 
-## 🚀 Kurulum
+## 🚀 Quick Start
 
-### 1. Bağımlılıkları Yükleyin
+### Prerequisites
+- Node.js 16+ and npm
+- Git
+
+### 1. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Sunucuyu Başlatın
+### 2. Development Mode
 
 ```bash
+npm run dev
+```
+
+This starts the server with hot reload and TypeScript compilation.
+
+### 3. Production Build
+
+```bash
+npm run build
 npm start
 ```
 
-### 3. Dashboard'u Açın
+### 4. Open Dashboard
 
-Tarayıcınızda şu adresi açın:
+Open in your browser:
 ```
 http://localhost:3000/dashboard
 ```
@@ -65,60 +82,110 @@ http://localhost:3000/dashboard
 - Engele çarparsanız oyun biter
 - Skorunuzu yükseltin!
 
-## 🛠️ Geliştirme
+## 🛠️ Development
 
-### Oyunu Özelleştirme
+### Available Scripts
 
-`game.html` dosyasını düzenleyerek oyunu özelleştirebilirsiniz:
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server with hot reload |
+| `npm run build` | Compile TypeScript to JavaScript |
+| `npm start` | Start production server |
+| `npm run lint` | Check code for errors |
+| `npm run lint:fix` | Fix linting errors automatically |
+| `npm run format` | Format code with Prettier |
+| `npm run sprites` | Generate sprite sheet from assets |
 
-```javascript
-// Oyuncu ayarları (satır ~92)
-this.player = {
-    x: this.canvas.width / 2,
-    y: this.canvas.height - 50,
-    width: 50,
-    height: 50,
-    color: '#00ff88',  // Oyuncu rengi
-    speed: 5           // Hareket hızı
-};
-```
-
-### Canlı Yenileme
-
-Herhangi bir `.html`, `.js` veya `.css` dosyasını değiştirdiğinizde:
-1. Sunucu değişikliği otomatik algılar
-2. Tüm bağlı cihazlara sinyal gönderir
-3. Sayfalar otomatik yenilenir
-
-### Yeni Özellik Ekleme
-
-1. `game.html` dosyasını düzenleyin
-2. Kaydedin
-3. Değişiklik anında tüm cihazlara yansır!
-
-## 📂 Proje Yapısı
+### Project Structure
 
 ```
 deneme6/
-├── server.js           # Express sunucu ve WebSocket yönetimi
-├── game.html           # Ana oyun dosyası (HTML5 Canvas)
-├── package.json        # Proje bağımlılıkları
-└── README.md          # Dokümantasyon
+├── src/                      # Source code
+│   ├── server/              # Server-side TypeScript
+│   │   ├── index.ts         # Server entry point
+│   │   ├── controllers/     # Route controllers
+│   │   └── services/        # Business logic
+│   ├── game/                # Game client code
+│   │   ├── index.ts         # Game entry point
+│   │   └── scenes/          # Phaser scenes
+│   └── shared/              # Shared types
+│       └── types.ts         # TypeScript definitions
+├── public/                  # Static files
+│   ├── js/                  # Compiled game code
+│   ├── css/                 # Stylesheets
+│   └── images/              # Images & sprites
+├── assets/                  # Source assets
+│   ├── sprites/             # Sprites for sheet generation
+│   ├── sounds/              # Audio files
+│   └── fonts/               # Custom fonts
+├── docs/                    # Documentation
+│   ├── DEVELOPER_GUIDE.md   # Development guide
+│   ├── GIT_STRATEGY.md      # Git workflow
+│   ├── API.md               # API documentation
+│   └── ARCHITECTURE.md      # System architecture
+├── dist/                    # Compiled TypeScript
+├── tsconfig.json           # TypeScript config
+├── webpack.config.js       # Webpack config
+└── package.json           # Dependencies
 ```
 
-## 🔧 Yapılandırma
+### Live Reload
 
-### Port Değiştirme
+When you edit any `.html`, `.js`, `.ts`, or `.css` file:
+1. Server automatically detects the change
+2. Sends signal to all connected devices
+3. Pages automatically reload
 
-Farklı bir port kullanmak için:
+### Creating New Features
+
+**Server-side:**
+```typescript
+// src/server/controllers/MyController.ts
+export class MyController {
+  public myRoute(req: Request, res: Response): void {
+    res.json({ message: 'Hello World' });
+  }
+}
+```
+
+**Game scene:**
+```typescript
+// src/game/scenes/MyScene.ts
+import Phaser from 'phaser';
+
+export class MyScene extends Phaser.Scene {
+  create(): void {
+    // Your game logic
+  }
+}
+```
+
+## 🔧 Configuration
+
+### Change Port
+
+To use a different port:
 
 ```bash
 PORT=8080 npm start
 ```
 
-### Ağ Ayarları
+### Network Settings
 
-Sunucu otomatik olarak yerel IP adresinizi algılar. Manuel olarak değiştirmek isterseniz `server.js` dosyasındaki `getLocalIP()` fonksiyonunu düzenleyin.
+The server automatically detects your local IP address. To manually change it, edit the `getLocalIP()` function in `src/server/index.ts`.
+
+### TypeScript Configuration
+
+TypeScript settings are in `tsconfig.json`. Key options:
+- Strict mode enabled
+- ES2020 target
+- Path aliases (`@/`, `@server/`, `@game/`, `@shared/`)
+
+### ESLint & Prettier
+
+Code quality tools are configured in:
+- `.eslintrc.json` - Linting rules
+- `.prettierrc` - Code formatting
 
 ## 📊 Dashboard Özellikleri
 
@@ -149,35 +216,91 @@ Dashboard şunları sağlar:
 1. ✅ Port 3000 başka bir uygulama tarafından kullanılıyor mu?
 2. ✅ Tarayıcı WebSocket'i destekliyor mu?
 
-## 🚀 İleri Seviye
+## 🚀 Advanced
 
-### Farklı Oyun Ekleme
+### Adding a New Game
 
-Yeni bir oyun dosyası oluşturup `server.js`'de route ekleyebilirsiniz:
+Create a new Phaser scene:
 
-```javascript
-app.get('/mygame', (req, res) => {
-    res.sendFile(path.join(__dirname, 'mygame.html'));
-});
+```typescript
+// src/game/scenes/MyGameScene.ts
+import Phaser from 'phaser';
+
+export class MyGameScene extends Phaser.Scene {
+  constructor() {
+    super({ key: 'MyGameScene' });
+  }
+
+  create(): void {
+    // Your game logic
+  }
+}
 ```
 
-### CSS Stilleri Özelleştirme
+Register in `src/game/index.ts`:
 
-`game.html` içindeki `<style>` bölümünü düzenleyerek görünümü değiştirebilirsiniz.
+```typescript
+const config: Phaser.Types.Core.GameConfig = {
+  scenes: [MenuScene, MainScene, MyGameScene]
+};
+```
 
-### Performans İyileştirme
+### Asset Pipeline
 
-- Canvas boyutunu optimize edin
-- Oyun döngüsünü optimize edin
-- Gereksiz render'ları önleyin
+Place sprites in `assets/sprites/`:
+```
+assets/sprites/
+├── player.png
+├── enemy1.png
+└── coin.png
+```
 
-## 📝 Lisans
+Generate sprite sheet:
+```bash
+npm run sprites
+```
 
-MIT License - İstediğiniz gibi kullanabilirsiniz!
+Output:
+- `public/images/spritesheet.png`
+- `src/game/styles/sprites.css`
 
-## 🤝 Katkıda Bulunma
+### Performance Optimization
 
-Her türlü katkı ve öneri için pull request açabilirsiniz.
+**Server:**
+- Enable compression
+- Use caching for static files
+- Minimize WebSocket broadcasts
+
+**Game:**
+- Use object pooling
+- Optimize sprite sizes
+- Use sprite sheets
+- Enable Phaser physics only when needed
+
+## 📚 Documentation
+
+- [Developer Guide](docs/DEVELOPER_GUIDE.md) - Complete development guide
+- [Git Strategy](docs/GIT_STRATEGY.md) - Branching and commit workflow
+- [API Documentation](docs/API.md) - REST and WebSocket API
+- [Architecture](docs/ARCHITECTURE.md) - System design and architecture
+
+## 🧪 Technology Stack
+
+- **Language:** TypeScript
+- **Server:** Node.js + Express
+- **Game Engine:** Phaser 3
+- **WebSocket:** ws library
+- **Build Tools:** TypeScript Compiler, Webpack
+- **Code Quality:** ESLint, Prettier
+- **Asset Pipeline:** webpack-spritesmith
+
+## 📝 License
+
+MIT License - Use as you wish!
+
+## 🤝 Contributing
+
+Contributions and suggestions are welcome! Please follow the [Git Strategy](docs/GIT_STRATEGY.md) guide.
 
 ## 💡 İpuçları
 
