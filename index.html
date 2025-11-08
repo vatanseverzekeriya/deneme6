@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional RPG Games - Portfolio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0612 0%, #1e0a3c 50%, #2d1b69 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 48px;
+            background: linear-gradient(90deg, #a855f7, #ec4899, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+        }
+
+        .subtitle {
+            font-size: 20px;
+            color: #c084fc;
+            opacity: 0.9;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .game-card {
+            background: rgba(168, 85, 247, 0.1);
+            border: 2px solid rgba(168, 85, 247, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(168, 85, 247, 0.1),
+                transparent
+            );
+            transform: rotate(45deg);
+            transition: all 0.6s;
+        }
+
+        .game-card:hover::before {
+            left: 100%;
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px);
+            border-color: #a855f7;
+            box-shadow: 0 20px 60px rgba(168, 85, 247, 0.4);
+        }
+
+        .game-icon {
+            font-size: 64px;
+            text-align: center;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.6));
+        }
+
+        .game-title {
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 15px;
+            color: #e9d5ff;
+        }
+
+        .game-description {
+            font-size: 16px;
+            color: #c084fc;
+            text-align: center;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .game-features {
+            list-style: none;
+            margin: 20px 0;
+            padding: 0;
+        }
+
+        .game-features li {
+            padding: 8px 0;
+            color: #d8b4fe;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .game-features li::before {
+            content: '⚡';
+            font-size: 16px;
+        }
+
+        .play-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+        }
+
+        .play-btn:hover {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            box-shadow: 0 6px 25px rgba(168, 85, 247, 0.6);
+            transform: scale(1.05);
+        }
+
+        .play-btn:active {
+            transform: scale(0.98);
+        }
+
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #78350f;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .new-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 20px 10px rgba(239, 68, 68, 0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            padding: 20px;
+            color: #c084fc;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 32px;
+            }
+
+            .subtitle {
+                font-size: 16px;
+            }
+
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .game-card {
+                padding: 20px;
+            }
+
+            .game-icon {
+                font-size: 48px;
+            }
+
+            .game-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚔️ PROFESSIONAL RPG GAMES ⚔️</h1>
+            <p class="subtitle">Experience High-Quality Game Assets & Animations</p>
+        </header>
+
+        <div class="games-grid">
+            <!-- Wizard's Quest - NEW! -->
+            <div class="game-card" onclick="location.href='wizard-rpg.html'">
+                <div class="new-badge">🔥 NEW!</div>
+                <div class="game-icon">🧙‍♂️</div>
+                <h2 class="game-title">WIZARD'S QUEST</h2>
+                <p class="game-description">
+                    Professional pixel-art RPG featuring a powerful wizard with stunning spell effects and professionally crafted enemy sprites.
+                </p>
+                <ul class="game-features">
+                    <li>Hand-crafted Wizard sprite with multiple animations</li>
+                    <li>Professional enemy designs (Goblin, Skeleton, Dragon)</li>
+                    <li>Advanced particle system for spell effects</li>
+                    <li>Fireball, Lightning, Frost Nova & Heal spells</li>
+                    <li>Smooth animations and combat system</li>
+                    <li>Level progression with XP system</li>
+                </ul>
+                <button class="play-btn">⚡ PLAY NOW ⚡</button>
+                <div class="badge">AAA Quality Assets</div>
+            </div>
+
+            <!-- Metin2 Style RPG -->
+            <div class="game-card" onclick="location.href='metin2-style.html'">
+                <div class="game-icon">⚔️</div>
+                <h2 class="game-title">METIN2 STYLE RPG</h2>
+                <p class="game-description">
+                    Classic MMORPG experience with character classes, skill system, and mobile controls.
+                </p>
+                <ul class="game-features">
+                    <li>4 Character Classes (Warrior, Ninja, Shaman, Sura)</li>
+                    <li>Unique skill system for each class</li>
+                    <li>Mobile-optimized controls with joystick</li>
+                    <li>Progressive enemy difficulty</li>
+                    <li>Loot and inventory system</li>
+                    <li>Level-up progression</li>
+                </ul>
+                <button class="play-btn">🎮 PLAY GAME</button>
+                <div class="badge">Classic RPG</div>
+            </div>
+
+            <!-- Simple Mobile Game -->
+            <div class="game-card" onclick="location.href='game.html'">
+                <div class="game-icon">🎮</div>
+                <h2 class="game-title">MOBILE ADVENTURE</h2>
+                <p class="game-description">
+                    Simple and fun mobile game with touch controls and smooth gameplay.
+                </p>
+                <ul class="game-features">
+                    <li>Touch-friendly controls</li>
+                    <li>Simple gameplay mechanics</li>
+                    <li>Score tracking</li>
+                    <li>Responsive design</li>
+                </ul>
+                <button class="play-btn">🕹️ PLAY GAME</button>
+                <div class="badge">Casual</div>
+            </div>
+        </div>
+
+        <footer>
+            <p>🎨 All assets and sprites are professionally designed and optimized for performance</p>
+            <p style="margin-top: 10px;">Made with ❤️ using HTML5 Canvas & JavaScript</p>
+        </footer>
+    </div>
+</body>
+</html>

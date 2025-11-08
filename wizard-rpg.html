@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Wizard's Quest - Professional RPG</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #0a0612;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            touch-action: none;
+            color: white;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        /* Professional HUD */
+        #hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .hud-container {
+            background: linear-gradient(180deg, rgba(10, 6, 18, 0.95) 0%, rgba(10, 6, 18, 0.7) 100%);
+            border-bottom: 3px solid rgba(147, 51, 234, 0.5);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            padding: 15px 20px;
+        }
+
+        .player-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .player-avatar {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+            border: 3px solid #c084fc;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
+        }
+
+        .player-info {
+            flex: 1;
+        }
+
+        .player-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #e9d5ff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            margin-bottom: 5px;
+        }
+
+        .stat-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .stat-bar {
+            position: relative;
+            height: 22px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .stat-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hp-fill {
+            background: linear-gradient(90deg, #dc2626 0%, #ef4444 50%, #f87171 100%);
+            box-shadow: inset 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        .mp-fill {
+            background: linear-gradient(90deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
+            box-shadow: inset 0 0 10px rgba(0, 100, 255, 0.5);
+        }
+
+        .xp-fill {
+            background: linear-gradient(90deg, #ca8a04 0%, #eab308 50%, #facc15 100%);
+            box-shadow: inset 0 0 10px rgba(234, 179, 8, 0.5);
+        }
+
+        .stat-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            line-height: 18px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
+            z-index: 1;
+        }
+
+        .level-badge {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            border: 2px solid #fcd34d;
+            border-radius: 6px;
+            padding: 5px 12px;
+            font-weight: bold;
+            font-size: 14px;
+            color: #78350f;
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.6);
+            white-space: nowrap;
+        }
+
+        /* Skills Bar */
+        #skills {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            pointer-events: auto;
+            z-index: 100;
+        }
+
+        .skill-slot {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, rgba(88, 28, 135, 0.9) 0%, rgba(109, 40, 217, 0.9) 100%);
+            border: 3px solid rgba(168, 85, 247, 0.6);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .skill-slot:hover {
+            transform: translateY(-5px);
+            border-color: #c084fc;
+            box-shadow: 0 6px 25px rgba(168, 85, 247, 0.8);
+        }
+
+        .skill-slot:active {
+            transform: translateY(-2px);
+        }
+
+        .skill-slot.cooldown {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .skill-icon {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+
+        .skill-key {
+            position: absolute;
+            bottom: 4px;
+            right: 6px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #fbbf24;
+        }
+
+        .skill-cooldown {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .skill-mana-cost {
+            position: absolute;
+            top: 4px;
+            left: 6px;
+            background: rgba(37, 99, 235, 0.9);
+            border-radius: 3px;
+            padding: 2px 5px;
+            font-size: 9px;
+            font-weight: bold;
+            color: white;
+        }
+
+        /* Joystick */
+        #joystick {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 140px;
+            height: 140px;
+            pointer-events: auto;
+            z-index: 100;
+        }
+
+        .joystick-base {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, rgba(88, 28, 135, 0.3) 100%);
+            border: 4px solid rgba(168, 85, 247, 0.4);
+            position: relative;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .joystick-stick {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+            border: 3px solid #c084fc;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.6);
+        }
+
+        /* Damage Numbers */
+        .damage-number {
+            position: fixed;
+            font-weight: bold;
+            font-size: 28px;
+            pointer-events: none;
+            animation: floatUp 1.2s ease-out forwards;
+            text-shadow: 2px 2px 6px black, -1px -1px 2px black;
+            z-index: 200;
+            font-family: 'Impact', sans-serif;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-40px) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-120px) scale(0.8);
+            }
+        }
+
+        /* Notifications */
+        #notification {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, rgba(88, 28, 135, 0.95) 0%, rgba(109, 40, 217, 0.95) 100%);
+            border: 3px solid #c084fc;
+            border-radius: 12px;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+            display: none;
+            z-index: 300;
+            animation: slideDown 0.3s;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        @keyframes slideDown {
+            from {
+                top: -100px;
+                opacity: 0;
+            }
+            to {
+                top: 100px;
+                opacity: 1;
+            }
+        }
+
+        /* Loading Screen */
+        #loading {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #0a0612 0%, #1e0a3c 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        #loading.hidden {
+            display: none;
+        }
+
+        .loading-title {
+            font-size: 48px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #a855f7, #ec4899, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% {
+                filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.8));
+            }
+            50% {
+                filter: drop-shadow(0 0 40px rgba(168, 85, 247, 1));
+            }
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(168, 85, 247, 0.2);
+            border-top-color: #a855f7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .player-header {
+                flex-direction: row;
+            }
+
+            .loading-title {
+                font-size: 32px;
+            }
+
+            .skill-slot {
+                width: 60px;
+                height: 60px;
+            }
+
+            .skill-icon {
+                font-size: 26px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading">
+        <div class="loading-title">⚡ WIZARD'S QUEST ⚡</div>
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div class="hud-container">
+            <div class="player-header">
+                <div class="player-avatar">🧙‍♂️</div>
+                <div class="player-info">
+                    <div class="player-name">ARCHMAGE WIZARD</div>
+                    <div class="stat-bars">
+                        <div class="stat-bar">
+                            <div class="stat-fill hp-fill" id="hpBar" style="width: 100%"></div>
+                            <div class="stat-text" id="hpText">HP: 100/100</div>
+                        </div>
+                        <div class="stat-bar">
+                            <div class="stat-fill mp-fill" id="mpBar" style="width: 100%"></div>
+                            <div class="stat-text" id="mpText">MP: 150/150</div>
+                        </div>
+                        <div class="stat-bar">
+                            <div class="stat-fill xp-fill" id="xpBar" style="width: 0%"></div>
+                            <div class="stat-text" id="xpText">XP: 0/100</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="level-badge" id="levelBadge">LVL 1</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skills -->
+    <div id="skills">
+        <div class="skill-slot" onclick="game.useSkill(0)">
+            <div class="skill-icon">🔥</div>
+            <div class="skill-key">Q</div>
+            <div class="skill-mana-cost">15</div>
+        </div>
+        <div class="skill-slot" onclick="game.useSkill(1)">
+            <div class="skill-icon">⚡</div>
+            <div class="skill-key">W</div>
+            <div class="skill-mana-cost">25</div>
+        </div>
+        <div class="skill-slot" onclick="game.useSkill(2)">
+            <div class="skill-icon">❄️</div>
+            <div class="skill-key">E</div>
+            <div class="skill-mana-cost">20</div>
+        </div>
+        <div class="skill-slot" onclick="game.useSkill(3)">
+            <div class="skill-icon">💚</div>
+            <div class="skill-key">R</div>
+            <div class="skill-mana-cost">30</div>
+        </div>
+    </div>
+
+    <!-- Joystick -->
+    <div id="joystick">
+        <div class="joystick-base">
+            <div class="joystick-stick" id="joystickStick"></div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification"></div>
+
+    <script src="wizard-game.js"></script>
+
+    <script>
+        // Live reload
+        if (typeof WebSocket !== 'undefined') {
+            const ws = new WebSocket('ws://' + window.location.host);
+            ws.onmessage = function(event) {
+                if (event.data === 'reload') {
+                    window.location.reload();
+                }
+            };
+        }
+    </script>
+</body>
+</html>
