@@ -91,12 +91,210 @@ class Game {
         this.joystickAngle = 0;
         this.joystickPower = 0;
 
+        // Audio system
+        this.audioContext = null;
+        this.isMuted = false;
+        this.initAudioSystem();
+
+        // Combat enhancements
+        this.comboCount = 0;
+        this.lastHitTime = 0;
+        this.comboTimeout = null;
+
+        // Daily engagement
+        this.dailyQuests = [];
+        this.achievements = [];
+        this.loginReward = null;
+        this.initDailyEngagement();
+
         this.setupControls();
     }
 
     resizeCanvas() {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
+    }
+
+    // Audio System
+    initAudioSystem() {
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch(e) {
+            console.warn('Audio not supported');
+        }
+    }
+
+    playSound(type) {
+        if (!this.audioContext || this.isMuted) return;
+
+        const ctx = this.audioContext;
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        switch(type) {
+            case 'hit':
+                oscillator.frequency.value = 200;
+                gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + 0.1);
+                break;
+            case 'skill':
+                oscillator.frequency.value = 400;
+                gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + 0.3);
+                break;
+            case 'levelup':
+                oscillator.frequency.value = 523;
+                gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + 0.5);
+                setTimeout(() => {
+                    const osc2 = ctx.createOscillator();
+                    const gain2 = ctx.createGain();
+                    osc2.connect(gain2);
+                    gain2.connect(ctx.destination);
+                    osc2.frequency.value = 659;
+                    gain2.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                    osc2.start(ctx.currentTime);
+                    osc2.stop(ctx.currentTime + 0.5);
+                }, 150);
+                break;
+            case 'pickup':
+                oscillator.frequency.value = 800;
+                gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + 0.2);
+                break;
+            case 'damage':
+                oscillator.frequency.value = 100;
+                gainNode.gain.setValueAtTime(0.4, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + 0.15);
+                break;
+            case 'death':
+                oscillator.frequency.value = 150;
+                gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + 0.4);
+                break;
+            case 'combo':
+                oscillator.frequency.value = 600 + (this.comboCount * 50);
+                gainNode.gain.setValueAtTime(0.25, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + 0.2);
+                break;
+        }
+    }
+
+    // Daily Engagement System
+    initDailyEngagement() {
+        const today = new Date().toDateString();
+        const savedData = localStorage.getItem('rpg_daily_data');
+
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            if (data.lastLogin !== today) {
+                // New day - reset quests and give login reward
+                this.generateDailyQuests();
+                this.giveLoginReward();
+                this.saveDailyData(today);
+            } else {
+                // Same day - load existing quests
+                this.dailyQuests = data.quests || [];
+                this.achievements = data.achievements || [];
+            }
+        } else {
+            // First time
+            this.generateDailyQuests();
+            this.giveLoginReward();
+            this.saveDailyData(today);
+        }
+
+        this.loadAchievements();
+    }
+
+    generateDailyQuests() {
+        this.dailyQuests = [
+            { id: 1, name: 'Canavar Avcısı', desc: 'Türe göre 10 canavar öldür', target: 10, progress: 0, reward: 100, type: 'kill' },
+            { id: 2, name: 'Seviye Atlama', desc: '2 seviye atla', target: 2, progress: 0, reward: 150, type: 'level' },
+            { id: 3, name: 'Altın Toplayıcı', desc: '200 altın topla', target: 200, progress: 0, reward: 50, type: 'gold' }
+        ];
+    }
+
+    giveLoginReward() {
+        const rewards = [
+            { name: 'Can İksiri', icon: '❤️', type: 'potion', heal: 50 },
+            { name: 'Mana İksiri', icon: '💙', type: 'potion', mana: 50 },
+            { name: 'Altın', icon: '💰', type: 'gold', value: 50 }
+        ];
+        this.loginReward = rewards[Math.floor(Math.random() * rewards.length)];
+        this.showNotification(`🎁 Giriş Ödülü: ${this.loginReward.icon} ${this.loginReward.name}`);
+    }
+
+    saveDailyData(date) {
+        const data = {
+            lastLogin: date,
+            quests: this.dailyQuests,
+            achievements: this.achievements
+        };
+        localStorage.setItem('rpg_daily_data', JSON.stringify(data));
+    }
+
+    updateQuestProgress(type, amount = 1) {
+        this.dailyQuests.forEach(quest => {
+            if (quest.type === type && quest.progress < quest.target) {
+                quest.progress += amount;
+                if (quest.progress >= quest.target) {
+                    this.completeQuest(quest);
+                }
+            }
+        });
+        this.saveDailyData(new Date().toDateString());
+    }
+
+    completeQuest(quest) {
+        this.showNotification(`✅ Görev Tamamlandı: ${quest.name} (+${quest.reward} Altın)`);
+        if (this.player) {
+            this.player.gold += quest.reward;
+        }
+        this.playSound('levelup');
+    }
+
+    loadAchievements() {
+        const savedAchievements = localStorage.getItem('rpg_achievements');
+        if (savedAchievements) {
+            this.achievements = JSON.parse(savedAchievements);
+        } else {
+            this.achievements = [
+                { id: 1, name: 'İlk Kan', desc: 'İlk canavarı öldür', unlocked: false },
+                { id: 2, name: 'Acemi Savaşçı', desc: 'Seviye 5e ulaş', unlocked: false },
+                { id: 3, name: 'Usta Savaşçı', desc: 'Seviye 10a ulaş', unlocked: false },
+                { id: 4, name: 'Kombo Ustası', desc: '5 kombo yap', unlocked: false },
+                { id: 5, name: 'Hazine Avcısı', desc: '1000 altın topla', unlocked: false }
+            ];
+        }
+    }
+
+    unlockAchievement(id) {
+        const achievement = this.achievements.find(a => a.id === id);
+        if (achievement && !achievement.unlocked) {
+            achievement.unlocked = true;
+            this.showNotification(`🏆 Başarım Kazanıldı: ${achievement.name}`);
+            this.playSound('levelup');
+            localStorage.setItem('rpg_achievements', JSON.stringify(this.achievements));
+        }
     }
 
     selectCharacter(className) {
@@ -122,11 +320,17 @@ class Game {
             damage: classData.baseDamage,
             defense: classData.baseDefense,
 
+            // Advanced combat stats
+            critChance: 0.15,  // 15% crit chance
+            critDamage: 2.0,   // 2x damage on crit
+            dodgeChance: 0.10, // 10% dodge chance
+
             speed: 3,
             skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
 
             gold: 0,
-            attackCooldown: 0
+            attackCooldown: 0,
+            totalKills: 0
         };
 
         this.updateHUD();
@@ -266,13 +470,24 @@ class Game {
         this.player.mp -= skill.mpCost;
         skill.cooldownRemaining = skill.cooldown;
 
+        // Play skill sound
+        this.playSound('skill');
+
         // Skill effects
         if (skill.damage) {
             const nearestMob = this.findNearestMob();
             if (nearestMob) {
                 const distance = this.getDistance(this.player, nearestMob);
                 if (distance < 300) {
-                    this.damageEnemy(nearestMob, skill.damage + this.player.damage);
+                    // Critical hit chance
+                    const isCrit = Math.random() < this.player.critChance;
+                    let totalDamage = skill.damage + this.player.damage;
+                    if (isCrit) {
+                        totalDamage *= this.player.critDamage;
+                        this.showDamage(nearestMob.x, nearestMob.y - 20, totalDamage, true);
+                    }
+
+                    this.damageEnemy(nearestMob, totalDamage, isCrit);
 
                     if (skill.lifesteal) {
                         this.player.hp = Math.min(
@@ -286,6 +501,7 @@ class Game {
 
         if (skill.heal) {
             this.player.hp = Math.min(this.player.maxHP, this.player.hp + skill.heal);
+            this.playSound('pickup');
         }
 
         this.updateHUD();
@@ -334,9 +550,38 @@ class Game {
         return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
     }
 
-    damageEnemy(enemy, damage) {
+    damageEnemy(enemy, damage, isCrit = false) {
         enemy.hp -= damage;
-        this.showDamage(enemy.x, enemy.y, damage);
+
+        if (!isCrit) {
+            this.showDamage(enemy.x, enemy.y, damage, false);
+        }
+
+        // Combo system
+        const now = Date.now();
+        if (now - this.lastHitTime < 2000) {
+            this.comboCount++;
+            if (this.comboCount >= 3) {
+                this.showComboText(this.comboCount);
+                this.playSound('combo');
+
+                // Check combo achievement
+                if (this.comboCount >= 5) {
+                    this.unlockAchievement(4);
+                }
+            }
+        } else {
+            this.comboCount = 1;
+        }
+        this.lastHitTime = now;
+
+        // Reset combo after 2 seconds
+        if (this.comboTimeout) clearTimeout(this.comboTimeout);
+        this.comboTimeout = setTimeout(() => {
+            this.comboCount = 0;
+        }, 2000);
+
+        this.playSound('hit');
 
         if (enemy.hp <= 0) {
             this.killEnemy(enemy);
@@ -347,6 +592,18 @@ class Game {
         const index = this.mobs.indexOf(enemy);
         if (index > -1) {
             this.mobs.splice(index, 1);
+        }
+
+        // Play death sound
+        this.playSound('death');
+
+        // Track kills and quests
+        this.player.totalKills++;
+        this.updateQuestProgress('kill', 1);
+
+        // Check achievements
+        if (this.player.totalKills === 1) {
+            this.unlockAchievement(1); // First blood
         }
 
         // XP
@@ -384,20 +641,73 @@ class Game {
         this.player.damage += 3;
         this.player.defense += 2;
 
+        // Slightly increase crit and dodge chance on level up
+        this.player.critChance = Math.min(0.5, this.player.critChance + 0.01);
+        this.player.dodgeChance = Math.min(0.3, this.player.dodgeChance + 0.005);
+
+        this.playSound('levelup');
         this.showNotification('🎉 LEVEL UP! ' + this.player.level);
+
+        // Update quest progress
+        this.updateQuestProgress('level', 1);
+
+        // Check achievements
+        if (this.player.level === 5) {
+            this.unlockAchievement(2);
+        }
+        if (this.player.level === 10) {
+            this.unlockAchievement(3);
+        }
+
         this.updateHUD();
     }
 
-    showDamage(x, y, damage) {
+    showDamage(x, y, damage, isCrit = false) {
         const dmg = document.createElement('div');
         dmg.className = 'damage-number';
-        dmg.textContent = '-' + damage;
+        dmg.textContent = '-' + Math.floor(damage);
         dmg.style.left = x + 'px';
         dmg.style.top = y + 'px';
-        dmg.style.color = '#ff4444';
-        document.body.appendChild(dmg);
 
+        if (isCrit) {
+            dmg.style.color = '#ffd700';
+            dmg.style.fontSize = '32px';
+            dmg.style.fontWeight = 'bold';
+            dmg.textContent = 'CRIT! -' + Math.floor(damage);
+        } else {
+            dmg.style.color = '#ff4444';
+        }
+
+        document.body.appendChild(dmg);
         setTimeout(() => dmg.remove(), 1000);
+    }
+
+    showComboText(combo) {
+        const comboText = document.createElement('div');
+        comboText.className = 'damage-number';
+        comboText.textContent = `${combo}x COMBO!`;
+        comboText.style.left = (this.canvas.width / 2) + 'px';
+        comboText.style.top = '200px';
+        comboText.style.color = '#00ff00';
+        comboText.style.fontSize = '28px';
+        comboText.style.fontWeight = 'bold';
+        document.body.appendChild(comboText);
+
+        setTimeout(() => comboText.remove(), 1000);
+    }
+
+    showDodgeText() {
+        const dodgeText = document.createElement('div');
+        dodgeText.className = 'damage-number';
+        dodgeText.textContent = 'DODGE!';
+        dodgeText.style.left = this.player.x + 'px';
+        dodgeText.style.top = (this.player.y - 50) + 'px';
+        dodgeText.style.color = '#00ffff';
+        dodgeText.style.fontSize = '24px';
+        dodgeText.style.fontWeight = 'bold';
+        document.body.appendChild(dodgeText);
+
+        setTimeout(() => dodgeText.remove(), 1000);
     }
 
     showNotification(text) {
@@ -416,15 +726,33 @@ class Game {
             this.drops.splice(index, 1);
         }
 
-        // Add to inventory
-        for (let i = 0; i < this.inventory.length; i++) {
-            if (!this.inventory[i]) {
-                this.inventory[i] = drop;
-                this.updateInventory();
-                this.showNotification(`+1 ${drop.name} ${drop.icon}`);
-                break;
+        // Play pickup sound
+        this.playSound('pickup');
+
+        // Handle gold separately
+        if (drop.type === 'gold') {
+            const goldAmount = drop.value || 10;
+            this.player.gold += goldAmount;
+            this.updateQuestProgress('gold', goldAmount);
+            this.showNotification(`+${goldAmount} Altın 💰`);
+
+            // Check gold achievement
+            if (this.player.gold >= 1000) {
+                this.unlockAchievement(5);
+            }
+        } else {
+            // Add to inventory
+            for (let i = 0; i < this.inventory.length; i++) {
+                if (!this.inventory[i]) {
+                    this.inventory[i] = drop;
+                    this.updateInventory();
+                    this.showNotification(`+1 ${drop.name} ${drop.icon}`);
+                    break;
+                }
             }
         }
+
+        this.updateHUD();
     }
 
     useItem(slot) {
@@ -496,15 +824,24 @@ class Game {
                 // Attack player
                 if (dist < 50) {
                     if (mob.targetCooldown <= 0) {
-                        const damage = Math.max(1, mob.damage - this.player.defense);
-                        this.player.hp -= damage;
-                        this.showDamage(this.player.x, this.player.y - 40, damage);
-                        mob.targetCooldown = 1000;
+                        // Check dodge
+                        const isDodged = Math.random() < this.player.dodgeChance;
 
-                        if (this.player.hp <= 0) {
-                            this.gameOver();
+                        if (isDodged) {
+                            this.showDodgeText();
+                            this.playSound('skill');
+                        } else {
+                            const damage = Math.max(1, mob.damage - this.player.defense);
+                            this.player.hp -= damage;
+                            this.showDamage(this.player.x, this.player.y - 40, damage);
+                            this.playSound('damage');
+
+                            if (this.player.hp <= 0) {
+                                this.gameOver();
+                            }
                         }
 
+                        mob.targetCooldown = 1000;
                         this.updateHUD();
                     }
                 }
@@ -616,6 +953,8 @@ class Game {
 
         document.getElementById('playerName').textContent = this.player.name;
         document.getElementById('playerLevel').textContent = `Seviye: ${this.player.level}`;
+        document.getElementById('playerGold').textContent = `💰 ${this.player.gold}`;
+        document.getElementById('playerKills').textContent = `⚔️ ${this.player.totalKills}`;
 
         const hpPercent = (this.player.hp / this.player.maxHP) * 100;
         const mpPercent = (this.player.mp / this.player.maxMP) * 100;
@@ -634,7 +973,10 @@ class Game {
     }
 
     gameOver() {
-        alert('😵 Öldün!\n\nSeviye: ' + this.player.level + '\nXP: ' + this.player.xp);
+        // Save score to leaderboard
+        this.saveToLeaderboard();
+
+        alert('😵 Öldün!\n\nSeviye: ' + this.player.level + '\nXP: ' + this.player.xp + '\nAltın: ' + this.player.gold);
         window.location.reload();
     }
 
@@ -642,6 +984,167 @@ class Game {
         this.update();
         this.draw();
         requestAnimationFrame(() => this.gameLoop());
+    }
+
+    // UI Methods
+    togglePanel(panelName) {
+        const panel = document.getElementById(panelName + 'Panel');
+        if (!panel) return;
+
+        const isActive = panel.classList.contains('active');
+
+        // Close all panels first
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+
+        if (!isActive) {
+            panel.classList.add('active');
+
+            // Update panel content
+            if (panelName === 'quests') {
+                this.updateQuestsUI();
+            } else if (panelName === 'achievements') {
+                this.updateAchievementsUI();
+            } else if (panelName === 'leaderboard') {
+                this.updateLeaderboardUI();
+            }
+        }
+    }
+
+    toggleSound() {
+        this.isMuted = !this.isMuted;
+        const btn = document.querySelector('.menu-btn[title="Ses"]');
+        if (btn) {
+            btn.textContent = this.isMuted ? '🔇' : '🔊';
+        }
+    }
+
+    updateQuestsUI() {
+        const container = document.getElementById('questsList');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        this.dailyQuests.forEach(quest => {
+            const progress = Math.min(quest.progress, quest.target);
+            const percent = (progress / quest.target) * 100;
+            const isCompleted = progress >= quest.target;
+
+            const div = document.createElement('div');
+            div.className = 'quest-item' + (isCompleted ? ' completed' : '');
+            div.innerHTML = `
+                <div class="quest-name">${quest.name}</div>
+                <div class="quest-desc">${quest.desc} - Ödül: ${quest.reward} Altın</div>
+                <div class="quest-progress">
+                    <div class="quest-progress-bar" style="width: ${percent}%"></div>
+                    <div class="quest-progress-text">${progress} / ${quest.target}</div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    updateAchievementsUI() {
+        const container = document.getElementById('achievementsList');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        this.achievements.forEach(achievement => {
+            const div = document.createElement('div');
+            div.className = 'achievement-item' + (achievement.unlocked ? ' unlocked' : '');
+            div.innerHTML = `
+                <div class="achievement-icon">${achievement.unlocked ? '🏆' : '🔒'}</div>
+                <div class="achievement-info">
+                    <div class="achievement-name">${achievement.name}</div>
+                    <div class="achievement-desc">${achievement.desc}</div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    updateLeaderboardUI() {
+        const container = document.getElementById('leaderboardList');
+        if (!container) return;
+
+        const leaderboard = this.getLeaderboard();
+        container.innerHTML = '';
+
+        leaderboard.forEach((entry, index) => {
+            const isCurrentPlayer = this.player && entry.name === this.player.name && entry.level === this.player.level;
+            const div = document.createElement('div');
+            div.className = 'leaderboard-item';
+            if (isCurrentPlayer) {
+                div.style.borderColor = '#ffd700';
+            }
+
+            const rank = index + 1;
+            let rankIcon = '🥉';
+            if (rank === 1) rankIcon = '🥇';
+            else if (rank === 2) rankIcon = '🥈';
+
+            div.innerHTML = `
+                <div class="leaderboard-rank">${rankIcon} #${rank}</div>
+                <div class="leaderboard-info">
+                    <div class="leaderboard-name">${entry.name} ${entry.icon}</div>
+                    <div class="leaderboard-stats">Seviye ${entry.level} • ${entry.kills} Öldürme • ${entry.gold} Altın</div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    saveToLeaderboard() {
+        if (!this.player) return;
+
+        const leaderboard = this.getLeaderboard();
+
+        const entry = {
+            name: this.player.name,
+            icon: this.player.icon,
+            level: this.player.level,
+            kills: this.player.totalKills,
+            gold: this.player.gold,
+            timestamp: Date.now()
+        };
+
+        leaderboard.push(entry);
+        leaderboard.sort((a, b) => {
+            if (b.level !== a.level) return b.level - a.level;
+            if (b.kills !== a.kills) return b.kills - a.kills;
+            return b.gold - a.gold;
+        });
+
+        // Keep top 10
+        const top10 = leaderboard.slice(0, 10);
+        localStorage.setItem('rpg_leaderboard', JSON.stringify(top10));
+    }
+
+    getLeaderboard() {
+        const saved = localStorage.getItem('rpg_leaderboard');
+        return saved ? JSON.parse(saved) : [];
+    }
+
+    shareScore() {
+        if (!this.player) return;
+
+        const text = `🎮 RPG Mobile - Metin2 Style\n\n` +
+                    `${this.player.icon} ${this.player.name}\n` +
+                    `📊 Seviye: ${this.player.level}\n` +
+                    `⚔️ Öldürme: ${this.player.totalKills}\n` +
+                    `💰 Altın: ${this.player.gold}`;
+
+        if (navigator.share) {
+            navigator.share({
+                title: 'RPG Mobile Score',
+                text: text
+            }).catch(() => {});
+        } else {
+            // Fallback - copy to clipboard
+            navigator.clipboard.writeText(text).then(() => {
+                this.showNotification('📋 Skor panoya kopyalandı!');
+            });
+        }
     }
 }
 
