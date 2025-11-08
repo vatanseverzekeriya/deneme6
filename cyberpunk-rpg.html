@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Cyberpunk RPG - Neon City</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+        body {
+            background: #000;
+            font-family: 'Orbitron', monospace;
+            overflow: hidden;
+            touch-action: none;
+            color: #00ffff;
+        }
+
+        #gameScreen {
+            display: none;
+        }
+
+        #gameScreen.active {
+            display: block;
+        }
+
+        /* Character Selection Screen */
+        #charSelect {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #2a0a3e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        #charSelect.hidden {
+            display: none;
+        }
+
+        /* Animated background */
+        #charSelect::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 255, 255, 0.03) 2px,
+                    rgba(0, 255, 255, 0.03) 4px
+                );
+            animation: scan 8s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(40px); }
+        }
+
+        .select-title {
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            text-shadow:
+                0 0 10px #00ffff,
+                0 0 20px #00ffff,
+                0 0 30px #00ffff,
+                0 0 40px #ff00ff;
+            color: #00ffff;
+            letter-spacing: 4px;
+            animation: glow 2s ease-in-out infinite;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes glow {
+            0%, 100% {
+                text-shadow:
+                    0 0 10px #00ffff,
+                    0 0 20px #00ffff,
+                    0 0 30px #00ffff,
+                    0 0 40px #ff00ff;
+            }
+            50% {
+                text-shadow:
+                    0 0 20px #00ffff,
+                    0 0 30px #00ffff,
+                    0 0 40px #00ffff,
+                    0 0 50px #ff00ff,
+                    0 0 60px #ff00ff;
+            }
+        }
+
+        .select-subtitle {
+            font-size: 16px;
+            margin-bottom: 40px;
+            color: #ff00ff;
+            letter-spacing: 2px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            max-width: 700px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .char-card {
+            background: linear-gradient(145deg, rgba(0, 255, 255, 0.1), rgba(255, 0, 255, 0.1));
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            border-radius: 15px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .char-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(45deg, transparent, rgba(0, 255, 255, 0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .char-card:hover::before,
+        .char-card:active::before {
+            transform: translateX(100%);
+        }
+
+        .char-card:hover,
+        .char-card:active {
+            transform: translateY(-5px) scale(1.03);
+            border-color: #00ffff;
+            box-shadow:
+                0 0 20px rgba(0, 255, 255, 0.5),
+                0 0 40px rgba(255, 0, 255, 0.3),
+                inset 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+
+        .char-icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 0 10px #00ffff);
+        }
+
+        .char-name {
+            font-size: 22px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+            letter-spacing: 2px;
+        }
+
+        .char-desc {
+            font-size: 13px;
+            color: #ff00ff;
+            letter-spacing: 1px;
+        }
+
+        .char-stats {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(0, 255, 255, 0.3);
+            font-size: 11px;
+            color: #00ff88;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 5px;
+        }
+
+        /* Game Canvas */
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+        }
+
+        /* HUD */
+        #hud {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .stat-bar {
+            background: linear-gradient(145deg, rgba(0, 0, 0, 0.9), rgba(10, 10, 30, 0.9));
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow:
+                0 0 20px rgba(0, 255, 255, 0.3),
+                inset 0 0 20px rgba(0, 255, 255, 0.1);
+        }
+
+        .player-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #00ffff;
+            text-shadow: 0 0 5px #00ffff;
+        }
+
+        .bar-container {
+            height: 22px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 11px;
+            overflow: hidden;
+            margin-bottom: 6px;
+            position: relative;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bar-fill::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .hp-bar {
+            background: linear-gradient(90deg, #ff0066, #ff3399);
+            box-shadow: 0 0 10px #ff0066;
+        }
+
+        .mp-bar {
+            background: linear-gradient(90deg, #0066ff, #00ccff);
+            box-shadow: 0 0 10px #0066ff;
+        }
+
+        .xp-bar {
+            background: linear-gradient(90deg, #00ff88, #00ffcc);
+            box-shadow: 0 0 10px #00ff88;
+        }
+
+        .bar-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 22px;
+            text-shadow: 1px 1px 3px black;
+            color: #fff;
+        }
+
+        /* Skills */
+        #skills {
+            position: fixed;
+            bottom: 110px;
+            right: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 100;
+        }
+
+        .skill-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 12px;
+            border: 3px solid rgba(0, 255, 255, 0.6);
+            background: linear-gradient(145deg, rgba(0, 50, 100, 0.9), rgba(50, 0, 100, 0.9));
+            color: #00ffff;
+            font-size: 11px;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            pointer-events: auto;
+            position: relative;
+            box-shadow:
+                0 0 15px rgba(0, 255, 255, 0.4),
+                inset 0 0 15px rgba(0, 255, 255, 0.2);
+        }
+
+        .skill-btn:active {
+            transform: scale(0.95);
+            box-shadow:
+                0 0 25px rgba(0, 255, 255, 0.8),
+                0 0 50px rgba(255, 0, 255, 0.6),
+                inset 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        .skill-btn.cooldown {
+            opacity: 0.4;
+            pointer-events: none;
+            border-color: #666;
+        }
+
+        .skill-icon {
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 4px;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        .skill-key {
+            font-size: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 255, 255, 0.4);
+        }
+
+        .cooldown-overlay {
+            position: absolute;
+            inset: 0;
+            border-radius: 9px;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 900;
+            color: #ff0066;
+            text-shadow: 0 0 10px #ff0066;
+        }
+
+        /* Joystick */
+        #joystick {
+            position: fixed;
+            bottom: 25px;
+            left: 25px;
+            width: 130px;
+            height: 130px;
+            pointer-events: auto;
+            z-index: 100;
+        }
+
+        .joystick-base {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, rgba(0, 50, 100, 0.6), rgba(50, 0, 100, 0.6));
+            border: 3px solid rgba(0, 255, 255, 0.5);
+            position: relative;
+            box-shadow:
+                0 0 20px rgba(0, 255, 255, 0.4),
+                inset 0 0 30px rgba(0, 255, 255, 0.2);
+        }
+
+        .joystick-stick {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #00ffff, #00cccc);
+            border: 2px solid rgba(0, 255, 255, 0.8);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s;
+            box-shadow:
+                0 0 20px rgba(0, 255, 255, 0.8),
+                inset 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        /* Inventory */
+        #inventory {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(145deg, rgba(0, 0, 0, 0.9), rgba(10, 10, 30, 0.9));
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            gap: 8px;
+            pointer-events: auto;
+            box-shadow:
+                0 0 20px rgba(0, 255, 255, 0.3),
+                inset 0 0 20px rgba(0, 255, 255, 0.1);
+            z-index: 100;
+        }
+
+        .inv-slot {
+            width: 55px;
+            height: 55px;
+            background: rgba(0, 50, 100, 0.3);
+            border: 2px solid rgba(0, 255, 255, 0.4);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .inv-slot.has-item {
+            border-color: #00ffff;
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow:
+                0 0 15px rgba(0, 255, 255, 0.5),
+                inset 0 0 10px rgba(0, 255, 255, 0.2);
+        }
+
+        .inv-slot:hover {
+            transform: scale(1.05);
+        }
+
+        /* Damage Numbers */
+        .damage-number {
+            position: fixed;
+            font-weight: 900;
+            font-size: 32px;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+            text-shadow:
+                0 0 5px currentColor,
+                2px 2px 4px black;
+            z-index: 1000;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-50px) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-120px) scale(0.8);
+            }
+        }
+
+        /* Loot notification */
+        #lootNotif {
+            position: fixed;
+            top: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(145deg, rgba(0, 0, 0, 0.95), rgba(10, 10, 30, 0.95));
+            border: 2px solid #00ffff;
+            border-radius: 12px;
+            padding: 12px 25px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: slideDown 0.3s;
+            box-shadow:
+                0 0 30px rgba(0, 255, 255, 0.6),
+                inset 0 0 20px rgba(0, 255, 255, 0.2);
+            font-weight: 700;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+            z-index: 1000;
+        }
+
+        @keyframes slideDown {
+            from {
+                top: -50px;
+                opacity: 0;
+            }
+            to {
+                top: 140px;
+                opacity: 1;
+            }
+        }
+
+        /* Live indicator */
+        .live-indicator {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(145deg, #ff0066, #ff3399);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 900;
+            z-index: 1000;
+            border: 2px solid rgba(255, 0, 102, 0.5);
+            box-shadow:
+                0 0 20px rgba(255, 0, 102, 0.6),
+                inset 0 0 10px rgba(255, 255, 255, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow:
+                    0 0 20px rgba(255, 0, 102, 0.6),
+                    inset 0 0 10px rgba(255, 255, 255, 0.3);
+            }
+            50% {
+                box-shadow:
+                    0 0 30px rgba(255, 0, 102, 1),
+                    inset 0 0 15px rgba(255, 255, 255, 0.5);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .char-grid {
+                grid-template-columns: 1fr;
+                max-width: 400px;
+            }
+
+            .select-title {
+                font-size: 32px;
+            }
+
+            .select-subtitle {
+                font-size: 13px;
+            }
+
+            .char-card {
+                padding: 20px;
+            }
+        }
+
+        /* Glitch effect for title */
+        .glitch {
+            position: relative;
+        }
+
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0.8;
+        }
+
+        .glitch::before {
+            animation: glitch-1 0.3s infinite;
+            color: #00ffff;
+            z-index: -1;
+        }
+
+        .glitch::after {
+            animation: glitch-2 0.3s infinite;
+            color: #ff00ff;
+            z-index: -2;
+        }
+
+        @keyframes glitch-1 {
+            0%, 100% {
+                transform: translate(0);
+            }
+            33% {
+                transform: translate(-2px, 2px);
+            }
+            66% {
+                transform: translate(2px, -2px);
+            }
+        }
+
+        @keyframes glitch-2 {
+            0%, 100% {
+                transform: translate(0);
+            }
+            33% {
+                transform: translate(2px, -2px);
+            }
+            66% {
+                transform: translate(-2px, 2px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="live-indicator">🔴 LIVE</div>
+
+    <!-- Character Selection -->
+    <div id="charSelect">
+        <h1 class="select-title glitch" data-text="CYBERPUNK RPG">CYBERPUNK RPG</h1>
+        <div class="select-subtitle">// SELECT YOUR RUNNER //</div>
+        <div class="char-grid">
+            <div class="char-card" onclick="selectCharacter('netrunner')">
+                <div class="char-icon">💻</div>
+                <div class="char-name">NETRUNNER</div>
+                <div class="char-desc">Hacker Specialist</div>
+                <div class="char-stats">
+                    <div>HP: 120</div>
+                    <div>MP: 150</div>
+                    <div>DMG: 18</div>
+                    <div>DEF: 6</div>
+                </div>
+            </div>
+            <div class="char-card" onclick="selectCharacter('street_samurai')">
+                <div class="char-icon">⚔️</div>
+                <div class="char-name">STREET SAMURAI</div>
+                <div class="char-desc">Melee Combat Expert</div>
+                <div class="char-stats">
+                    <div>HP: 160</div>
+                    <div>MP: 80</div>
+                    <div>DMG: 22</div>
+                    <div>DEF: 12</div>
+                </div>
+            </div>
+            <div class="char-card" onclick="selectCharacter('tech_priest')">
+                <div class="char-icon">🔧</div>
+                <div class="char-name">TECH PRIEST</div>
+                <div class="char-desc">Support & Healing</div>
+                <div class="char-stats">
+                    <div>HP: 130</div>
+                    <div>MP: 140</div>
+                    <div>DMG: 16</div>
+                    <div>DEF: 8</div>
+                </div>
+            </div>
+            <div class="char-card" onclick="selectCharacter('corpo_soldier')">
+                <div class="char-icon">🎯</div>
+                <div class="char-name">CORPO SOLDIER</div>
+                <div class="char-desc">Balanced Warfare</div>
+                <div class="char-stats">
+                    <div>HP: 145</div>
+                    <div>MP: 110</div>
+                    <div>DMG: 20</div>
+                    <div>DEF: 10</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- HUD -->
+        <div id="hud">
+            <div class="stat-bar">
+                <div class="player-info">
+                    <span id="playerName">RUNNER</span>
+                    <span id="playerLevel">LEVEL: 1</span>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-fill hp-bar" id="hpBar" style="width: 100%"></div>
+                    <div class="bar-text" id="hpText">HP: 100/100</div>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-fill mp-bar" id="mpBar" style="width: 100%"></div>
+                    <div class="bar-text" id="mpText">MP: 100/100</div>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-fill xp-bar" id="xpBar" style="width: 0%"></div>
+                    <div class="bar-text" id="xpText">XP: 0/100</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skills -->
+        <div id="skills"></div>
+
+        <!-- Joystick -->
+        <div id="joystick">
+            <div class="joystick-base">
+                <div class="joystick-stick" id="joystickStick"></div>
+            </div>
+        </div>
+
+        <!-- Inventory -->
+        <div id="inventory">
+            <div class="inv-slot" id="slot0"></div>
+            <div class="inv-slot" id="slot1"></div>
+            <div class="inv-slot" id="slot2"></div>
+            <div class="inv-slot" id="slot3"></div>
+            <div class="inv-slot" id="slot4"></div>
+        </div>
+
+        <!-- Loot Notification -->
+        <div id="lootNotif"></div>
+    </div>
+
+    <script src="cyberpunk-rpg.js"></script>
+
+    <script>
+        // Live reload
+        if (typeof WebSocket !== 'undefined') {
+            const ws = new WebSocket('ws://' + window.location.host);
+            ws.onmessage = function(event) {
+                if (event.data === 'reload') {
+                    window.location.reload();
+                }
+            };
+        }
+    </script>
+</body>
+</html>

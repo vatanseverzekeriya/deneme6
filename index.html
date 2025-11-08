@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Mobile Game Hub - Oyun Seçimi</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #2a0a3e 100%);
+            font-family: 'Orbitron', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 255, 255, 0.03) 2px,
+                    rgba(0, 255, 255, 0.03) 4px
+                );
+            animation: scan 8s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes scan {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(40px); }
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 56px;
+            font-weight: 900;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #00ffff, #ff00ff, #00ffff);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease infinite, glow 2s ease-in-out infinite;
+            letter-spacing: 3px;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes glow {
+            0%, 100% {
+                filter: drop-shadow(0 0 10px #00ffff) drop-shadow(0 0 20px #ff00ff);
+            }
+            50% {
+                filter: drop-shadow(0 0 20px #00ffff) drop-shadow(0 0 40px #ff00ff);
+            }
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #00ffff;
+            font-size: 16px;
+            margin-bottom: 50px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .game-card {
+            background: linear-gradient(145deg, rgba(0, 50, 100, 0.3), rgba(50, 0, 100, 0.3));
+            border: 2px solid rgba(0, 255, 255, 0.4);
+            border-radius: 20px;
+            padding: 30px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent, rgba(0, 255, 255, 0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .game-card:hover::before {
+            transform: translateX(100%);
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: #00ffff;
+            box-shadow:
+                0 20px 60px rgba(0, 255, 255, 0.3),
+                0 0 40px rgba(255, 0, 255, 0.2),
+                inset 0 0 30px rgba(0, 255, 255, 0.1);
+        }
+
+        .game-card:active {
+            transform: translateY(-5px) scale(0.98);
+        }
+
+        .game-icon {
+            font-size: 72px;
+            text-align: center;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 15px currentColor);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .game-card:nth-child(1) .game-icon { animation-delay: 0s; }
+        .game-card:nth-child(2) .game-icon { animation-delay: 0.5s; }
+        .game-card:nth-child(3) .game-icon { animation-delay: 1s; }
+
+        .game-title {
+            font-size: 28px;
+            font-weight: 900;
+            text-align: center;
+            color: #00ffff;
+            margin-bottom: 12px;
+            text-shadow: 0 0 10px #00ffff;
+            letter-spacing: 2px;
+        }
+
+        .game-description {
+            text-align: center;
+            color: #ff00ff;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        .game-features {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        .game-features li {
+            color: #00ff88;
+            font-size: 13px;
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .game-features li::before {
+            content: '▶';
+            position: absolute;
+            left: 0;
+            color: #00ffff;
+        }
+
+        .play-button {
+            background: linear-gradient(135deg, #00ffff, #00cccc);
+            border: none;
+            color: #000;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 900;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        .play-button:hover {
+            background: linear-gradient(135deg, #ff00ff, #cc00cc);
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.7);
+            transform: scale(1.05);
+        }
+
+        .play-button:active {
+            transform: scale(0.95);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0, 255, 255, 0.3);
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #888;
+            margin-bottom: 3px;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 14px;
+            font-weight: 900;
+            color: #00ffff;
+            text-shadow: 0 0 5px #00ffff;
+        }
+
+        .live-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #ff0066, #ff3399);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 13px;
+            font-weight: 900;
+            z-index: 1000;
+            border: 2px solid rgba(255, 0, 102, 0.5);
+            box-shadow: 0 0 20px rgba(255, 0, 102, 0.6);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(255, 0, 102, 0.6);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(255, 0, 102, 1);
+                transform: scale(1.05);
+            }
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(255, 0, 102, 0.3);
+            color: #ff3399;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 900;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 0, 102, 0.5);
+            letter-spacing: 1px;
+        }
+
+        .badge.new {
+            background: rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+            border-color: rgba(0, 255, 136, 0.5);
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 36px;
+            }
+
+            .subtitle {
+                font-size: 13px;
+            }
+
+            .games-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .game-card {
+                padding: 25px;
+            }
+
+            .game-icon {
+                font-size: 60px;
+            }
+
+            .game-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="live-indicator">🔴 LIVE</div>
+
+    <div class="container">
+        <h1>GAME HUB</h1>
+        <div class="subtitle">// SELECT YOUR ADVENTURE //</div>
+
+        <div class="games-grid">
+            <!-- Classic Mobile Game -->
+            <div class="game-card" onclick="window.location.href='game.html'">
+                <div class="badge">CLASSIC</div>
+                <div class="game-icon">🎮</div>
+                <div class="game-title">DODGE MASTER</div>
+                <div class="game-description">
+                    Klasik kaçınma oyunu. Düşen engelleri atlatın ve en yüksek skoru yapın!
+                </div>
+                <ul class="game-features">
+                    <li>Basit kontroller</li>
+                    <li>Mobil uyumlu</li>
+                    <li>Skor sistemi</li>
+                </ul>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-label">ZORLUK</div>
+                        <div class="stat-value">⭐⭐</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">SÜRE</div>
+                        <div class="stat-value">5-10 dk</div>
+                    </div>
+                </div>
+                <button class="play-button">PLAY NOW</button>
+            </div>
+
+            <!-- Metin2 Style RPG -->
+            <div class="game-card" onclick="window.location.href='metin2-style.html'">
+                <div class="badge">RPG</div>
+                <div class="game-icon">⚔️</div>
+                <div class="game-title">FANTASY QUEST</div>
+                <div class="game-description">
+                    Metin2 tarzı RPG! 4 karakter sınıfı, beceriler, canavar avı ve level atlama.
+                </div>
+                <ul class="game-features">
+                    <li>4 farklı karakter sınıfı</li>
+                    <li>Beceri sistemi (Q, W, E)</li>
+                    <li>Level ve ekipman sistemi</li>
+                    <li>Joystick kontrol</li>
+                </ul>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-label">ZORLUK</div>
+                        <div class="stat-value">⭐⭐⭐⭐</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">SÜRE</div>
+                        <div class="stat-value">∞</div>
+                    </div>
+                </div>
+                <button class="play-button">PLAY NOW</button>
+            </div>
+
+            <!-- Cyberpunk RPG - NEW! -->
+            <div class="game-card" onclick="window.location.href='cyberpunk-rpg.html'">
+                <div class="badge new">🆕 NEW!</div>
+                <div class="game-icon">💻</div>
+                <div class="game-title">CYBERPUNK RPG</div>
+                <div class="game-description">
+                    Profesyonel sprite-based Cyberpunk RPG! 8 yönlü hareket, animasyonlar ve particle efektler.
+                </div>
+                <ul class="game-features">
+                    <li>Profesyonel sprite animasyonları</li>
+                    <li>8 yönlü hareket sistemi</li>
+                    <li>4 cyberpunk karakter sınıfı</li>
+                    <li>Particle effect sistemi</li>
+                    <li>5 farklı düşman tipi</li>
+                </ul>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-label">ZORLUK</div>
+                        <div class="stat-value">⭐⭐⭐⭐⭐</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">SÜRE</div>
+                        <div class="stat-value">∞</div>
+                    </div>
+                </div>
+                <button class="play-button">PLAY NOW</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Live reload
+        if (typeof WebSocket !== 'undefined') {
+            const ws = new WebSocket('ws://' + window.location.host);
+            ws.onmessage = function(event) {
+                if (event.data === 'reload') {
+                    window.location.reload();
+                }
+            };
+        }
+
+        // Add hover sound effect (optional)
+        document.querySelectorAll('.game-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                // Could add sound effect here
+            });
+        });
+    </script>
+</body>
+</html>
