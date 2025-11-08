@@ -91,6 +91,12 @@ class Game {
         this.joystickAngle = 0;
         this.joystickPower = 0;
 
+        // Animation system
+        this.wizardSprite = new WizardSprite();
+        this.particleSystem = new MagicParticleSystem();
+        this.animationFrame = 0;
+        this.lastFrameTime = 0;
+
         this.setupControls();
     }
 
@@ -108,7 +114,7 @@ class Game {
             icon: classData.icon,
             x: this.canvas.width / 2,
             y: this.canvas.height / 2,
-            size: 40,
+            size: 64,
 
             level: 1,
             xp: 0,
@@ -126,7 +132,17 @@ class Game {
             skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
 
             gold: 0,
-            attackCooldown: 0
+            attackCooldown: 0,
+
+            // Animation properties
+            animState: 'idle',
+            animFrame: 0,
+            direction: 'south',
+            lastDirection: 'south',
+            moving: false,
+            attacking: false,
+            hurting: false,
+            dead: false
         };
 
         this.updateHUD();
@@ -266,6 +282,15 @@ class Game {
         this.player.mp -= skill.mpCost;
         skill.cooldownRemaining = skill.cooldown;
 
+        // Trigger attack animation
+        this.player.attacking = true;
+        setTimeout(() => {
+            this.player.attacking = false;
+        }, 400);
+
+        // Emit magic particles
+        this.particleSystem.emit(this.player.x + 15, this.player.y - 25, 8, 'sparkle');
+
         // Skill effects
         if (skill.damage) {
             const nearestMob = this.findNearestMob();
@@ -273,6 +298,9 @@ class Game {
                 const distance = this.getDistance(this.player, nearestMob);
                 if (distance < 300) {
                     this.damageEnemy(nearestMob, skill.damage + this.player.damage);
+
+                    // Emit particles at target
+                    this.particleSystem.emit(nearestMob.x, nearestMob.y, 12, 'sparkle');
 
                     if (skill.lifesteal) {
                         this.player.hp = Math.min(
@@ -286,6 +314,8 @@ class Game {
 
         if (skill.heal) {
             this.player.hp = Math.min(this.player.maxHP, this.player.hp + skill.heal);
+            // Healing particles
+            this.particleSystem.emit(this.player.x, this.player.y - 20, 15, 'sparkle');
         }
 
         this.updateHUD();
@@ -475,6 +505,9 @@ class Game {
             dy = Math.sin(this.joystickAngle) * this.joystickPower;
         }
 
+        // Update movement state
+        this.player.moving = !!(dx || dy);
+
         if (dx || dy) {
             const magnitude = Math.sqrt(dx * dx + dy * dy);
             dx = (dx / magnitude) * this.player.speed;
@@ -482,6 +515,10 @@ class Game {
 
             this.player.x = Math.max(20, Math.min(this.canvas.width - 20, this.player.x + dx));
             this.player.y = Math.max(20, Math.min(this.canvas.height - 20, this.player.y + dy));
+
+            // Update direction based on movement
+            this.player.direction = this.getDirection(dx, dy);
+            this.player.lastDirection = this.player.direction;
         }
 
         // Update mobs
@@ -501,8 +538,15 @@ class Game {
                         this.showDamage(this.player.x, this.player.y - 40, damage);
                         mob.targetCooldown = 1000;
 
+                        // Trigger hurt animation
+                        this.player.hurting = true;
+                        setTimeout(() => {
+                            this.player.hurting = false;
+                        }, 200);
+
                         if (this.player.hp <= 0) {
-                            this.gameOver();
+                            this.player.dead = true;
+                            setTimeout(() => this.gameOver(), 1000);
                         }
 
                         this.updateHUD();
@@ -534,6 +578,43 @@ class Game {
             this.player.mp = Math.min(this.player.maxMP, this.player.mp + 0.1);
             if (Math.random() < 0.1) this.updateHUD();
         }
+
+        // Update animation state
+        if (this.player.dead) {
+            this.player.animState = 'death';
+        } else if (this.player.attacking) {
+            this.player.animState = 'attack';
+        } else if (this.player.hurting) {
+            this.player.animState = 'hurt';
+        } else if (this.player.moving) {
+            this.player.animState = 'walk';
+        } else {
+            this.player.animState = 'idle';
+        }
+
+        // Update particle system
+        this.particleSystem.update();
+
+        // Increment animation frame
+        this.animationFrame++;
+    }
+
+    /**
+     * Get 8-directional direction from movement vector
+     */
+    getDirection(dx, dy) {
+        const angle = Math.atan2(dy, dx);
+        const deg = angle * 180 / Math.PI;
+
+        if (deg >= -22.5 && deg < 22.5) return 'east';
+        if (deg >= 22.5 && deg < 67.5) return 'southeast';
+        if (deg >= 67.5 && deg < 112.5) return 'south';
+        if (deg >= 112.5 && deg < 157.5) return 'southwest';
+        if (deg >= 157.5 || deg < -157.5) return 'west';
+        if (deg >= -157.5 && deg < -112.5) return 'northwest';
+        if (deg >= -112.5 && deg < -67.5) return 'north';
+        if (deg >= -67.5 && deg < -22.5) return 'northeast';
+        return 'south';
     }
 
     draw() {
@@ -590,24 +671,30 @@ class Game {
             this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth * hpPercent, barHeight);
         });
 
-        // Player
+        // Player - Use professional sprite instead of emoji
         if (this.player) {
-            // Shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            this.ctx.beginPath();
-            this.ctx.ellipse(this.player.x, this.player.y + this.player.size/2, this.player.size/2, this.player.size/4, 0, 0, Math.PI * 2);
-            this.ctx.fill();
+            // Draw wizard sprite
+            this.wizardSprite.draw(
+                this.ctx,
+                this.player.x,
+                this.player.y,
+                this.player.direction,
+                this.player.animState,
+                this.animationFrame
+            );
 
-            // Player icon
-            this.ctx.font = this.player.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
+            // Draw particle effects
+            this.particleSystem.draw(this.ctx);
 
-            // Glow effect
-            this.ctx.shadowBlur = 10;
-            this.ctx.shadowColor = '#ffd700';
-            this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
-            this.ctx.shadowBlur = 0;
+            // Add sparkles when moving
+            if (this.player.moving && this.animationFrame % 5 === 0) {
+                this.particleSystem.emit(
+                    this.player.x + (Math.random() - 0.5) * 20,
+                    this.player.y + (Math.random() - 0.5) * 20,
+                    1,
+                    'sparkle'
+                );
+            }
         }
     }
 
