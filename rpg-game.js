@@ -1,3 +1,15 @@
+// Map Tile Types
+const TILE_TYPES = {
+    grass: { icon: '🌿', walkable: true, color: '#4a7c59' },
+    dirt: { icon: '🟫', walkable: true, color: '#8b6f47' },
+    water: { icon: '💧', walkable: false, color: '#4a90e2' },
+    tree: { icon: '🌲', walkable: false, color: '#2d5016' },
+    wall: { icon: '🧱', walkable: false, color: '#8b4513' },
+    path: { icon: '🟨', walkable: true, color: '#d4a574' },
+    flower: { icon: '🌸', walkable: true, color: '#4a7c59' },
+    rock: { icon: '🪨', walkable: false, color: '#696969' }
+};
+
 // Character Classes
 const CLASSES = {
     warrior: {
@@ -80,6 +92,18 @@ class Game {
         this.resizeCanvas();
         window.addEventListener('resize', () => this.resizeCanvas());
 
+        // World settings
+        this.tileSize = 50;
+        this.worldWidth = 100;  // 100 tiles wide
+        this.worldHeight = 100; // 100 tiles tall
+        this.map = [];
+
+        // Camera
+        this.camera = {
+            x: 0,
+            y: 0
+        };
+
         this.player = null;
         this.mobs = [];
         this.projectiles = [];
@@ -91,7 +115,76 @@ class Game {
         this.joystickAngle = 0;
         this.joystickPower = 0;
 
+        this.generateMap();
         this.setupControls();
+    }
+
+    generateMap() {
+        // Create a large procedural map
+        for (let y = 0; y < this.worldHeight; y++) {
+            this.map[y] = [];
+            for (let x = 0; x < this.worldWidth; x++) {
+                let tile = 'grass';
+
+                // Create rivers
+                if (Math.abs(Math.sin(x * 0.1) * 10 + y) < 2) {
+                    tile = 'water';
+                }
+                // Create paths
+                else if ((x + y) % 15 < 2) {
+                    tile = 'path';
+                }
+                // Add trees randomly
+                else if (Math.random() < 0.15) {
+                    tile = 'tree';
+                }
+                // Add walls occasionally
+                else if (Math.random() < 0.03) {
+                    tile = 'wall';
+                }
+                // Add flowers
+                else if (Math.random() < 0.1) {
+                    tile = 'flower';
+                }
+                // Add rocks
+                else if (Math.random() < 0.05) {
+                    tile = 'rock';
+                }
+                // Some dirt patches
+                else if (Math.random() < 0.2) {
+                    tile = 'dirt';
+                }
+
+                this.map[y][x] = tile;
+            }
+        }
+
+        // Ensure spawn area is clear
+        const centerX = Math.floor(this.worldWidth / 2);
+        const centerY = Math.floor(this.worldHeight / 2);
+        for (let dy = -3; dy <= 3; dy++) {
+            for (let dx = -3; dx <= 3; dx++) {
+                if (centerY + dy >= 0 && centerY + dy < this.worldHeight &&
+                    centerX + dx >= 0 && centerX + dx < this.worldWidth) {
+                    this.map[centerY + dy][centerX + dx] = 'grass';
+                }
+            }
+        }
+    }
+
+    getTileAt(worldX, worldY) {
+        const tileX = Math.floor(worldX / this.tileSize);
+        const tileY = Math.floor(worldY / this.tileSize);
+
+        if (tileY >= 0 && tileY < this.worldHeight && tileX >= 0 && tileX < this.worldWidth) {
+            return TILE_TYPES[this.map[tileY][tileX]];
+        }
+        return null;
+    }
+
+    isWalkable(worldX, worldY) {
+        const tile = this.getTileAt(worldX, worldY);
+        return tile ? tile.walkable : false;
     }
 
     resizeCanvas() {
@@ -102,12 +195,16 @@ class Game {
     selectCharacter(className) {
         const classData = CLASSES[className];
 
+        // Spawn in world center
+        const worldCenterX = (this.worldWidth * this.tileSize) / 2;
+        const worldCenterY = (this.worldHeight * this.tileSize) / 2;
+
         this.player = {
             class: className,
             name: classData.name,
             icon: classData.icon,
-            x: this.canvas.width / 2,
-            y: this.canvas.height / 2,
+            x: worldCenterX,
+            y: worldCenterY,
             size: 40,
 
             level: 1,
@@ -128,6 +225,10 @@ class Game {
             gold: 0,
             attackCooldown: 0
         };
+
+        // Center camera on player
+        this.camera.x = this.player.x - this.canvas.width / 2;
+        this.camera.y = this.player.y - this.canvas.height / 2;
 
         this.updateHUD();
         this.createSkillButtons();
@@ -238,13 +339,25 @@ class Game {
         );
         const type = MOB_TYPES[Math.floor(Math.random() * (typeIndex + 1))];
 
-        const margin = 100;
-        const x = Math.random() < 0.5
-            ? Math.random() * margin
-            : this.canvas.width - Math.random() * margin;
-        const y = Math.random() < 0.5
-            ? Math.random() * margin
-            : this.canvas.height - Math.random() * margin;
+        // Spawn mobs in world coordinates around player
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 300 + Math.random() * 500;
+        let x = this.player.x + Math.cos(angle) * distance;
+        let y = this.player.y + Math.sin(angle) * distance;
+
+        // Make sure spawn is within world bounds
+        x = Math.max(50, Math.min(this.worldWidth * this.tileSize - 50, x));
+        y = Math.max(50, Math.min(this.worldHeight * this.tileSize - 50, y));
+
+        // Find walkable position
+        let attempts = 0;
+        while (!this.isWalkable(x, y) && attempts < 10) {
+            x = this.player.x + Math.cos(Math.random() * Math.PI * 2) * distance;
+            y = this.player.y + Math.sin(Math.random() * Math.PI * 2) * distance;
+            x = Math.max(50, Math.min(this.worldWidth * this.tileSize - 50, x));
+            y = Math.max(50, Math.min(this.worldHeight * this.tileSize - 50, y));
+            attempts++;
+        }
 
         this.mobs.push({
             ...type,
@@ -388,12 +501,13 @@ class Game {
         this.updateHUD();
     }
 
-    showDamage(x, y, damage) {
+    showDamage(worldX, worldY, damage) {
         const dmg = document.createElement('div');
         dmg.className = 'damage-number';
         dmg.textContent = '-' + damage;
-        dmg.style.left = x + 'px';
-        dmg.style.top = y + 'px';
+        // Convert world coordinates to screen coordinates
+        dmg.style.left = (worldX - this.camera.x) + 'px';
+        dmg.style.top = (worldY - this.camera.y) + 'px';
         dmg.style.color = '#ff4444';
         document.body.appendChild(dmg);
 
@@ -480,8 +594,29 @@ class Game {
             dx = (dx / magnitude) * this.player.speed;
             dy = (dy / magnitude) * this.player.speed;
 
-            this.player.x = Math.max(20, Math.min(this.canvas.width - 20, this.player.x + dx));
-            this.player.y = Math.max(20, Math.min(this.canvas.height - 20, this.player.y + dy));
+            // Calculate new position
+            const newX = this.player.x + dx;
+            const newY = this.player.y + dy;
+
+            // Check collision with world boundaries
+            const worldMaxX = this.worldWidth * this.tileSize - 20;
+            const worldMaxY = this.worldHeight * this.tileSize - 20;
+
+            // Check if the new position is walkable
+            let canMoveX = newX >= 20 && newX <= worldMaxX && this.isWalkable(newX, this.player.y);
+            let canMoveY = newY >= 20 && newY <= worldMaxY && this.isWalkable(this.player.x, newY);
+
+            // Move player
+            if (canMoveX) {
+                this.player.x = newX;
+            }
+            if (canMoveY) {
+                this.player.y = newY;
+            }
+
+            // Update camera to follow player (player stays centered)
+            this.camera.x = this.player.x - this.canvas.width / 2;
+            this.camera.y = this.player.y - this.canvas.height / 2;
         }
 
         // Update mobs
@@ -537,46 +672,70 @@ class Game {
     }
 
     draw() {
-        this.ctx.fillStyle = '#1a1a2e';
+        // Clear canvas
+        this.ctx.fillStyle = '#2d5016';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Grid
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-        this.ctx.lineWidth = 1;
-        for (let x = 0; x < this.canvas.width; x += 50) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.canvas.height);
-            this.ctx.stroke();
-        }
-        for (let y = 0; y < this.canvas.height; y += 50) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.canvas.width, y);
-            this.ctx.stroke();
+        // Calculate visible tile range
+        const startTileX = Math.floor(this.camera.x / this.tileSize);
+        const startTileY = Math.floor(this.camera.y / this.tileSize);
+        const endTileX = Math.ceil((this.camera.x + this.canvas.width) / this.tileSize);
+        const endTileY = Math.ceil((this.camera.y + this.canvas.height) / this.tileSize);
+
+        // Draw map tiles
+        for (let tileY = Math.max(0, startTileY); tileY < Math.min(this.worldHeight, endTileY); tileY++) {
+            for (let tileX = Math.max(0, startTileX); tileX < Math.min(this.worldWidth, endTileX); tileX++) {
+                const tile = TILE_TYPES[this.map[tileY][tileX]];
+                if (!tile) continue;
+
+                const screenX = tileX * this.tileSize - this.camera.x;
+                const screenY = tileY * this.tileSize - this.camera.y;
+
+                // Draw tile background
+                this.ctx.fillStyle = tile.color;
+                this.ctx.fillRect(screenX, screenY, this.tileSize, this.tileSize);
+
+                // Draw tile border for clarity
+                this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+                this.ctx.strokeRect(screenX, screenY, this.tileSize, this.tileSize);
+
+                // Draw tile icon
+                if (tile.icon) {
+                    this.ctx.font = (this.tileSize * 0.6) + 'px Arial';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(tile.icon, screenX + this.tileSize / 2, screenY + this.tileSize / 2);
+                }
+            }
         }
 
-        // Drops
+        // Draw drops
         this.drops.forEach(drop => {
+            const screenX = drop.x - this.camera.x;
+            const screenY = drop.y - this.camera.y;
+
             this.ctx.font = drop.size + 'px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(drop.icon, drop.x, drop.y);
+            this.ctx.fillText(drop.icon, screenX, screenY);
         });
 
-        // Mobs
+        // Draw mobs
         this.mobs.forEach(mob => {
+            const screenX = mob.x - this.camera.x;
+            const screenY = mob.y - this.camera.y;
+
             // Shadow
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
             this.ctx.beginPath();
-            this.ctx.ellipse(mob.x, mob.y + mob.size/2, mob.size/2, mob.size/4, 0, 0, Math.PI * 2);
+            this.ctx.ellipse(screenX, screenY + mob.size/2, mob.size/2, mob.size/4, 0, 0, Math.PI * 2);
             this.ctx.fill();
 
             // Mob icon
             this.ctx.font = mob.size + 'px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(mob.icon, mob.x, mob.y);
+            this.ctx.fillText(mob.icon, screenX, screenY);
 
             // HP bar
             const barWidth = 40;
@@ -584,18 +743,21 @@ class Game {
             const hpPercent = mob.hp / mob.maxHP;
 
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth, barHeight);
+            this.ctx.fillRect(screenX - barWidth/2, screenY - mob.size, barWidth, barHeight);
 
             this.ctx.fillStyle = hpPercent > 0.5 ? '#4ade80' : hpPercent > 0.25 ? '#fbbf24' : '#ef4444';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth * hpPercent, barHeight);
+            this.ctx.fillRect(screenX - barWidth/2, screenY - mob.size, barWidth * hpPercent, barHeight);
         });
 
-        // Player
+        // Draw player (centered on screen)
         if (this.player) {
+            const screenX = this.player.x - this.camera.x;
+            const screenY = this.player.y - this.camera.y;
+
             // Shadow
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
             this.ctx.beginPath();
-            this.ctx.ellipse(this.player.x, this.player.y + this.player.size/2, this.player.size/2, this.player.size/4, 0, 0, Math.PI * 2);
+            this.ctx.ellipse(screenX, screenY + this.player.size/2, this.player.size/2, this.player.size/4, 0, 0, Math.PI * 2);
             this.ctx.fill();
 
             // Player icon
@@ -606,7 +768,7 @@ class Game {
             // Glow effect
             this.ctx.shadowBlur = 10;
             this.ctx.shadowColor = '#ffd700';
-            this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
+            this.ctx.fillText(this.player.icon, screenX, screenY);
             this.ctx.shadowBlur = 0;
         }
     }
