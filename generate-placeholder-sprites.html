@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprite Placeholder Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+        }
+        h1 {
+            color: #ffd700;
+        }
+        .controls {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #4ade80;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #22c55e;
+        }
+        .preview {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        canvas {
+            border: 2px solid #ffd700;
+            margin: 10px 0;
+            display: block;
+            image-rendering: pixelated;
+        }
+        .info {
+            background: rgba(255, 215, 0, 0.1);
+            padding: 15px;
+            border-left: 4px solid #ffd700;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 Placeholder Sprite Generator</h1>
+
+    <div class="info">
+        <strong>Purpose:</strong> Generate colored placeholder sprite sheets for testing the animation system.<br>
+        These are NOT final art - just colored rectangles to verify the system works!<br>
+        <strong>Note:</strong> Real sprite sheets should be created by a pixel artist.
+    </div>
+
+    <div class="controls">
+        <h2>Generate Test Sprites</h2>
+        <button onclick="generateWarriorSprites()">Generate Warrior Sprites</button>
+        <button onclick="generateNinjaSprites()">Generate Ninja Sprites</button>
+        <button onclick="generateShamanSprites()">Generate Shaman Sprites</button>
+        <button onclick="generateSuraSprites()">Generate Sura Sprites</button>
+        <br>
+        <button onclick="generateAllCharacters()">Generate ALL Characters</button>
+        <button onclick="generateAllMobs()">Generate ALL Mobs</button>
+    </div>
+
+    <div class="preview" id="preview"></div>
+
+    <script>
+        const colors = {
+            warrior: '#ff4444',
+            ninja: '#4444ff',
+            shaman: '#9333ea',
+            sura: '#1a1a1a'
+        };
+
+        function createSpriteSheet(name, frameCount, width, height, color) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width * frameCount;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+
+            for (let i = 0; i < frameCount; i++) {
+                // Base color
+                ctx.fillStyle = color;
+                ctx.fillRect(i * width, 0, width, height);
+
+                // Add some variation to make it look like animation
+                const offset = Math.sin(i / frameCount * Math.PI * 2) * 10;
+
+                // Simple character shape
+                ctx.fillStyle = shadeColor(color, 20);
+                // Body
+                ctx.fillRect(i * width + 20, 30 + offset, 24, 30);
+                // Head
+                ctx.fillRect(i * width + 22, 15 + offset, 20, 15);
+
+                // Add border
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(i * width, 0, width, height);
+
+                // Frame number
+                ctx.fillStyle = '#fff';
+                ctx.font = '10px Arial';
+                ctx.fillText(i + 1, i * width + 5, 15);
+            }
+
+            return canvas;
+        }
+
+        function shadeColor(color, percent) {
+            const num = parseInt(color.replace("#",""), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) + amt;
+            const G = (num >> 8 & 0x00FF) + amt;
+            const B = (num & 0x0000FF) + amt;
+            return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000
+                + (G<255?G<1?0:G:255)*0x100
+                + (B<255?B<1?0:B:255)).toString(16).slice(1);
+        }
+
+        function generateCharacterSprites(className, color) {
+            const preview = document.getElementById('preview');
+            preview.innerHTML = `<h3>Generating ${className} sprites...</h3>`;
+
+            const animations = [
+                { name: 'idle', frames: 4 },
+                { name: 'walk', frames: 8 },
+                { name: 'attack', frames: 6 },
+                { name: 'skill1', frames: 8 },
+                { name: 'skill2', frames: 8 },
+                { name: 'skill3', frames: 8 },
+                { name: 'death', frames: 6 }
+            ];
+
+            animations.forEach(anim => {
+                const canvas = createSpriteSheet(
+                    `${className}_${anim.name}`,
+                    anim.frames,
+                    64,
+                    64,
+                    color
+                );
+
+                const div = document.createElement('div');
+                div.innerHTML = `<h4>${className}_${anim.name}.png (${anim.frames} frames)</h4>`;
+                div.appendChild(canvas);
+
+                const downloadBtn = document.createElement('button');
+                downloadBtn.textContent = `Download ${anim.name}`;
+                downloadBtn.onclick = () => downloadCanvas(canvas, `${className}_${anim.name}.png`);
+                div.appendChild(downloadBtn);
+
+                preview.appendChild(div);
+            });
+
+            preview.innerHTML += `<p style="color: #4ade80;">✅ ${className} sprites generated! Click download buttons to save.</p>`;
+        }
+
+        function downloadCanvas(canvas, filename) {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        function generateWarriorSprites() {
+            generateCharacterSprites('warrior', colors.warrior);
+        }
+
+        function generateNinjaSprites() {
+            generateCharacterSprites('ninja', colors.ninja);
+        }
+
+        function generateShamanSprites() {
+            generateCharacterSprites('shaman', colors.shaman);
+        }
+
+        function generateSuraSprites() {
+            generateCharacterSprites('sura', colors.sura);
+        }
+
+        function generateAllCharacters() {
+            const preview = document.getElementById('preview');
+            preview.innerHTML = '<h3>Generating ALL character sprites...</h3>';
+
+            setTimeout(() => generateWarriorSprites(), 100);
+            setTimeout(() => generateNinjaSprites(), 200);
+            setTimeout(() => generateShamanSprites(), 300);
+            setTimeout(() => generateSuraSprites(), 400);
+        }
+
+        function generateMobSprites(mobName, color) {
+            const preview = document.getElementById('preview');
+            preview.innerHTML += `<h3>${mobName} sprites</h3>`;
+
+            const animations = [
+                { name: 'idle', frames: 4 },
+                { name: 'walk', frames: 4 },
+                { name: 'attack', frames: 4 },
+                { name: 'death', frames: 4 }
+            ];
+
+            animations.forEach(anim => {
+                const canvas = createSpriteSheet(
+                    `${mobName}_${anim.name}`,
+                    anim.frames,
+                    64,
+                    64,
+                    color
+                );
+
+                const div = document.createElement('div');
+                div.innerHTML = `<h4>${mobName}_${anim.name}.png</h4>`;
+                div.appendChild(canvas);
+
+                const downloadBtn = document.createElement('button');
+                downloadBtn.textContent = `Download ${anim.name}`;
+                downloadBtn.onclick = () => downloadCanvas(canvas, `${mobName}_${anim.name}.png`);
+                div.appendChild(downloadBtn);
+
+                preview.appendChild(div);
+            });
+        }
+
+        function generateAllMobs() {
+            const preview = document.getElementById('preview');
+            preview.innerHTML = '<h3>Generating ALL mob sprites...</h3>';
+
+            const mobs = [
+                { name: 'wolf', color: '#8b4513' },
+                { name: 'goblin', color: '#228b22' },
+                { name: 'orc', color: '#556b2f' },
+                { name: 'troll', color: '#2f4f4f' },
+                { name: 'dragon', color: '#dc143c' }
+            ];
+
+            mobs.forEach((mob, i) => {
+                setTimeout(() => generateMobSprites(mob.name, mob.color), i * 100);
+            });
+        }
+
+        // Initial message
+        document.getElementById('preview').innerHTML = `
+            <h3>👋 Welcome!</h3>
+            <p>This tool generates simple colored placeholder sprite sheets for testing.</p>
+            <p>Click a button above to generate sprites, then download them.</p>
+            <p><strong>Instructions:</strong></p>
+            <ol>
+                <li>Click "Generate Warrior Sprites" (or any character)</li>
+                <li>Click download buttons for each animation</li>
+                <li>Place downloaded PNGs in: <code>assets/characters/</code></li>
+                <li>Reload the game to see animations!</li>
+            </ol>
+            <p style="color: #fbbf24;">⚠️ These are PLACEHOLDERS only. For production, hire a pixel artist!</p>
+        `;
+    </script>
+</body>
+</html>

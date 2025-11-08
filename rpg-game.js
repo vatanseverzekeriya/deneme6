@@ -91,7 +91,89 @@ class Game {
         this.joystickAngle = 0;
         this.joystickPower = 0;
 
+        // Asset loading system
+        this.assetLoader = new AssetLoader();
+        this.useSprites = false;
+        this.animationControllers = new Map();
+        this.lastAnimationUpdate = 0;
+
         this.setupControls();
+        this.initAssets();
+    }
+
+    /**
+     * Initialize asset loading
+     */
+    async initAssets() {
+        console.log('🎮 Initializing game assets...');
+
+        // Show loading screen
+        this.showLoadingScreen();
+
+        try {
+            const loaded = await this.assetLoader.loadAll();
+            this.useSprites = loaded;
+
+            if (loaded) {
+                console.log('✅ Sprite mode enabled');
+            } else {
+                console.log('📱 Using emoji fallback mode');
+            }
+        } catch (error) {
+            console.warn('⚠️ Asset loading failed, using emoji mode:', error);
+            this.useSprites = false;
+        }
+
+        this.hideLoadingScreen();
+    }
+
+    showLoadingScreen() {
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = 'loadingScreen';
+        loadingDiv.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            color: white;
+            font-family: Arial, sans-serif;
+        `;
+        loadingDiv.innerHTML = `
+            <div style="font-size: 24px; margin-bottom: 20px;">🎮 Loading Assets...</div>
+            <div style="width: 300px; height: 20px; background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden;">
+                <div id="loadingBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4ade80, #22c55e); transition: width 0.3s;"></div>
+            </div>
+            <div id="loadingText" style="margin-top: 10px; font-size: 14px; color: #aaa;">Preparing game...</div>
+        `;
+        document.body.appendChild(loadingDiv);
+
+        // Update loading bar
+        const updateInterval = setInterval(() => {
+            const progress = this.assetLoader.getProgress();
+            const bar = document.getElementById('loadingBar');
+            const text = document.getElementById('loadingText');
+
+            if (bar) bar.style.width = progress + '%';
+            if (text) text.textContent = `Loading... ${Math.floor(progress)}%`;
+
+            if (progress >= 100 || !document.getElementById('loadingScreen')) {
+                clearInterval(updateInterval);
+            }
+        }, 100);
+    }
+
+    hideLoadingScreen() {
+        const loadingScreen = document.getElementById('loadingScreen');
+        if (loadingScreen) {
+            setTimeout(() => loadingScreen.remove(), 500);
+        }
     }
 
     resizeCanvas() {
@@ -126,8 +208,19 @@ class Game {
             skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
 
             gold: 0,
-            attackCooldown: 0
+            attackCooldown: 0,
+
+            // Animation state
+            currentAnimation: 'idle',
+            facing: 'right',
+            isMoving: false,
+            isAttacking: false
         };
+
+        // Set up animation controllers for player
+        if (this.useSprites && this.assetLoader.sprites[className]) {
+            this.setupPlayerAnimations(className);
+        }
 
         this.updateHUD();
         this.createSkillButtons();
@@ -137,6 +230,60 @@ class Game {
 
         this.spawnMobs();
         this.gameLoop();
+    }
+
+    /**
+     * Set up animation controllers for player character
+     */
+    setupPlayerAnimations(className) {
+        const sprites = this.assetLoader.sprites[className];
+        const playerId = 'player';
+
+        this.animationControllers.set(`${playerId}_idle`, new AnimationController(sprites.idle));
+        this.animationControllers.set(`${playerId}_walk`, new AnimationController(sprites.walk));
+        this.animationControllers.set(`${playerId}_attack`, new AnimationController(sprites.attack));
+        this.animationControllers.set(`${playerId}_skill_q`, new AnimationController(sprites.skill_q));
+        this.animationControllers.set(`${playerId}_skill_w`, new AnimationController(sprites.skill_w));
+        this.animationControllers.set(`${playerId}_skill_e`, new AnimationController(sprites.skill_e));
+        this.animationControllers.set(`${playerId}_death`, new AnimationController(sprites.death));
+
+        // Set death animation to not loop
+        const deathAnim = this.animationControllers.get(`${playerId}_death`);
+        if (deathAnim) deathAnim.setLoop(false);
+    }
+
+    /**
+     * Set up animation controllers for a mob
+     */
+    setupMobAnimations(mob) {
+        // Map mob types to sprite names
+        const spriteNameMap = {
+            'Kurt': 'wolf',
+            'Goblin': 'goblin',
+            'Ork': 'orc',
+            'Troll': 'troll',
+            'Ejderha': 'dragon'
+        };
+
+        const spriteName = spriteNameMap[mob.name];
+        if (!spriteName || !this.assetLoader.sprites[spriteName]) return;
+
+        const sprites = this.assetLoader.sprites[spriteName];
+        const mobId = `mob_${mob.id}`;
+
+        mob.id = mobId;
+        mob.spriteName = spriteName;
+
+        this.animationControllers.set(`${mobId}_idle`, new AnimationController(sprites.idle));
+        this.animationControllers.set(`${mobId}_walk`, new AnimationController(sprites.walk));
+        this.animationControllers.set(`${mobId}_attack`, new AnimationController(sprites.attack));
+        this.animationControllers.set(`${mobId}_death`, new AnimationController(sprites.death));
+
+        // Set death animation to not loop
+        const deathAnim = this.animationControllers.get(`${mobId}_death`);
+        if (deathAnim) deathAnim.setLoop(false);
+
+        mob.currentAnimation = 'idle';
     }
 
     createSkillButtons() {
@@ -246,13 +393,23 @@ class Game {
             ? Math.random() * margin
             : this.canvas.height - Math.random() * margin;
 
-        this.mobs.push({
+        const mob = {
             ...type,
             x, y,
             maxHP: type.hp,
             size: 35,
-            targetCooldown: 0
-        });
+            targetCooldown: 0,
+            id: `mob_${Date.now()}_${Math.random()}`,
+            currentAnimation: 'idle',
+            facing: 'right'
+        };
+
+        // Set up animations if using sprites
+        if (this.useSprites) {
+            this.setupMobAnimations(mob);
+        }
+
+        this.mobs.push(mob);
     }
 
     useSkill(index) {
@@ -482,6 +639,20 @@ class Game {
 
             this.player.x = Math.max(20, Math.min(this.canvas.width - 20, this.player.x + dx));
             this.player.y = Math.max(20, Math.min(this.canvas.height - 20, this.player.y + dy));
+
+            // Update animation state
+            this.player.isMoving = true;
+            this.player.currentAnimation = 'walk';
+
+            // Update facing direction
+            if (dx !== 0) {
+                this.player.facing = dx > 0 ? 'right' : 'left';
+            }
+        } else {
+            this.player.isMoving = false;
+            if (!this.player.isAttacking) {
+                this.player.currentAnimation = 'idle';
+            }
         }
 
         // Update mobs
@@ -493,8 +664,14 @@ class Game {
                 mob.x += Math.cos(angle) * mob.speed;
                 mob.y += Math.sin(angle) * mob.speed;
 
+                // Update mob facing direction
+                mob.facing = Math.cos(angle) > 0 ? 'right' : 'left';
+                mob.currentAnimation = 'walk';
+
                 // Attack player
                 if (dist < 50) {
+                    mob.currentAnimation = 'attack';
+
                     if (mob.targetCooldown <= 0) {
                         const damage = Math.max(1, mob.damage - this.player.defense);
                         this.player.hp -= damage;
@@ -508,6 +685,8 @@ class Game {
                         this.updateHUD();
                     }
                 }
+            } else {
+                mob.currentAnimation = 'idle';
             }
 
             if (mob.targetCooldown > 0) {
@@ -533,6 +712,14 @@ class Game {
         if (this.player.mp < this.player.maxMP) {
             this.player.mp = Math.min(this.player.maxMP, this.player.mp + 0.1);
             if (Math.random() < 0.1) this.updateHUD();
+        }
+
+        // Update animations
+        if (this.useSprites) {
+            const timestamp = performance.now();
+            this.animationControllers.forEach(controller => {
+                controller.update(timestamp);
+            });
         }
     }
 
@@ -572,11 +759,16 @@ class Game {
             this.ctx.ellipse(mob.x, mob.y + mob.size/2, mob.size/2, mob.size/4, 0, 0, Math.PI * 2);
             this.ctx.fill();
 
-            // Mob icon
-            this.ctx.font = mob.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(mob.icon, mob.x, mob.y);
+            // Draw mob (sprite or emoji)
+            if (this.useSprites && mob.id) {
+                this.drawEntity(mob, mob.id);
+            } else {
+                // Fallback to emoji
+                this.ctx.font = mob.size + 'px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(mob.icon, mob.x, mob.y);
+            }
 
             // HP bar
             const barWidth = 40;
@@ -598,17 +790,55 @@ class Game {
             this.ctx.ellipse(this.player.x, this.player.y + this.player.size/2, this.player.size/2, this.player.size/4, 0, 0, Math.PI * 2);
             this.ctx.fill();
 
-            // Player icon
-            this.ctx.font = this.player.size + 'px Arial';
+            // Draw player (sprite or emoji)
+            if (this.useSprites) {
+                this.drawEntity(this.player, 'player');
+            } else {
+                // Fallback to emoji
+                this.ctx.font = this.player.size + 'px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+
+                // Glow effect
+                this.ctx.shadowBlur = 10;
+                this.ctx.shadowColor = '#ffd700';
+                this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
+                this.ctx.shadowBlur = 0;
+            }
+        }
+    }
+
+    /**
+     * Draw an entity (player or mob) with sprite animation
+     */
+    drawEntity(entity, entityId) {
+        const animation = entity.currentAnimation || 'idle';
+        const animKey = `${entityId}_${animation}`;
+        const controller = this.animationControllers.get(animKey);
+
+        if (!controller) {
+            // Fallback to icon if animation not found
+            this.ctx.font = entity.size + 'px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
-
-            // Glow effect
-            this.ctx.shadowBlur = 10;
-            this.ctx.shadowColor = '#ffd700';
-            this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
-            this.ctx.shadowBlur = 0;
+            this.ctx.fillText(entity.icon, entity.x, entity.y);
+            return;
         }
+
+        // Save context state
+        this.ctx.save();
+
+        // Flip sprite if facing left
+        if (entity.facing === 'left') {
+            this.ctx.translate(entity.x, entity.y);
+            this.ctx.scale(-1, 1);
+            controller.draw(this.ctx, 0, 0, entity.size, entity.size);
+        } else {
+            controller.draw(this.ctx, entity.x, entity.y, entity.size, entity.size);
+        }
+
+        // Restore context state
+        this.ctx.restore();
     }
 
     updateHUD() {
