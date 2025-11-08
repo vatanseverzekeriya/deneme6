@@ -58,9 +58,13 @@ const CLASSES = {
 const MOB_TYPES = [
     { name: 'Kurt', icon: '🐺', hp: 50, damage: 8, xp: 25, gold: 10, speed: 1.5 },
     { name: 'Goblin', icon: '👹', hp: 60, damage: 10, xp: 30, gold: 15, speed: 1.2 },
+    { name: 'İskelet', icon: '💀', hp: 70, damage: 11, xp: 35, gold: 18, speed: 1.1 },
     { name: 'Ork', icon: '👾', hp: 80, damage: 12, xp: 40, gold: 20, speed: 1.0 },
+    { name: 'Golem', icon: '🗿', hp: 100, damage: 14, xp: 50, gold: 25, speed: 0.9 },
     { name: 'Troll', icon: '🧟', hp: 120, damage: 15, xp: 60, gold: 30, speed: 0.8 },
-    { name: 'Ejderha', icon: '🐉', hp: 200, damage: 25, xp: 100, gold: 50, speed: 0.6 }
+    { name: 'Vampir', icon: '🧛', hp: 150, damage: 20, xp: 80, gold: 40, speed: 0.7 },
+    { name: 'Ejderha', icon: '🐉', hp: 200, damage: 25, xp: 100, gold: 50, speed: 0.6 },
+    { name: 'Ateş Ruhu', icon: '👻', hp: 180, damage: 22, xp: 90, gold: 45, speed: 0.65 }
 ];
 
 // Boss types
@@ -74,10 +78,17 @@ const BOSS_TYPES = [
 // Items
 const ITEMS = [
     { name: 'Can İksiri', icon: '❤️', type: 'potion', heal: 50 },
+    { name: 'Büyük Can İksiri', icon: '💖', type: 'potion', heal: 100 },
     { name: 'Mana İksiri', icon: '💙', type: 'potion', mana: 50 },
+    { name: 'Büyük Mana İksiri', icon: '💜', type: 'potion', mana: 100 },
     { name: 'Altın', icon: '💰', type: 'gold', value: 10 },
-    { name: 'Kılıç', icon: '⚔️', type: 'weapon', damage: 5 },
-    { name: 'Zırh', icon: '🛡️', type: 'armor', defense: 5 }
+    { name: 'Altın Yığını', icon: '💎', type: 'gold', value: 50 },
+    { name: 'Demir Kılıç', icon: '⚔️', type: 'weapon', damage: 5 },
+    { name: 'Çelik Kılıç', icon: '🗡️', type: 'weapon', damage: 10 },
+    { name: 'Efsanevi Kılıç', icon: '⚜️', type: 'weapon', damage: 20 },
+    { name: 'Deri Zırh', icon: '🛡️', type: 'armor', defense: 5 },
+    { name: 'Demir Zırh', icon: '🔰', type: 'armor', defense: 10 },
+    { name: 'Ejderha Zırhı', icon: '🐉', type: 'armor', defense: 20 }
 ];
 
 // Achievements
@@ -91,6 +102,76 @@ const ACHIEVEMENTS = [
     { id: 'combo_10', name: 'Kombo Ustası', desc: '10x Combo yap', check: (game) => game.maxCombo >= 10 },
     { id: 'rich', name: 'Zengin', desc: '500 altın topla', check: (game) => game.player.gold >= 500 }
 ];
+
+// Sound System
+class SoundSystem {
+    constructor() {
+        this.audioContext = null;
+        this.enabled = true;
+        this.initAudioContext();
+    }
+
+    initAudioContext() {
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            console.warn('Web Audio API not supported');
+            this.enabled = false;
+        }
+    }
+
+    playTone(frequency, duration, type = 'sine', volume = 0.1) {
+        if (!this.enabled || !this.audioContext) return;
+
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+
+        oscillator.type = type;
+        oscillator.frequency.value = frequency;
+        gainNode.gain.value = volume;
+
+        oscillator.start();
+        gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration);
+        oscillator.stop(this.audioContext.currentTime + duration);
+    }
+
+    hit() {
+        this.playTone(200, 0.1, 'square', 0.05);
+    }
+
+    kill() {
+        this.playTone(150, 0.2, 'sawtooth', 0.08);
+        setTimeout(() => this.playTone(100, 0.3, 'sawtooth', 0.05), 100);
+    }
+
+    levelUp() {
+        this.playTone(523, 0.15, 'sine', 0.1);
+        setTimeout(() => this.playTone(659, 0.15, 'sine', 0.1), 150);
+        setTimeout(() => this.playTone(784, 0.3, 'sine', 0.1), 300);
+    }
+
+    achievement() {
+        this.playTone(440, 0.1, 'sine', 0.1);
+        setTimeout(() => this.playTone(554, 0.1, 'sine', 0.1), 100);
+        setTimeout(() => this.playTone(659, 0.2, 'sine', 0.1), 200);
+    }
+
+    pickup() {
+        this.playTone(800, 0.1, 'sine', 0.08);
+    }
+
+    boss() {
+        this.playTone(100, 0.3, 'sawtooth', 0.15);
+        setTimeout(() => this.playTone(80, 0.3, 'sawtooth', 0.15), 200);
+    }
+
+    skill() {
+        this.playTone(600, 0.15, 'triangle', 0.07);
+    }
+}
 
 class Game {
     constructor() {
@@ -120,6 +201,8 @@ class Game {
         this.joystickActive = false;
         this.joystickAngle = 0;
         this.joystickPower = 0;
+
+        this.sound = new SoundSystem();
 
         this.setupControls();
     }
@@ -302,6 +385,7 @@ class Game {
 
         this.player.mp -= skill.mpCost;
         skill.cooldownRemaining = skill.cooldown;
+        this.sound.skill();
 
         // Skill effects
         if (skill.damage) {
@@ -382,6 +466,7 @@ class Game {
 
         const comboDamage = Math.floor(damage * (1 + this.combo * 0.1));
         enemy.hp -= comboDamage;
+        this.sound.hit();
 
         // Show combo if > 1
         const displayDamage = this.combo > 1 ? `${comboDamage} x${this.combo}` : comboDamage;
@@ -397,6 +482,8 @@ class Game {
         if (index > -1) {
             this.mobs.splice(index, 1);
         }
+
+        this.sound.kill();
 
         // Particle effect
         const particleColor = enemy.isBoss ? '#ff00ff' : '#ff4444';
@@ -460,6 +547,7 @@ class Game {
         };
 
         this.mobs.push(boss);
+        this.sound.boss();
         this.showNotification(`⚠️ BOSS ORTAYA ÇIKTI: ${boss.name}!`);
         this.createParticleBurst(boss.x, boss.y, 40, '#ff00ff');
     }
@@ -486,6 +574,7 @@ class Game {
             if (!this.unlockedAchievements.includes(achievement.id)) {
                 if (achievement.check(this)) {
                     this.unlockedAchievements.push(achievement.id);
+                    this.sound.achievement();
                     this.showNotification(`🏆 BAŞARIM: ${achievement.name} - ${achievement.desc}`);
                     this.createParticleBurst(this.player.x, this.player.y, 20, '#ffd700');
                 }
@@ -561,6 +650,8 @@ class Game {
         this.player.damage += 3;
         this.player.defense += 2;
 
+        this.sound.levelUp();
+
         // Boss spawn at every 5 levels
         if (this.player.level % 5 === 0) {
             this.spawnBoss();
@@ -604,6 +695,8 @@ class Game {
             this.drops.splice(index, 1);
         }
 
+        this.sound.pickup();
+
         // Add to inventory
         for (let i = 0; i < this.inventory.length; i++) {
             if (!this.inventory[i]) {
@@ -630,6 +723,12 @@ class Game {
             this.inventory[slot] = null;
             this.updateInventory();
             this.updateHUD();
+        } else if (item.type === 'gold') {
+            this.player.gold += item.value || 10;
+            this.inventory[slot] = null;
+            this.updateInventory();
+            this.updateHUD();
+            this.showNotification(`💰 +${item.value || 10} Altın`);
         } else if (item.type === 'weapon') {
             // Unequip current weapon if any
             if (this.player.equipment.weapon) {

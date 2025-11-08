@@ -364,6 +364,101 @@
             font-weight: bold;
             z-index: 1000;
         }
+
+        /* Stats Modal */
+        #statsModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(26, 26, 46, 0.98);
+            border: 3px solid #ffd700;
+            border-radius: 20px;
+            padding: 30px;
+            z-index: 2000;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        #statsModal.active {
+            display: block;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1999;
+        }
+
+        .modal-overlay.active {
+            display: block;
+        }
+
+        .modal-title {
+            text-align: center;
+            font-size: 24px;
+            color: #ffd700;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin-bottom: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+        }
+
+        .stat-label {
+            color: #aaa;
+        }
+
+        .stat-value {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            background: #ff4444;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .stats-button {
+            position: fixed;
+            bottom: 100px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 215, 0, 0.3);
+            border: 2px solid #ffd700;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stats-button:active {
+            transform: scale(0.9);
+        }
     </style>
 </head>
 <body>
@@ -455,6 +550,17 @@
 
         <!-- Mini-map -->
         <canvas id="minimap" width="150" height="150"></canvas>
+
+        <!-- Stats Button -->
+        <div class="stats-button" onclick="toggleStats()">📊</div>
+    </div>
+
+    <!-- Stats Modal -->
+    <div class="modal-overlay" id="statsOverlay" onclick="toggleStats()"></div>
+    <div id="statsModal">
+        <div class="modal-title">📊 İSTATİSTİKLER</div>
+        <div id="statsContent"></div>
+        <button class="close-btn" onclick="toggleStats()">Kapat</button>
     </div>
 
     <script src="rpg-game.js"></script>
@@ -471,6 +577,37 @@
             if (game.loadGame()) {
                 document.getElementById('charSelect').classList.add('hidden');
                 document.getElementById('gameScreen').classList.add('active');
+            }
+        }
+
+        function toggleStats() {
+            const modal = document.getElementById('statsModal');
+            const overlay = document.getElementById('statsOverlay');
+            const isActive = modal.classList.contains('active');
+
+            if (isActive) {
+                modal.classList.remove('active');
+                overlay.classList.remove('active');
+            } else {
+                if (game.player) {
+                    const stats = game.player;
+                    const content = `
+                        <div class="stat-row"><span class="stat-label">Seviye</span><span class="stat-value">${stats.level}</span></div>
+                        <div class="stat-row"><span class="stat-label">Sınıf</span><span class="stat-value">${stats.name}</span></div>
+                        <div class="stat-row"><span class="stat-label">Can</span><span class="stat-value">${stats.hp} / ${stats.maxHP}</span></div>
+                        <div class="stat-row"><span class="stat-label">Mana</span><span class="stat-value">${stats.mp} / ${stats.maxMP}</span></div>
+                        <div class="stat-row"><span class="stat-label">Hasar</span><span class="stat-value">${stats.damage}</span></div>
+                        <div class="stat-row"><span class="stat-label">Savunma</span><span class="stat-value">${stats.defense}</span></div>
+                        <div class="stat-row"><span class="stat-label">Altın</span><span class="stat-value">${stats.gold} 💰</span></div>
+                        <div class="stat-row"><span class="stat-label">Toplam Öldürülen</span><span class="stat-value">${stats.kills}</span></div>
+                        <div class="stat-row"><span class="stat-label">Boss Öldürülen</span><span class="stat-value">${stats.bossKills}</span></div>
+                        <div class="stat-row"><span class="stat-label">Max Combo</span><span class="stat-value">${game.maxCombo}x</span></div>
+                        <div class="stat-row"><span class="stat-label">Başarımlar</span><span class="stat-value">${game.unlockedAchievements.length} / ${ACHIEVEMENTS.length}</span></div>
+                    `;
+                    document.getElementById('statsContent').innerHTML = content;
+                }
+                modal.classList.add('active');
+                overlay.classList.add('active');
             }
         }
 
