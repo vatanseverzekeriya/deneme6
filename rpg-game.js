@@ -1,66 +1,66 @@
-// Character Classes
+// Character Classes - CYBER THEME
 const CLASSES = {
     warrior: {
-        name: 'Savaşçı',
-        icon: '🛡️',
+        name: 'Cyber Samurai',
+        spriteType: 'cyber-samurai',
         baseHP: 150,
         baseMP: 50,
         baseDamage: 15,
         baseDefense: 10,
         skills: [
-            { name: 'Güçlü Vuruş', icon: '⚔️', damage: 30, mpCost: 15, cooldown: 3000, key: 'Q' },
-            { name: 'Kalkan', icon: '🛡️', defense: 20, mpCost: 20, cooldown: 5000, key: 'W' },
-            { name: 'Savaş Çığlığı', icon: '💥', damage: 50, mpCost: 30, cooldown: 8000, key: 'E' }
+            { name: 'Plasma Strike', icon: '⚡', damage: 30, mpCost: 15, cooldown: 3000, key: 'Q' },
+            { name: 'Energy Shield', icon: '🛡️', defense: 20, mpCost: 20, cooldown: 5000, key: 'W' },
+            { name: 'Cyber Slash', icon: '⚔️', damage: 50, mpCost: 30, cooldown: 8000, key: 'E' }
         ]
     },
     ninja: {
-        name: 'Ninja',
-        icon: '🗡️',
+        name: 'Shadow Operative',
+        spriteType: 'cyber-samurai', // Using same sprite with different stats
         baseHP: 100,
         baseMP: 80,
         baseDamage: 25,
         baseDefense: 5,
         skills: [
-            { name: 'Hızlı Saldırı', icon: '⚡', damage: 20, mpCost: 10, cooldown: 2000, key: 'Q' },
-            { name: 'Gölge Adımı', icon: '💨', dodge: true, mpCost: 15, cooldown: 4000, key: 'W' },
-            { name: 'Kritik Vuruş', icon: '🗡️', damage: 60, mpCost: 25, cooldown: 6000, key: 'E' }
+            { name: 'Rapid Strike', icon: '⚡', damage: 20, mpCost: 10, cooldown: 2000, key: 'Q' },
+            { name: 'Phase Shift', icon: '💨', dodge: true, mpCost: 15, cooldown: 4000, key: 'W' },
+            { name: 'Critical Hit', icon: '💥', damage: 60, mpCost: 25, cooldown: 6000, key: 'E' }
         ]
     },
     shaman: {
-        name: 'Şaman',
-        icon: '🔮',
+        name: 'Tech Mage',
+        spriteType: 'cyber-samurai',
         baseHP: 120,
         baseMP: 120,
         baseDamage: 18,
         baseDefense: 7,
         skills: [
-            { name: 'Işın', icon: '✨', damage: 25, mpCost: 12, cooldown: 2500, key: 'Q' },
-            { name: 'İyileştirme', icon: '💚', heal: 40, mpCost: 20, cooldown: 5000, key: 'W' },
-            { name: 'Yıldırım', icon: '⚡', damage: 45, mpCost: 28, cooldown: 7000, key: 'E' }
+            { name: 'Laser Beam', icon: '✨', damage: 25, mpCost: 12, cooldown: 2500, key: 'Q' },
+            { name: 'Nano Heal', icon: '💚', heal: 40, mpCost: 20, cooldown: 5000, key: 'W' },
+            { name: 'EMP Blast', icon: '⚡', damage: 45, mpCost: 28, cooldown: 7000, key: 'E' }
         ]
     },
     sura: {
-        name: 'Sura',
-        icon: '⚡',
+        name: 'Void Knight',
+        spriteType: 'cyber-samurai',
         baseHP: 130,
         baseMP: 100,
         baseDamage: 20,
         baseDefense: 8,
         skills: [
-            { name: 'Karanlık Kılıç', icon: '🌑', damage: 28, mpCost: 14, cooldown: 2500, key: 'Q' },
-            { name: 'Ruh Emme', icon: '👻', damage: 20, lifesteal: 0.5, mpCost: 18, cooldown: 4500, key: 'W' },
-            { name: 'Kara Büyü', icon: '💀', damage: 55, mpCost: 32, cooldown: 8000, key: 'E' }
+            { name: 'Dark Blade', icon: '🌑', damage: 28, mpCost: 14, cooldown: 2500, key: 'Q' },
+            { name: 'Life Drain', icon: '💀', damage: 20, lifesteal: 0.5, mpCost: 18, cooldown: 4500, key: 'W' },
+            { name: 'Void Surge', icon: '💜', damage: 55, mpCost: 32, cooldown: 8000, key: 'E' }
         ]
     }
 };
 
-// Mob types
+// Mob types - CYBER ENEMIES
 const MOB_TYPES = [
-    { name: 'Kurt', icon: '🐺', hp: 50, damage: 8, xp: 25, gold: 10, speed: 1.5 },
-    { name: 'Goblin', icon: '👹', hp: 60, damage: 10, xp: 30, gold: 15, speed: 1.2 },
-    { name: 'Ork', icon: '👾', hp: 80, damage: 12, xp: 40, gold: 20, speed: 1.0 },
-    { name: 'Troll', icon: '🧟', hp: 120, damage: 15, xp: 60, gold: 30, speed: 0.8 },
-    { name: 'Ejderha', icon: '🐉', hp: 200, damage: 25, xp: 100, gold: 50, speed: 0.6 }
+    { name: 'Cyber Wolf', spriteType: 'cyber-wolf', hp: 50, damage: 8, xp: 25, gold: 10, speed: 1.5, size: 80 },
+    { name: 'Combat Drone', spriteType: 'combat-drone', hp: 60, damage: 10, xp: 30, gold: 15, speed: 1.2, size: 64 },
+    { name: 'War Bot', spriteType: 'cyber-wolf', hp: 80, damage: 12, xp: 40, gold: 20, speed: 1.0, size: 80 },
+    { name: 'Heavy Mech', spriteType: 'heavy-mech', hp: 120, damage: 15, xp: 60, gold: 30, speed: 0.8, size: 160 },
+    { name: 'Titan Mech', spriteType: 'heavy-mech', hp: 200, damage: 25, xp: 100, gold: 50, speed: 0.6, size: 160 }
 ];
 
 // Items
@@ -77,6 +77,9 @@ class Game {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
 
+        // Initialize sprite engine
+        this.spriteEngine = new SpriteEngine();
+
         this.resizeCanvas();
         window.addEventListener('resize', () => this.resizeCanvas());
 
@@ -90,6 +93,10 @@ class Game {
         this.joystickActive = false;
         this.joystickAngle = 0;
         this.joystickPower = 0;
+
+        // Animation tracking
+        this.animationFrame = 0;
+        this.animationSpeed = 0.15;
 
         this.setupControls();
     }
@@ -105,10 +112,17 @@ class Game {
         this.player = {
             class: className,
             name: classData.name,
-            icon: classData.icon,
+            spriteType: classData.spriteType,
             x: this.canvas.width / 2,
             y: this.canvas.height / 2,
-            size: 40,
+            size: 128, // Larger size for detailed sprites
+
+            // Animation state
+            direction: 'south',
+            action: 'idle',
+            animFrame: 0,
+            lastMoveX: 0,
+            lastMoveY: 0,
 
             level: 1,
             xp: 0,
@@ -238,7 +252,7 @@ class Game {
         );
         const type = MOB_TYPES[Math.floor(Math.random() * (typeIndex + 1))];
 
-        const margin = 100;
+        const margin = 200;
         const x = Math.random() < 0.5
             ? Math.random() * margin
             : this.canvas.width - Math.random() * margin;
@@ -250,8 +264,11 @@ class Game {
             ...type,
             x, y,
             maxHP: type.hp,
-            size: 35,
-            targetCooldown: 0
+            size: type.size || 80,
+            targetCooldown: 0,
+            // Animation state
+            direction: 'south',
+            animFrame: 0
         });
     }
 
@@ -266,30 +283,95 @@ class Game {
         this.player.mp -= skill.mpCost;
         skill.cooldownRemaining = skill.cooldown;
 
+        // Trigger attack animation
+        if (skill.damage) {
+            this.player.action = 'attack';
+            this.player.animFrame = 0;
+
+            // Reset to idle after animation
+            setTimeout(() => {
+                if (this.player && this.player.action === 'attack') {
+                    this.player.action = 'idle';
+                }
+            }, 500);
+        }
+
         // Skill effects
         if (skill.damage) {
             const nearestMob = this.findNearestMob();
             if (nearestMob) {
                 const distance = this.getDistance(this.player, nearestMob);
                 if (distance < 300) {
-                    this.damageEnemy(nearestMob, skill.damage + this.player.damage);
+                    // Face the enemy
+                    const dx = nearestMob.x - this.player.x;
+                    const dy = nearestMob.y - this.player.y;
+                    this.player.direction = this.getDirection(dx, dy);
 
-                    if (skill.lifesteal) {
-                        this.player.hp = Math.min(
-                            this.player.maxHP,
-                            this.player.hp + skill.damage * skill.lifesteal
-                        );
-                    }
+                    // Deal damage with delay for animation
+                    setTimeout(() => {
+                        this.damageEnemy(nearestMob, skill.damage + this.player.damage);
+
+                        if (skill.lifesteal) {
+                            this.player.hp = Math.min(
+                                this.player.maxHP,
+                                this.player.hp + skill.damage * skill.lifesteal
+                            );
+                        }
+                    }, 200);
+
+                    // Create attack effect
+                    this.createAttackEffect(nearestMob.x, nearestMob.y);
                 }
             }
         }
 
         if (skill.heal) {
             this.player.hp = Math.min(this.player.maxHP, this.player.hp + skill.heal);
+            this.createHealEffect(this.player.x, this.player.y);
         }
 
         this.updateHUD();
         this.updateSkillUI(index);
+    }
+
+    /**
+     * Create visual attack effect
+     */
+    createAttackEffect(x, y) {
+        const effect = document.createElement('div');
+        effect.style.position = 'fixed';
+        effect.style.left = x + 'px';
+        effect.style.top = y + 'px';
+        effect.style.width = '80px';
+        effect.style.height = '80px';
+        effect.style.borderRadius = '50%';
+        effect.style.background = 'radial-gradient(circle, rgba(255,0,255,0.8) 0%, rgba(255,0,255,0) 70%)';
+        effect.style.pointerEvents = 'none';
+        effect.style.animation = 'expand 0.5s ease-out';
+        effect.style.transform = 'translate(-50%, -50%)';
+
+        document.body.appendChild(effect);
+
+        setTimeout(() => effect.remove(), 500);
+    }
+
+    /**
+     * Create visual heal effect
+     */
+    createHealEffect(x, y) {
+        const effect = document.createElement('div');
+        effect.style.position = 'fixed';
+        effect.style.left = x + 'px';
+        effect.style.top = y + 'px';
+        effect.style.fontSize = '32px';
+        effect.textContent = '💚';
+        effect.style.pointerEvents = 'none';
+        effect.style.animation = 'floatUp 1s ease-out';
+        effect.style.transform = 'translate(-50%, -50%)';
+
+        document.body.appendChild(effect);
+
+        setTimeout(() => effect.remove(), 1000);
     }
 
     updateSkillUI(index) {
@@ -332,6 +414,28 @@ class Game {
 
     getDistance(a, b) {
         return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+    }
+
+    /**
+     * Get 8-directional direction from movement vector
+     */
+    getDirection(dx, dy) {
+        if (dx === 0 && dy === 0) return this.player ? this.player.direction : 'south';
+
+        const angle = Math.atan2(dy, dx);
+        const degrees = angle * 180 / Math.PI;
+
+        // Convert angle to 8 directions
+        if (degrees >= -22.5 && degrees < 22.5) return 'east';
+        if (degrees >= 22.5 && degrees < 67.5) return 'south-east';
+        if (degrees >= 67.5 && degrees < 112.5) return 'south';
+        if (degrees >= 112.5 && degrees < 157.5) return 'south-west';
+        if (degrees >= 157.5 || degrees < -157.5) return 'west';
+        if (degrees >= -157.5 && degrees < -112.5) return 'north-west';
+        if (degrees >= -112.5 && degrees < -67.5) return 'north';
+        if (degrees >= -67.5 && degrees < -22.5) return 'north-east';
+
+        return 'south';
     }
 
     damageEnemy(enemy, damage) {
@@ -461,6 +565,9 @@ class Game {
     update() {
         if (!this.player) return;
 
+        // Update animation frame
+        this.animationFrame += this.animationSpeed;
+
         // Player movement
         let dx = 0, dy = 0;
 
@@ -480,8 +587,19 @@ class Game {
             dx = (dx / magnitude) * this.player.speed;
             dy = (dy / magnitude) * this.player.speed;
 
-            this.player.x = Math.max(20, Math.min(this.canvas.width - 20, this.player.x + dx));
-            this.player.y = Math.max(20, Math.min(this.canvas.height - 20, this.player.y + dy));
+            this.player.x = Math.max(64, Math.min(this.canvas.width - 64, this.player.x + dx));
+            this.player.y = Math.max(64, Math.min(this.canvas.height - 64, this.player.y + dy));
+
+            // Update player direction based on movement (8 directions)
+            this.player.direction = this.getDirection(dx, dy);
+            this.player.action = 'walk';
+            this.player.animFrame = Math.floor(this.animationFrame) % 8;
+
+            this.player.lastMoveX = dx;
+            this.player.lastMoveY = dy;
+        } else {
+            this.player.action = 'idle';
+            this.player.animFrame = Math.floor(this.animationFrame * 0.5) % 8;
         }
 
         // Update mobs
@@ -490,15 +608,22 @@ class Game {
 
             if (dist < 400) {
                 const angle = Math.atan2(this.player.y - mob.y, this.player.x - mob.x);
-                mob.x += Math.cos(angle) * mob.speed;
-                mob.y += Math.sin(angle) * mob.speed;
+                const moveX = Math.cos(angle) * mob.speed;
+                const moveY = Math.sin(angle) * mob.speed;
+
+                mob.x += moveX;
+                mob.y += moveY;
+
+                // Update mob direction
+                mob.direction = this.getDirection(moveX, moveY);
+                mob.animFrame = Math.floor(this.animationFrame) % 8;
 
                 // Attack player
-                if (dist < 50) {
+                if (dist < 80) {
                     if (mob.targetCooldown <= 0) {
                         const damage = Math.max(1, mob.damage - this.player.defense);
                         this.player.hp -= damage;
-                        this.showDamage(this.player.x, this.player.y - 40, damage);
+                        this.showDamage(this.player.x, this.player.y - 60, damage);
                         mob.targetCooldown = 1000;
 
                         if (this.player.hp <= 0) {
@@ -508,6 +633,8 @@ class Game {
                         this.updateHUD();
                     }
                 }
+            } else {
+                mob.animFrame = Math.floor(this.animationFrame * 0.3) % 8;
             }
 
             if (mob.targetCooldown > 0) {
@@ -537,12 +664,16 @@ class Game {
     }
 
     draw() {
-        this.ctx.fillStyle = '#1a1a2e';
+        // Background
+        this.ctx.fillStyle = '#0a0e27';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Grid
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        // Cyber grid with glow
+        this.ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
         this.ctx.lineWidth = 1;
+        this.ctx.shadowBlur = 5;
+        this.ctx.shadowColor = 'rgba(0, 255, 255, 0.3)';
+
         for (let x = 0; x < this.canvas.width; x += 50) {
             this.ctx.beginPath();
             this.ctx.moveTo(x, 0);
@@ -556,57 +687,112 @@ class Game {
             this.ctx.stroke();
         }
 
-        // Drops
+        this.ctx.shadowBlur = 0;
+
+        // Drops (items)
         this.drops.forEach(drop => {
+            // Item glow
+            this.ctx.fillStyle = 'rgba(255, 215, 0, 0.2)';
+            this.ctx.beginPath();
+            this.ctx.arc(drop.x, drop.y, drop.size * 1.5, 0, Math.PI * 2);
+            this.ctx.fill();
+
             this.ctx.font = drop.size + 'px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(drop.icon, drop.x, drop.y);
-        });
-
-        // Mobs
-        this.mobs.forEach(mob => {
-            // Shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            this.ctx.beginPath();
-            this.ctx.ellipse(mob.x, mob.y + mob.size/2, mob.size/2, mob.size/4, 0, 0, Math.PI * 2);
-            this.ctx.fill();
-
-            // Mob icon
-            this.ctx.font = mob.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(mob.icon, mob.x, mob.y);
-
-            // HP bar
-            const barWidth = 40;
-            const barHeight = 4;
-            const hpPercent = mob.hp / mob.maxHP;
-
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth, barHeight);
-
-            this.ctx.fillStyle = hpPercent > 0.5 ? '#4ade80' : hpPercent > 0.25 ? '#fbbf24' : '#ef4444';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth * hpPercent, barHeight);
-        });
-
-        // Player
-        if (this.player) {
-            // Shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            this.ctx.beginPath();
-            this.ctx.ellipse(this.player.x, this.player.y + this.player.size/2, this.player.size/2, this.player.size/4, 0, 0, Math.PI * 2);
-            this.ctx.fill();
-
-            // Player icon
-            this.ctx.font = this.player.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-
-            // Glow effect
             this.ctx.shadowBlur = 10;
             this.ctx.shadowColor = '#ffd700';
-            this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
+            this.ctx.fillText(drop.icon, drop.x, drop.y);
+            this.ctx.shadowBlur = 0;
+        });
+
+        // Draw mobs with sprites
+        this.mobs.forEach(mob => {
+            this.spriteEngine.drawCyberWolf(
+                this.ctx,
+                mob.x - mob.size / 2,
+                mob.y - mob.size / 2,
+                mob.direction || 'south',
+                mob.animFrame || 0
+            );
+
+            // HP bar
+            const barWidth = mob.size * 0.8;
+            const barHeight = 6;
+            const hpPercent = mob.hp / mob.maxHP;
+
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size/2 - 15, barWidth, barHeight);
+
+            // HP bar gradient
+            const hpGradient = this.ctx.createLinearGradient(
+                mob.x - barWidth/2, 0,
+                mob.x + barWidth/2, 0
+            );
+            if (hpPercent > 0.5) {
+                hpGradient.addColorStop(0, '#4ade80');
+                hpGradient.addColorStop(1, '#22c55e');
+            } else if (hpPercent > 0.25) {
+                hpGradient.addColorStop(0, '#fbbf24');
+                hpGradient.addColorStop(1, '#f59e0b');
+            } else {
+                hpGradient.addColorStop(0, '#ef4444');
+                hpGradient.addColorStop(1, '#dc2626');
+            }
+
+            this.ctx.fillStyle = hpGradient;
+            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size/2 - 15, barWidth * hpPercent, barHeight);
+
+            // HP bar glow
+            this.ctx.strokeStyle = hpPercent > 0.5 ? '#4ade80' : hpPercent > 0.25 ? '#fbbf24' : '#ef4444';
+            this.ctx.lineWidth = 1;
+            this.ctx.shadowBlur = 5;
+            this.ctx.shadowColor = this.ctx.strokeStyle;
+            this.ctx.strokeRect(mob.x - barWidth/2, mob.y - mob.size/2 - 15, barWidth, barHeight);
+            this.ctx.shadowBlur = 0;
+
+            // Mob name
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = '10px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.shadowBlur = 3;
+            this.ctx.shadowColor = '#000000';
+            this.ctx.fillText(mob.name, mob.x, mob.y - mob.size/2 - 25);
+            this.ctx.shadowBlur = 0;
+        });
+
+        // Draw player with sprite
+        if (this.player) {
+            // Player glow aura
+            const glowGradient = this.ctx.createRadialGradient(
+                this.player.x, this.player.y, 0,
+                this.player.x, this.player.y, this.player.size
+            );
+            glowGradient.addColorStop(0, 'rgba(0, 255, 255, 0.3)');
+            glowGradient.addColorStop(1, 'rgba(0, 255, 255, 0)');
+
+            this.ctx.fillStyle = glowGradient;
+            this.ctx.beginPath();
+            this.ctx.arc(this.player.x, this.player.y, this.player.size, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Draw player sprite
+            this.spriteEngine.drawCyberSamurai(
+                this.ctx,
+                this.player.x - this.player.size / 2,
+                this.player.y - this.player.size / 2,
+                this.player.direction,
+                this.player.animFrame,
+                this.player.action
+            );
+
+            // Player name tag
+            this.ctx.fillStyle = '#00ffff';
+            this.ctx.font = 'bold 14px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.shadowBlur = 5;
+            this.ctx.shadowColor = '#00ffff';
+            this.ctx.fillText(this.player.name, this.player.x, this.player.y - this.player.size/2 - 20);
             this.ctx.shadowBlur = 0;
         }
     }
