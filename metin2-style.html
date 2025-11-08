@@ -346,6 +346,347 @@
             font-weight: bold;
             z-index: 1000;
         }
+
+        /* Tutorial System */
+        #tutorialOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.3);
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 100px;
+            z-index: 2000;
+            pointer-events: none;
+        }
+
+        #tutorialOverlay.highlighting {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        #tutorialBox {
+            background: linear-gradient(135deg, #1a1a2e 0%, #2d1b69 100%);
+            border: 3px solid #ffd700;
+            border-radius: 15px;
+            padding: 20px 30px;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            pointer-events: auto;
+            animation: tutorialPulse 0.5s ease-out;
+        }
+
+        @keyframes tutorialPulse {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        #tutorialMessage {
+            font-size: 18px;
+            margin-bottom: 15px;
+            line-height: 1.5;
+            color: #fff;
+        }
+
+        #tutorialProgress {
+            font-size: 12px;
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+
+        #tutorialSkip {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        #tutorialSkip:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: #ffd700;
+        }
+
+        #tutorialArrow {
+            position: fixed;
+            width: 0;
+            height: 0;
+            display: none;
+            pointer-events: none;
+            z-index: 2001;
+        }
+
+        .tutorial-arrow-bottom-left {
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 30px solid #ffd700;
+            animation: arrowBounce 1s infinite;
+        }
+
+        .tutorial-arrow-right {
+            border-top: 20px solid transparent;
+            border-bottom: 20px solid transparent;
+            border-left: 30px solid #ffd700;
+            animation: arrowBounce 1s infinite;
+        }
+
+        .tutorial-arrow-bottom {
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 30px solid #ffd700;
+            animation: arrowBounce 1s infinite;
+        }
+
+        @keyframes arrowBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(10px); }
+        }
+
+        .tutorial-highlight {
+            position: relative;
+            z-index: 2002 !important;
+            box-shadow: 0 0 0 5px #ffd700, 0 0 20px 10px rgba(255, 215, 0, 0.5) !important;
+            animation: highlightPulse 1.5s infinite !important;
+        }
+
+        @keyframes highlightPulse {
+            0%, 100% { box-shadow: 0 0 0 5px #ffd700, 0 0 20px 10px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 0 0 8px #ffd700, 0 0 30px 15px rgba(255, 215, 0, 0.8); }
+        }
+
+        /* Tooltip System */
+        .game-tooltip {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 13px;
+            pointer-events: none;
+            z-index: 3000;
+            display: none;
+            max-width: 250px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Settings Panel */
+        .settings-btn {
+            position: fixed;
+            top: 10px;
+            right: 80px;
+            background: rgba(100, 50, 150, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .settings-btn:hover {
+            background: rgba(120, 70, 180, 1);
+            transform: rotate(90deg);
+        }
+
+        .settings-panel {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 5000;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .settings-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 3px solid #ffd700;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.8);
+        }
+
+        .settings-content h2 {
+            color: #ffd700;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 28px;
+        }
+
+        .settings-content h3 {
+            color: #fff;
+            margin: 20px 0 10px 0;
+            font-size: 20px;
+        }
+
+        .settings-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .volume-control label {
+            min-width: 120px;
+            font-size: 15px;
+        }
+
+        .volume-control input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .volume-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ffd700;
+            cursor: pointer;
+        }
+
+        .volume-control input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ffd700;
+            cursor: pointer;
+            border: none;
+        }
+
+        .volume-control span {
+            min-width: 50px;
+            text-align: right;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .keyboard-shortcuts {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .shortcut-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .shortcut-item .key {
+            background: rgba(255, 215, 0, 0.2);
+            border: 2px solid #ffd700;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-family: monospace;
+            color: #ffd700;
+            font-size: 14px;
+        }
+
+        .action-btn {
+            background: rgba(255, 215, 0, 0.2);
+            border: 2px solid #ffd700;
+            color: #ffd700;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 215, 0, 0.4);
+            transform: scale(1.05);
+        }
+
+        .close-btn {
+            background: rgba(255, 50, 50, 0.3);
+            border: 2px solid #ff4444;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 50, 50, 0.5);
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .settings-content {
+                padding: 20px;
+            }
+
+            .settings-content h2 {
+                font-size: 22px;
+            }
+
+            .settings-content h3 {
+                font-size: 18px;
+            }
+
+            .volume-control {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .volume-control label {
+                min-width: auto;
+            }
+
+            .volume-control input[type="range"] {
+                width: 100%;
+            }
+
+            .shortcut-item {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+            }
+        }
     </style>
 </head>
 <body>

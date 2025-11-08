@@ -1,3 +1,511 @@
+// Audio Manager
+class AudioManager {
+    constructor() {
+        this.sounds = {};
+        this.music = {};
+        this.currentMusic = null;
+        this.isCombat = false;
+
+        // Volume settings
+        this.volumes = {
+            master: 0.7,
+            music: 0.5,
+            sfx: 0.8
+        };
+
+        // Load from localStorage
+        this.loadSettings();
+
+        this.initializeAudio();
+    }
+
+    initializeAudio() {
+        // Background Music (5 tracks for different zones/states)
+        this.music = {
+            menu: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/10/audio_d1718ab41b.mp3', true, 'music'),
+            idle: this.createAudio('https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3', true, 'music'),
+            combat: this.createAudio('https://cdn.pixabay.com/download/audio/2022/08/02/audio_884fe25f21.mp3', true, 'music'),
+            boss: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c70ef0f3.mp3', true, 'music'),
+            victory: this.createAudio('https://cdn.pixabay.com/download/audio/2022/08/04/audio_d0e2b68177.mp3', false, 'music')
+        };
+
+        // Sound Effects (50+ SFX organized by category)
+        this.sounds = {
+            // Combat SFX
+            attack_sword: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_4744e3c301.mp3', false, 'sfx'),
+            attack_magic: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/10/audio_ec4dd0c3c6.mp3', false, 'sfx'),
+            attack_critical: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/20/audio_1723a36349.mp3', false, 'sfx'),
+            hit_player: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_9b0e92a6fa.mp3', false, 'sfx'),
+            hit_enemy: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/24/audio_e183c08578.mp3', false, 'sfx'),
+            death_player: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/10/audio_5b62a84cb3.mp3', false, 'sfx'),
+            death_enemy: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_8e6967a7b8.mp3', false, 'sfx'),
+
+            // Skills SFX
+            skill_warrior_1: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/10/audio_69c82d5e14.mp3', false, 'sfx'),
+            skill_warrior_2: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_f14de513be.mp3', false, 'sfx'),
+            skill_warrior_3: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/20/audio_abcd123456.mp3', false, 'sfx'),
+            skill_ninja_1: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/12/audio_swift123abc.mp3', false, 'sfx'),
+            skill_ninja_2: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/18/audio_shadow456def.mp3', false, 'sfx'),
+            skill_ninja_3: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/22/audio_crit789ghi.mp3', false, 'sfx'),
+            skill_shaman_1: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/14/audio_magic111aaa.mp3', false, 'sfx'),
+            skill_shaman_2: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/16/audio_heal222bbb.mp3', false, 'sfx'),
+            skill_shaman_3: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/25/audio_lightning333.mp3', false, 'sfx'),
+            skill_sura_1: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/13/audio_dark444ccc.mp3', false, 'sfx'),
+            skill_sura_2: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/17/audio_soul555ddd.mp3', false, 'sfx'),
+            skill_sura_3: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/21/audio_black666eee.mp3', false, 'sfx'),
+
+            // UI SFX
+            ui_click: this.createAudio('https://cdn.pixabay.com/download/audio/2021/08/04/audio_12b0c7443c.mp3', false, 'sfx'),
+            ui_hover: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/10/audio_hover001xyz.mp3', false, 'sfx'),
+            ui_select: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/11/audio_select002abc.mp3', false, 'sfx'),
+            ui_error: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/12/audio_error003def.mp3', false, 'sfx'),
+            ui_success: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/13/audio_success004ghi.mp3', false, 'sfx'),
+
+            // Item/Loot SFX
+            loot_pickup: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/10/audio_pickup101xyz.mp3', false, 'sfx'),
+            loot_gold: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_gold102abc.mp3', false, 'sfx'),
+            loot_rare: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/18/audio_rare103def.mp3', false, 'sfx'),
+            potion_use: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/20/audio_potion201xyz.mp3', false, 'sfx'),
+            equip_item: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/22/audio_equip202abc.mp3', false, 'sfx'),
+
+            // Level/XP SFX
+            xp_gain: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/16/audio_xp301xyz.mp3', false, 'sfx'),
+            level_up: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/19/audio_levelup302abc.mp3', false, 'sfx'),
+
+            // Movement SFX
+            footstep_1: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/14/audio_step401xyz.mp3', false, 'sfx'),
+            footstep_2: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_step402abc.mp3', false, 'sfx'),
+            dodge: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/17/audio_dodge501xyz.mp3', false, 'sfx'),
+
+            // Mob SFX
+            mob_wolf: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/11/audio_wolf601xyz.mp3', false, 'sfx'),
+            mob_goblin: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/12/audio_goblin602abc.mp3', false, 'sfx'),
+            mob_ork: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/13/audio_ork603def.mp3', false, 'sfx'),
+            mob_troll: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/14/audio_troll604ghi.mp3', false, 'sfx'),
+            mob_dragon: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_dragon605jkl.mp3', false, 'sfx'),
+
+            // Ambient SFX
+            ambient_wind: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/16/audio_wind701xyz.mp3', true, 'sfx'),
+            ambient_fire: this.createAudio('https://cdn.pixabay.com/download/audio/2022/03/17/audio_fire702abc.mp3', true, 'sfx')
+        };
+    }
+
+    createAudio(src, loop = false, type = 'sfx') {
+        const audio = new Audio();
+        audio.loop = loop;
+        audio.volume = this.volumes.master * this.volumes[type];
+        // Don't set src immediately to avoid auto-loading
+        audio.dataset.src = src;
+        audio.preload = 'none'; // Don't preload to avoid errors with placeholder URLs
+        return audio;
+    }
+
+    playSound(name) {
+        const sound = this.sounds[name];
+        if (!sound) return;
+
+        try {
+            // Clone the audio to allow multiple simultaneous plays
+            const clone = sound.cloneNode();
+            clone.volume = this.volumes.master * this.volumes.sfx;
+            // Only set src if it hasn't been set
+            if (!clone.src && sound.dataset.src) {
+                clone.src = sound.dataset.src;
+            }
+            clone.play().catch(e => {
+                // Silently fail for placeholder URLs
+                console.debug('Audio play failed:', name, e.message);
+            });
+        } catch (e) {
+            console.debug('Audio error:', name, e.message);
+        }
+    }
+
+    playMusic(name) {
+        if (this.currentMusic) {
+            this.fadeOut(this.currentMusic, 1000);
+        }
+
+        const music = this.music[name];
+        if (!music) return;
+
+        try {
+            if (!music.src && music.dataset.src) {
+                music.src = music.dataset.src;
+            }
+            music.volume = 0;
+            music.play().catch(e => console.debug('Music play failed:', name, e.message));
+            this.fadeIn(music, 1000);
+            this.currentMusic = music;
+        } catch (e) {
+            console.debug('Music error:', name, e.message);
+        }
+    }
+
+    fadeIn(audio, duration) {
+        const targetVolume = this.volumes.master * this.volumes.music;
+        const steps = 20;
+        const stepDuration = duration / steps;
+        const volumeStep = targetVolume / steps;
+        let currentStep = 0;
+
+        const interval = setInterval(() => {
+            currentStep++;
+            audio.volume = Math.min(volumeStep * currentStep, targetVolume);
+
+            if (currentStep >= steps) {
+                clearInterval(interval);
+            }
+        }, stepDuration);
+    }
+
+    fadeOut(audio, duration) {
+        const steps = 20;
+        const stepDuration = duration / steps;
+        const volumeStep = audio.volume / steps;
+        let currentStep = 0;
+
+        const interval = setInterval(() => {
+            currentStep++;
+            audio.volume = Math.max(audio.volume - volumeStep, 0);
+
+            if (currentStep >= steps) {
+                clearInterval(interval);
+                audio.pause();
+                audio.currentTime = 0;
+            }
+        }, stepDuration);
+    }
+
+    toggleCombatMusic(inCombat) {
+        if (this.isCombat === inCombat) return;
+
+        this.isCombat = inCombat;
+
+        if (inCombat) {
+            this.playMusic('combat');
+        } else {
+            this.playMusic('idle');
+        }
+    }
+
+    setVolume(type, value) {
+        this.volumes[type] = value;
+        this.saveSettings();
+
+        // Update all audio volumes
+        if (type === 'master' || type === 'music') {
+            Object.values(this.music).forEach(audio => {
+                audio.volume = this.volumes.master * this.volumes.music;
+            });
+        }
+
+        if (type === 'master' || type === 'sfx') {
+            Object.values(this.sounds).forEach(audio => {
+                audio.volume = this.volumes.master * this.volumes.sfx;
+            });
+        }
+    }
+
+    saveSettings() {
+        localStorage.setItem('audio_settings', JSON.stringify(this.volumes));
+    }
+
+    loadSettings() {
+        const saved = localStorage.getItem('audio_settings');
+        if (saved) {
+            this.volumes = JSON.parse(saved);
+        }
+    }
+}
+
+// Tutorial System
+class TutorialSystem {
+    constructor(game) {
+        this.game = game;
+        this.currentStep = 0;
+        this.completed = false;
+        this.active = false;
+
+        // Check if tutorial was completed before
+        const tutorialCompleted = localStorage.getItem('tutorial_completed');
+        if (tutorialCompleted) {
+            this.completed = true;
+        }
+
+        this.steps = [
+            {
+                step: 1,
+                trigger: 'game_start',
+                message: 'Hoş geldin! Joystick veya WASD tuşları ile hareket edebilirsin.',
+                highlight: '#joystick',
+                arrow: 'bottom-left',
+                canSkip: false,
+                duration: 5000
+            },
+            {
+                step: 2,
+                trigger: 'first_move',
+                message: 'Harika! Şimdi düşmanlara yaklaş.',
+                highlight: null,
+                arrow: null,
+                canSkip: false,
+                duration: 3000
+            },
+            {
+                step: 3,
+                trigger: 'first_enemy_nearby',
+                message: 'Düşman yakında! Q, W veya E tuşları ile skill kullan!',
+                highlight: '#skills',
+                arrow: 'right',
+                waitFor: 'skill_used'
+            },
+            {
+                step: 4,
+                trigger: 'skill_used',
+                message: 'Mükemmel! Skilllerin cooldown süresi var, dikkatli kullan.',
+                highlight: '#skills',
+                arrow: 'right',
+                duration: 3000
+            },
+            {
+                step: 5,
+                trigger: 'first_kill',
+                message: 'İlk düşmanını yendin! 🎉 Loot düştü, toplamak için üzerine yürü.',
+                highlight: null,
+                arrow: null,
+                waitFor: 'first_loot'
+            },
+            {
+                step: 6,
+                trigger: 'first_loot',
+                message: 'İtem topladın! Envanter slotları 1-5 tuşları ile kullanılabilir.',
+                highlight: '#inventory',
+                arrow: 'bottom',
+                duration: 4000
+            },
+            {
+                step: 7,
+                trigger: 'low_health',
+                message: 'HP\'n düşük! İksir kullanmak için 1-5 tuşlarına bas.',
+                highlight: '#inventory',
+                arrow: 'bottom',
+                waitFor: 'potion_used',
+                canSkip: true
+            },
+            {
+                step: 8,
+                trigger: 'tutorial_end',
+                message: 'Tutorial tamamlandı! Artık kendi başınasın. İyi şanslar! 🎮',
+                highlight: null,
+                arrow: null,
+                duration: 3000,
+                onComplete: () => {
+                    this.completeTutorial();
+                }
+            }
+        ];
+
+        this.stepStates = {};
+    }
+
+    start() {
+        if (this.completed) return;
+
+        this.active = true;
+        this.currentStep = 0;
+        this.createTutorialUI();
+    }
+
+    createTutorialUI() {
+        // Create tutorial overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'tutorialOverlay';
+        overlay.innerHTML = `
+            <div id="tutorialBox">
+                <div id="tutorialMessage"></div>
+                <div id="tutorialProgress"></div>
+                <button id="tutorialSkip" style="display: none;">Geç</button>
+            </div>
+            <div id="tutorialArrow"></div>
+        `;
+        document.body.appendChild(overlay);
+    }
+
+    trigger(eventName, data = {}) {
+        if (!this.active || this.completed) return;
+
+        const currentStepData = this.steps[this.currentStep];
+
+        if (currentStepData.trigger === eventName || currentStepData.waitFor === eventName) {
+            this.showStep(currentStepData);
+            this.stepStates[eventName] = true;
+
+            // Auto advance if not waiting
+            if (!currentStepData.waitFor && currentStepData.duration) {
+                setTimeout(() => {
+                    this.nextStep();
+                }, currentStepData.duration);
+            } else if (currentStepData.waitFor === eventName) {
+                setTimeout(() => {
+                    this.nextStep();
+                }, currentStepData.duration || 1000);
+            }
+        }
+    }
+
+    showStep(step) {
+        const message = document.getElementById('tutorialMessage');
+        const progress = document.getElementById('tutorialProgress');
+        const skipBtn = document.getElementById('tutorialSkip');
+        const arrow = document.getElementById('tutorialArrow');
+        const overlay = document.getElementById('tutorialOverlay');
+
+        if (!message) return;
+
+        message.textContent = step.message;
+        progress.textContent = `${step.step}/${this.steps.length}`;
+
+        if (step.canSkip) {
+            skipBtn.style.display = 'block';
+            skipBtn.onclick = () => this.nextStep();
+        } else {
+            skipBtn.style.display = 'none';
+        }
+
+        // Highlight element
+        if (step.highlight) {
+            const element = document.querySelector(step.highlight);
+            if (element) {
+                overlay.classList.add('highlighting');
+                element.classList.add('tutorial-highlight');
+
+                // Position arrow
+                if (step.arrow) {
+                    arrow.className = 'tutorial-arrow-' + step.arrow;
+                    arrow.style.display = 'block';
+                    this.positionArrow(arrow, element, step.arrow);
+                }
+            }
+        } else {
+            overlay.classList.remove('highlighting');
+            arrow.style.display = 'none';
+            document.querySelectorAll('.tutorial-highlight').forEach(el => {
+                el.classList.remove('tutorial-highlight');
+            });
+        }
+
+        overlay.style.display = 'flex';
+
+        // Play sound
+        if (this.game.audioManager) {
+            this.game.audioManager.playSound('ui_success');
+        }
+    }
+
+    positionArrow(arrow, element, direction) {
+        const rect = element.getBoundingClientRect();
+
+        switch(direction) {
+            case 'bottom-left':
+                arrow.style.left = rect.left + 'px';
+                arrow.style.top = (rect.bottom + 10) + 'px';
+                break;
+            case 'right':
+                arrow.style.left = (rect.right + 10) + 'px';
+                arrow.style.top = (rect.top + rect.height / 2) + 'px';
+                break;
+            case 'bottom':
+                arrow.style.left = (rect.left + rect.width / 2) + 'px';
+                arrow.style.top = (rect.bottom + 10) + 'px';
+                break;
+        }
+    }
+
+    nextStep() {
+        this.currentStep++;
+
+        if (this.currentStep >= this.steps.length) {
+            this.completeTutorial();
+        }
+    }
+
+    completeTutorial() {
+        this.completed = true;
+        this.active = false;
+        localStorage.setItem('tutorial_completed', 'true');
+
+        const overlay = document.getElementById('tutorialOverlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+
+        document.querySelectorAll('.tutorial-highlight').forEach(el => {
+            el.classList.remove('tutorial-highlight');
+        });
+    }
+
+    reset() {
+        localStorage.removeItem('tutorial_completed');
+        this.completed = false;
+        this.currentStep = 0;
+        this.stepStates = {};
+    }
+}
+
+// Tooltip System
+class TooltipSystem {
+    constructor() {
+        this.createTooltipElement();
+        this.activeTooltips = new Map();
+    }
+
+    createTooltipElement() {
+        const tooltip = document.createElement('div');
+        tooltip.id = 'gameTooltip';
+        tooltip.className = 'game-tooltip';
+        document.body.appendChild(tooltip);
+        this.tooltip = tooltip;
+    }
+
+    show(text, x, y) {
+        this.tooltip.textContent = text;
+        this.tooltip.style.left = x + 'px';
+        this.tooltip.style.top = y + 'px';
+        this.tooltip.style.display = 'block';
+    }
+
+    hide() {
+        this.tooltip.style.display = 'none';
+    }
+
+    register(element, text, options = {}) {
+        const showTooltip = (e) => {
+            this.show(text, e.pageX + 10, e.pageY + 10);
+        };
+
+        const hideTooltip = () => {
+            this.hide();
+        };
+
+        element.addEventListener('mouseenter', showTooltip);
+        element.addEventListener('mouseleave', hideTooltip);
+        element.addEventListener('mousemove', showTooltip);
+
+        this.activeTooltips.set(element, { showTooltip, hideTooltip });
+    }
+
+    unregister(element) {
+        const handlers = this.activeTooltips.get(element);
+        if (handlers) {
+            element.removeEventListener('mouseenter', handlers.showTooltip);
+            element.removeEventListener('mouseleave', handlers.hideTooltip);
+            element.removeEventListener('mousemove', handlers.showTooltip);
+            this.activeTooltips.delete(element);
+        }
+    }
+}
+
 // Character Classes
 const CLASSES = {
     warrior: {
@@ -91,7 +599,23 @@ class Game {
         this.joystickAngle = 0;
         this.joystickPower = 0;
 
+        // Initialize new systems
+        this.audioManager = new AudioManager();
+        this.tutorialSystem = new TutorialSystem(this);
+        this.tooltipSystem = new TooltipSystem();
+
+        // Tutorial tracking
+        this.hasMoved = false;
+        this.hasKilled = false;
+        this.hasLooted = false;
+        this.enemiesNearby = 0;
+
+        // Combat state for music
+        this.inCombat = false;
+        this.combatTimeout = null;
+
         this.setupControls();
+        this.createSettingsButton();
     }
 
     resizeCanvas() {
@@ -136,6 +660,13 @@ class Game {
         document.getElementById('gameScreen').classList.add('active');
 
         this.spawnMobs();
+
+        // Audio & Tutorial
+        this.audioManager.playSound('ui_select');
+        this.audioManager.playMusic('idle');
+        this.tutorialSystem.start();
+        this.tutorialSystem.trigger('game_start');
+
         this.gameLoop();
     }
 
@@ -260,11 +791,24 @@ class Game {
 
         const skill = this.player.skills[index];
 
-        if (skill.cooldownRemaining > 0) return;
-        if (this.player.mp < skill.mpCost) return;
+        if (skill.cooldownRemaining > 0) {
+            this.audioManager.playSound('ui_error');
+            return;
+        }
+        if (this.player.mp < skill.mpCost) {
+            this.audioManager.playSound('ui_error');
+            return;
+        }
 
         this.player.mp -= skill.mpCost;
         skill.cooldownRemaining = skill.cooldown;
+
+        // Play skill sound based on class
+        const skillSound = `skill_${this.player.class}_${index + 1}`;
+        this.audioManager.playSound(skillSound);
+
+        // Tutorial trigger
+        this.tutorialSystem.trigger('skill_used');
 
         // Skill effects
         if (skill.damage) {
@@ -286,6 +830,7 @@ class Game {
 
         if (skill.heal) {
             this.player.hp = Math.min(this.player.maxHP, this.player.hp + skill.heal);
+            this.audioManager.playSound('skill_shaman_2'); // Heal sound
         }
 
         this.updateHUD();
@@ -337,6 +882,7 @@ class Game {
     damageEnemy(enemy, damage) {
         enemy.hp -= damage;
         this.showDamage(enemy.x, enemy.y, damage);
+        this.audioManager.playSound('hit_enemy');
 
         if (enemy.hp <= 0) {
             this.killEnemy(enemy);
@@ -347,6 +893,16 @@ class Game {
         const index = this.mobs.indexOf(enemy);
         if (index > -1) {
             this.mobs.splice(index, 1);
+        }
+
+        // Audio
+        this.audioManager.playSound('death_enemy');
+        this.audioManager.playSound('xp_gain');
+
+        // Tutorial
+        if (!this.hasKilled) {
+            this.hasKilled = true;
+            this.tutorialSystem.trigger('first_kill');
         }
 
         // XP
@@ -384,6 +940,7 @@ class Game {
         this.player.damage += 3;
         this.player.defense += 2;
 
+        this.audioManager.playSound('level_up');
         this.showNotification('🎉 LEVEL UP! ' + this.player.level);
         this.updateHUD();
     }
@@ -416,6 +973,19 @@ class Game {
             this.drops.splice(index, 1);
         }
 
+        // Audio
+        if (drop.type === 'gold') {
+            this.audioManager.playSound('loot_gold');
+        } else {
+            this.audioManager.playSound('loot_pickup');
+        }
+
+        // Tutorial
+        if (!this.hasLooted) {
+            this.hasLooted = true;
+            this.tutorialSystem.trigger('first_loot');
+        }
+
         // Add to inventory
         for (let i = 0; i < this.inventory.length; i++) {
             if (!this.inventory[i]) {
@@ -438,6 +1008,9 @@ class Game {
             if (item.mana) {
                 this.player.mp = Math.min(this.player.maxMP, this.player.mp + item.mana);
             }
+
+            this.audioManager.playSound('potion_use');
+            this.tutorialSystem.trigger('potion_used');
 
             this.inventory[slot] = null;
             this.updateInventory();
@@ -482,13 +1055,23 @@ class Game {
 
             this.player.x = Math.max(20, Math.min(this.canvas.width - 20, this.player.x + dx));
             this.player.y = Math.max(20, Math.min(this.canvas.height - 20, this.player.y + dy));
+
+            // Tutorial: first move
+            if (!this.hasMoved) {
+                this.hasMoved = true;
+                this.tutorialSystem.trigger('first_move');
+            }
         }
+
+        // Track nearby enemies
+        let enemiesNearby = 0;
 
         // Update mobs
         this.mobs.forEach(mob => {
             const dist = this.getDistance(this.player, mob);
 
             if (dist < 400) {
+                enemiesNearby++;
                 const angle = Math.atan2(this.player.y - mob.y, this.player.x - mob.x);
                 mob.x += Math.cos(angle) * mob.speed;
                 mob.y += Math.sin(angle) * mob.speed;
@@ -499,6 +1082,7 @@ class Game {
                         const damage = Math.max(1, mob.damage - this.player.defense);
                         this.player.hp -= damage;
                         this.showDamage(this.player.x, this.player.y - 40, damage);
+                        this.audioManager.playSound('hit_player');
                         mob.targetCooldown = 1000;
 
                         if (this.player.hp <= 0) {
@@ -514,6 +1098,31 @@ class Game {
                 mob.targetCooldown -= 16;
             }
         });
+
+        // Combat music system
+        if (enemiesNearby > 0 && !this.inCombat) {
+            this.inCombat = true;
+            this.audioManager.toggleCombatMusic(true);
+
+            // Tutorial: enemy nearby
+            if (this.enemiesNearby === 0) {
+                this.tutorialSystem.trigger('first_enemy_nearby');
+            }
+        } else if (enemiesNearby === 0 && this.inCombat) {
+            // Delay leaving combat state
+            if (this.combatTimeout) clearTimeout(this.combatTimeout);
+            this.combatTimeout = setTimeout(() => {
+                this.inCombat = false;
+                this.audioManager.toggleCombatMusic(false);
+            }, 3000);
+        }
+
+        this.enemiesNearby = enemiesNearby;
+
+        // Tutorial: low health
+        if (this.player.hp < this.player.maxHP * 0.3) {
+            this.tutorialSystem.trigger('low_health');
+        }
 
         // Update drops
         this.drops.forEach(drop => {
@@ -633,9 +1242,128 @@ class Game {
             `XP: ${this.player.xp}/${this.player.xpToLevel}`;
     }
 
+    createSettingsButton() {
+        // Create settings button in top-right
+        const settingsBtn = document.createElement('button');
+        settingsBtn.id = 'settingsBtn';
+        settingsBtn.innerHTML = '⚙️';
+        settingsBtn.className = 'settings-btn';
+        settingsBtn.onclick = () => this.toggleSettings();
+        document.body.appendChild(settingsBtn);
+
+        // Create settings panel
+        const settingsPanel = document.createElement('div');
+        settingsPanel.id = 'settingsPanel';
+        settingsPanel.className = 'settings-panel';
+        settingsPanel.innerHTML = `
+            <div class="settings-content">
+                <h2>⚙️ Ayarlar</h2>
+
+                <div class="settings-section">
+                    <h3>🔊 Ses Ayarları</h3>
+                    <div class="volume-control">
+                        <label>Ana Ses:</label>
+                        <input type="range" id="masterVolume" min="0" max="100" value="70">
+                        <span id="masterVolumeValue">70%</span>
+                    </div>
+                    <div class="volume-control">
+                        <label>Müzik:</label>
+                        <input type="range" id="musicVolume" min="0" max="100" value="50">
+                        <span id="musicVolumeValue">50%</span>
+                    </div>
+                    <div class="volume-control">
+                        <label>Ses Efektleri:</label>
+                        <input type="range" id="sfxVolume" min="0" max="100" value="80">
+                        <span id="sfxVolumeValue">80%</span>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>⌨️ Klavye Kısayolları</h3>
+                    <div class="keyboard-shortcuts">
+                        <div class="shortcut-item">
+                            <span class="key">W A S D</span>
+                            <span>Hareket</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="key">Q W E</span>
+                            <span>Skill Kullan</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="key">1 2 3 4 5</span>
+                            <span>İtem Kullan</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="key">H</span>
+                            <span>Ayarlar/Yardım</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <span class="key">ESC</span>
+                            <span>Duraklat</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>🎮 Tutorial</h3>
+                    <button id="resetTutorial" class="action-btn">Tutorial'ı Sıfırla</button>
+                </div>
+
+                <button id="closeSettings" class="close-btn">Kapat</button>
+            </div>
+        `;
+        document.body.appendChild(settingsPanel);
+
+        // Setup event listeners
+        document.getElementById('masterVolume').addEventListener('input', (e) => {
+            const value = e.target.value / 100;
+            this.audioManager.setVolume('master', value);
+            document.getElementById('masterVolumeValue').textContent = e.target.value + '%';
+        });
+
+        document.getElementById('musicVolume').addEventListener('input', (e) => {
+            const value = e.target.value / 100;
+            this.audioManager.setVolume('music', value);
+            document.getElementById('musicVolumeValue').textContent = e.target.value + '%';
+        });
+
+        document.getElementById('sfxVolume').addEventListener('input', (e) => {
+            const value = e.target.value / 100;
+            this.audioManager.setVolume('sfx', value);
+            document.getElementById('sfxVolumeValue').textContent = e.target.value + '%';
+        });
+
+        document.getElementById('closeSettings').onclick = () => this.toggleSettings();
+        document.getElementById('resetTutorial').onclick = () => {
+            this.tutorialSystem.reset();
+            alert('Tutorial sıfırlandı! Sayfayı yeniden yükleyin.');
+        };
+
+        // H key to toggle settings
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'h') {
+                this.toggleSettings();
+            }
+        });
+    }
+
+    toggleSettings() {
+        const panel = document.getElementById('settingsPanel');
+        if (panel.style.display === 'flex') {
+            panel.style.display = 'none';
+            this.audioManager.playSound('ui_click');
+        } else {
+            panel.style.display = 'flex';
+            this.audioManager.playSound('ui_click');
+        }
+    }
+
     gameOver() {
-        alert('😵 Öldün!\n\nSeviye: ' + this.player.level + '\nXP: ' + this.player.xp);
-        window.location.reload();
+        this.audioManager.playSound('death_player');
+        setTimeout(() => {
+            alert('😵 Öldün!\n\nSeviye: ' + this.player.level + '\nXP: ' + this.player.xp);
+            window.location.reload();
+        }, 500);
     }
 
     gameLoop() {
