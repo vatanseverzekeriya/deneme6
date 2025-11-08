@@ -63,6 +63,14 @@ const MOB_TYPES = [
     { name: 'Ejderha', icon: '🐉', hp: 200, damage: 25, xp: 100, gold: 50, speed: 0.6 }
 ];
 
+// Boss types
+const BOSS_TYPES = [
+    { name: 'Kara Şövalye', icon: '⚔️', hp: 500, damage: 30, xp: 500, gold: 200, speed: 0.5, size: 60, isBoss: true },
+    { name: 'Cehennem Lordu', icon: '😈', hp: 800, damage: 40, xp: 800, gold: 300, speed: 0.4, size: 65, isBoss: true },
+    { name: 'Antik Ejderha', icon: '🐲', hp: 1200, damage: 50, xp: 1200, gold: 500, speed: 0.3, size: 70, isBoss: true },
+    { name: 'Karanlık Büyücü', icon: '🧙', hp: 1000, damage: 45, xp: 1000, gold: 400, speed: 0.35, size: 65, isBoss: true }
+];
+
 // Items
 const ITEMS = [
     { name: 'Can İksiri', icon: '❤️', type: 'potion', heal: 50 },
@@ -72,10 +80,25 @@ const ITEMS = [
     { name: 'Zırh', icon: '🛡️', type: 'armor', defense: 5 }
 ];
 
+// Achievements
+const ACHIEVEMENTS = [
+    { id: 'first_kill', name: 'İlk Kan', desc: 'İlk düşmanı öldür', check: (game) => game.player.kills >= 1 },
+    { id: 'killer', name: 'Katil', desc: '10 düşman öldür', check: (game) => game.player.kills >= 10 },
+    { id: 'slayer', name: 'Katliam', desc: '50 düşman öldür', check: (game) => game.player.kills >= 50 },
+    { id: 'level_5', name: 'Güçleniyor', desc: 'Seviye 5\'e ulaş', check: (game) => game.player.level >= 5 },
+    { id: 'level_10', name: 'Usta', desc: 'Seviye 10\'a ulaş', check: (game) => game.player.level >= 10 },
+    { id: 'first_boss', name: 'Boss Avcısı', desc: 'İlk Boss\'u öldür', check: (game) => game.player.bossKills >= 1 },
+    { id: 'combo_10', name: 'Kombo Ustası', desc: '10x Combo yap', check: (game) => game.maxCombo >= 10 },
+    { id: 'rich', name: 'Zengin', desc: '500 altın topla', check: (game) => game.player.gold >= 500 }
+];
+
 class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
+
+        this.minimapCanvas = document.getElementById('minimap');
+        this.minimapCtx = this.minimapCanvas.getContext('2d');
 
         this.resizeCanvas();
         window.addEventListener('resize', () => this.resizeCanvas());
@@ -85,6 +108,13 @@ class Game {
         this.projectiles = [];
         this.drops = [];
         this.inventory = Array(5).fill(null);
+        this.particles = [];
+        this.unlockedAchievements = [];
+        this.combo = 0;
+        this.comboTimer = 0;
+        this.maxCombo = 0;
+        this.lastLevelUp = 0;
+        this.autoSaveTimer = 0;
 
         this.keys = {};
         this.joystickActive = false;
@@ -126,7 +156,14 @@ class Game {
             skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
 
             gold: 0,
-            attackCooldown: 0
+            attackCooldown: 0,
+            kills: 0,
+            bossKills: 0,
+
+            equipment: {
+                weapon: null,
+                armor: null
+            }
         };
 
         this.updateHUD();
@@ -335,8 +372,20 @@ class Game {
     }
 
     damageEnemy(enemy, damage) {
-        enemy.hp -= damage;
-        this.showDamage(enemy.x, enemy.y, damage);
+        // Combo system
+        this.combo++;
+        this.comboTimer = 3000; // 3 seconds to continue combo
+
+        if (this.combo > this.maxCombo) {
+            this.maxCombo = this.combo;
+        }
+
+        const comboDamage = Math.floor(damage * (1 + this.combo * 0.1));
+        enemy.hp -= comboDamage;
+
+        // Show combo if > 1
+        const displayDamage = this.combo > 1 ? `${comboDamage} x${this.combo}` : comboDamage;
+        this.showDamage(enemy.x, enemy.y, displayDamage);
 
         if (enemy.hp <= 0) {
             this.killEnemy(enemy);
@@ -349,27 +398,155 @@ class Game {
             this.mobs.splice(index, 1);
         }
 
-        // XP
+        // Particle effect
+        const particleColor = enemy.isBoss ? '#ff00ff' : '#ff4444';
+        const particleCount = enemy.isBoss ? 50 : 20;
+        this.createParticleBurst(enemy.x, enemy.y, particleCount, particleColor);
+
+        // XP and stats
         this.player.xp += enemy.xp;
+        this.player.gold += enemy.gold || 0;
+        this.player.kills++;
+
+        if (enemy.isBoss) {
+            this.player.bossKills++;
+            this.showNotification(`🏆 BOSS YENİLDİ! +${enemy.xp} XP, +${enemy.gold} Altın`);
+        }
+
+        // Check achievements
+        this.checkAchievements();
+
         if (this.player.xp >= this.player.xpToLevel) {
             this.levelUp();
         }
 
         // Drop
-        if (Math.random() < 0.4) {
-            const item = ITEMS[Math.floor(Math.random() * ITEMS.length)];
-            this.drops.push({
-                ...item,
-                x: enemy.x,
-                y: enemy.y,
-                size: 25
-            });
+        const dropChance = enemy.isBoss ? 1.0 : 0.4;
+        const dropCount = enemy.isBoss ? 3 : 1;
+
+        for (let i = 0; i < dropCount; i++) {
+            if (Math.random() < dropChance) {
+                const item = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+                this.drops.push({
+                    ...item,
+                    x: enemy.x + (Math.random() - 0.5) * 50,
+                    y: enemy.y + (Math.random() - 0.5) * 50,
+                    size: 25
+                });
+            }
         }
 
-        // Spawn new mob
-        setTimeout(() => this.spawnMob(), 3000);
+        // Spawn new mob (not for bosses)
+        if (!enemy.isBoss) {
+            setTimeout(() => this.spawnMob(), 3000);
+        }
 
         this.updateHUD();
+    }
+
+    spawnBoss() {
+        const bossIndex = Math.min(
+            Math.floor(this.player.level / 10),
+            BOSS_TYPES.length - 1
+        );
+        const bossType = BOSS_TYPES[bossIndex];
+
+        const boss = {
+            ...bossType,
+            x: this.canvas.width / 2,
+            y: this.canvas.height / 2,
+            maxHP: bossType.hp,
+            targetCooldown: 0
+        };
+
+        this.mobs.push(boss);
+        this.showNotification(`⚠️ BOSS ORTAYA ÇIKTI: ${boss.name}!`);
+        this.createParticleBurst(boss.x, boss.y, 40, '#ff00ff');
+    }
+
+    createParticleBurst(x, y, count, color) {
+        for (let i = 0; i < count; i++) {
+            const angle = (Math.PI * 2 * i) / count;
+            const speed = 2 + Math.random() * 3;
+
+            this.particles.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: 1.0,
+                color: color,
+                size: 3 + Math.random() * 3
+            });
+        }
+    }
+
+    checkAchievements() {
+        ACHIEVEMENTS.forEach(achievement => {
+            if (!this.unlockedAchievements.includes(achievement.id)) {
+                if (achievement.check(this)) {
+                    this.unlockedAchievements.push(achievement.id);
+                    this.showNotification(`🏆 BAŞARIM: ${achievement.name} - ${achievement.desc}`);
+                    this.createParticleBurst(this.player.x, this.player.y, 20, '#ffd700');
+                }
+            }
+        });
+    }
+
+    saveGame() {
+        if (!this.player) return;
+
+        const saveData = {
+            player: {
+                class: this.player.class,
+                level: this.player.level,
+                xp: this.player.xp,
+                xpToLevel: this.player.xpToLevel,
+                hp: this.player.hp,
+                maxHP: this.player.maxHP,
+                mp: this.player.mp,
+                maxMP: this.player.maxMP,
+                damage: this.player.damage,
+                defense: this.player.defense,
+                gold: this.player.gold,
+                kills: this.player.kills,
+                bossKills: this.player.bossKills,
+                equipment: this.player.equipment
+            },
+            inventory: this.inventory,
+            unlockedAchievements: this.unlockedAchievements,
+            maxCombo: this.maxCombo
+        };
+
+        localStorage.setItem('rpg_save', JSON.stringify(saveData));
+    }
+
+    loadGame() {
+        const saveData = localStorage.getItem('rpg_save');
+        if (!saveData) return false;
+
+        try {
+            const data = JSON.parse(saveData);
+
+            // Start game with saved character
+            this.selectCharacter(data.player.class);
+
+            // Restore player data
+            Object.assign(this.player, data.player);
+
+            // Restore other data
+            this.inventory = data.inventory || Array(5).fill(null);
+            this.unlockedAchievements = data.unlockedAchievements || [];
+            this.maxCombo = data.maxCombo || 0;
+
+            this.updateHUD();
+            this.updateInventory();
+
+            return true;
+        } catch (e) {
+            console.error('Failed to load save:', e);
+            return false;
+        }
     }
 
     levelUp() {
@@ -384,8 +561,19 @@ class Game {
         this.player.damage += 3;
         this.player.defense += 2;
 
+        // Boss spawn at every 5 levels
+        if (this.player.level % 5 === 0) {
+            this.spawnBoss();
+        }
+
+        // Particle effect for level up
+        this.createParticleBurst(this.player.x, this.player.y, 30, '#ffd700');
+
         this.showNotification('🎉 LEVEL UP! ' + this.player.level);
+        this.checkAchievements();
         this.updateHUD();
+        this.lastLevelUp = this.player.level;
+        this.saveGame();
     }
 
     showDamage(x, y, damage) {
@@ -442,6 +630,32 @@ class Game {
             this.inventory[slot] = null;
             this.updateInventory();
             this.updateHUD();
+        } else if (item.type === 'weapon') {
+            // Unequip current weapon if any
+            if (this.player.equipment.weapon) {
+                this.player.damage -= this.player.equipment.weapon.damage;
+            }
+
+            // Equip new weapon
+            this.player.equipment.weapon = item;
+            this.player.damage += item.damage;
+            this.inventory[slot] = null;
+            this.updateInventory();
+            this.updateHUD();
+            this.showNotification(`⚔️ ${item.name} kuşanıldı! +${item.damage} Hasar`);
+        } else if (item.type === 'armor') {
+            // Unequip current armor if any
+            if (this.player.equipment.armor) {
+                this.player.defense -= this.player.equipment.armor.defense;
+            }
+
+            // Equip new armor
+            this.player.equipment.armor = item;
+            this.player.defense += item.defense;
+            this.inventory[slot] = null;
+            this.updateInventory();
+            this.updateHUD();
+            this.showNotification(`🛡️ ${item.name} kuşanıldı! +${item.defense} Savunma`);
         }
     }
 
@@ -534,6 +748,34 @@ class Game {
             this.player.mp = Math.min(this.player.maxMP, this.player.mp + 0.1);
             if (Math.random() < 0.1) this.updateHUD();
         }
+
+        // Update particles
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const p = this.particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.1; // gravity
+            p.life -= 0.02;
+
+            if (p.life <= 0) {
+                this.particles.splice(i, 1);
+            }
+        }
+
+        // Update combo timer
+        if (this.comboTimer > 0) {
+            this.comboTimer -= 16;
+            if (this.comboTimer <= 0) {
+                this.combo = 0;
+            }
+        }
+
+        // Auto-save every 10 seconds
+        this.autoSaveTimer += 16;
+        if (this.autoSaveTimer >= 10000) {
+            this.saveGame();
+            this.autoSaveTimer = 0;
+        }
     }
 
     draw() {
@@ -556,6 +798,16 @@ class Game {
             this.ctx.stroke();
         }
 
+        // Particles
+        this.particles.forEach(p => {
+            this.ctx.globalAlpha = p.life;
+            this.ctx.fillStyle = p.color;
+            this.ctx.beginPath();
+            this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+        this.ctx.globalAlpha = 1.0;
+
         // Drops
         this.drops.forEach(drop => {
             this.ctx.font = drop.size + 'px Arial';
@@ -566,28 +818,47 @@ class Game {
 
         // Mobs
         this.mobs.forEach(mob => {
+            const mobSize = mob.size || 35;
+
             // Shadow
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
             this.ctx.beginPath();
-            this.ctx.ellipse(mob.x, mob.y + mob.size/2, mob.size/2, mob.size/4, 0, 0, Math.PI * 2);
+            this.ctx.ellipse(mob.x, mob.y + mobSize/2, mobSize/2, mobSize/4, 0, 0, Math.PI * 2);
             this.ctx.fill();
 
+            // Boss glow effect
+            if (mob.isBoss) {
+                this.ctx.shadowBlur = 20;
+                this.ctx.shadowColor = '#ff00ff';
+            }
+
             // Mob icon
-            this.ctx.font = mob.size + 'px Arial';
+            this.ctx.font = mobSize + 'px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
             this.ctx.fillText(mob.icon, mob.x, mob.y);
+            this.ctx.shadowBlur = 0;
+
+            // Boss name
+            if (mob.isBoss) {
+                this.ctx.font = '14px Arial';
+                this.ctx.fillStyle = '#ff00ff';
+                this.ctx.strokeStyle = 'black';
+                this.ctx.lineWidth = 3;
+                this.ctx.strokeText(mob.name, mob.x, mob.y - mobSize - 15);
+                this.ctx.fillText(mob.name, mob.x, mob.y - mobSize - 15);
+            }
 
             // HP bar
-            const barWidth = 40;
-            const barHeight = 4;
+            const barWidth = mob.isBoss ? 80 : 40;
+            const barHeight = mob.isBoss ? 6 : 4;
             const hpPercent = mob.hp / mob.maxHP;
 
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth, barHeight);
+            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mobSize - 5, barWidth, barHeight);
 
             this.ctx.fillStyle = hpPercent > 0.5 ? '#4ade80' : hpPercent > 0.25 ? '#fbbf24' : '#ef4444';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth * hpPercent, barHeight);
+            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mobSize - 5, barWidth * hpPercent, barHeight);
         });
 
         // Player
@@ -631,6 +902,14 @@ class Game {
             `MP: ${Math.floor(this.player.mp)}/${this.player.maxMP}`;
         document.getElementById('xpText').textContent =
             `XP: ${this.player.xp}/${this.player.xpToLevel}`;
+
+        document.getElementById('goldDisplay').textContent = `💰 Altın: ${this.player.gold}`;
+
+        if (this.combo > 1) {
+            document.getElementById('comboDisplay').textContent = `🔥 COMBO x${this.combo}`;
+        } else {
+            document.getElementById('comboDisplay').textContent = '';
+        }
     }
 
     gameOver() {
@@ -638,9 +917,69 @@ class Game {
         window.location.reload();
     }
 
+    drawMinimap() {
+        if (!this.player) return;
+
+        const mmCtx = this.minimapCtx;
+        const mmSize = this.minimapCanvas.width;
+        const mapRadius = 300; // How far to show on minimap
+
+        // Clear
+        mmCtx.fillStyle = 'rgba(10, 14, 39, 0.9)';
+        mmCtx.fillRect(0, 0, mmSize, mmSize);
+
+        // Border
+        mmCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        mmCtx.lineWidth = 2;
+        mmCtx.strokeRect(0, 0, mmSize, mmSize);
+
+        const scale = mmSize / (mapRadius * 2);
+        const centerX = mmSize / 2;
+        const centerY = mmSize / 2;
+
+        // Draw mobs
+        this.mobs.forEach(mob => {
+            const dx = mob.x - this.player.x;
+            const dy = mob.y - this.player.y;
+
+            if (Math.abs(dx) < mapRadius && Math.abs(dy) < mapRadius) {
+                const mmX = centerX + dx * scale;
+                const mmY = centerY + dy * scale;
+
+                mmCtx.fillStyle = mob.isBoss ? '#ff00ff' : '#ff4444';
+                mmCtx.beginPath();
+                mmCtx.arc(mmX, mmY, mob.isBoss ? 4 : 2, 0, Math.PI * 2);
+                mmCtx.fill();
+            }
+        });
+
+        // Draw drops
+        this.drops.forEach(drop => {
+            const dx = drop.x - this.player.x;
+            const dy = drop.y - this.player.y;
+
+            if (Math.abs(dx) < mapRadius && Math.abs(dy) < mapRadius) {
+                const mmX = centerX + dx * scale;
+                const mmY = centerY + dy * scale;
+
+                mmCtx.fillStyle = '#ffd700';
+                mmCtx.beginPath();
+                mmCtx.arc(mmX, mmY, 1.5, 0, Math.PI * 2);
+                mmCtx.fill();
+            }
+        });
+
+        // Draw player
+        mmCtx.fillStyle = '#00ff88';
+        mmCtx.beginPath();
+        mmCtx.arc(centerX, centerY, 3, 0, Math.PI * 2);
+        mmCtx.fill();
+    }
+
     gameLoop() {
         this.update();
         this.draw();
+        this.drawMinimap();
         requestAnimationFrame(() => this.gameLoop());
     }
 }

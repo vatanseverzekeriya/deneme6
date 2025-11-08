@@ -325,6 +325,19 @@
             to { top: 120px; opacity: 1; }
         }
 
+        /* Mini-map */
+        #minimap {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 150px;
+            height: 150px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            pointer-events: none;
+        }
+
         @media (max-width: 768px) {
             .char-grid {
                 grid-template-columns: 1fr;
@@ -333,12 +346,17 @@
             .select-title {
                 font-size: 24px;
             }
+
+            #minimap {
+                width: 100px;
+                height: 100px;
+            }
         }
 
         .live-indicator {
             position: fixed;
             top: 10px;
-            right: 10px;
+            right: 170px;
             background: #4ade80;
             padding: 5px 10px;
             border-radius: 15px;
@@ -354,6 +372,11 @@
     <!-- Character Selection -->
     <div id="charSelect">
         <div class="select-title">⚔️ KARAKTER SEÇ ⚔️</div>
+        <div id="continueBtn" style="display: none; margin-bottom: 20px;">
+            <button class="btn" onclick="continueGame()" style="font-size: 18px; padding: 15px 30px; background: rgba(76, 175, 80, 0.3); border-color: #4caf50;">
+                ▶️ DEVAM ET
+            </button>
+        </div>
         <div class="char-grid">
             <div class="char-card" onclick="selectCharacter('warrior')">
                 <div class="char-icon">🛡️</div>
@@ -401,6 +424,10 @@
                     <div class="bar-fill xp-bar" id="xpBar" style="width: 0%"></div>
                     <div class="bar-text" id="xpText">XP: 0/100</div>
                 </div>
+                <div class="player-info" style="margin-top: 5px;">
+                    <span id="goldDisplay">💰 Altın: 0</span>
+                    <span id="comboDisplay" style="color: #ff4444; font-weight: bold;"></span>
+                </div>
             </div>
         </div>
 
@@ -425,11 +452,28 @@
 
         <!-- Loot Notification -->
         <div id="lootNotif"></div>
+
+        <!-- Mini-map -->
+        <canvas id="minimap" width="150" height="150"></canvas>
     </div>
 
     <script src="rpg-game.js"></script>
 
     <script>
+        // Check for saved game
+        window.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('rpg_save')) {
+                document.getElementById('continueBtn').style.display = 'block';
+            }
+        });
+
+        function continueGame() {
+            if (game.loadGame()) {
+                document.getElementById('charSelect').classList.add('hidden');
+                document.getElementById('gameScreen').classList.add('active');
+            }
+        }
+
         // Live reload
         if (typeof WebSocket !== 'undefined') {
             const ws = new WebSocket('ws://' + window.location.host);
