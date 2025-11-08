@@ -73,6 +73,7 @@ app.get('/', (req, res) => {
 app.get('/dashboard', (req, res) => {
     const gameUrl = `http://${localIP}:${PORT}/game.html`;
     const rpgUrl = `http://${localIP}:${PORT}/metin2-style.html`;
+    const scorpionUrl = `http://${localIP}:${PORT}/scorpion-rpg.html`;
 
     res.send(`
 <!DOCTYPE html>
@@ -273,7 +274,7 @@ app.get('/dashboard', (req, res) => {
 
         .game-selector {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 15px;
             margin-bottom: 20px;
         }
@@ -353,6 +354,11 @@ app.get('/dashboard', (req, res) => {
                         <div class="game-title">RPG Oyunu</div>
                         <div class="game-desc">Metin2-style RPG</div>
                     </div>
+                    <div class="game-option" onclick="selectGame('scorpion')">
+                        <div class="game-icon">🦂</div>
+                        <div class="game-title">Desert Scorpion Hunter</div>
+                        <div class="game-desc">Professional RPG with high-quality assets</div>
+                    </div>
                 </div>
 
                 <h2>📱 QR Kod ile Bağlan</h2>
@@ -399,7 +405,8 @@ app.get('/dashboard', (req, res) => {
         // Game URLs
         const games = {
             game: '${gameUrl}',
-            rpg: '${rpgUrl}'
+            rpg: '${rpgUrl}',
+            scorpion: '${scorpionUrl}'
         };
 
         let currentGame = 'game';

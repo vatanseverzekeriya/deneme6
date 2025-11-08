@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Desert Scorpion Hunter - Professional RPG</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(135deg, #2C1810 0%, #4A3728 50%, #654321 100%);
+            font-family: 'Georgia', 'Times New Roman', serif;
+            overflow: hidden;
+            touch-action: none;
+            color: #F4E4C1;
+        }
+
+        /* Character Select Screen */
+        #charSelect {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #1a0a00 0%, #2c1810 50%, #3a2818 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+
+        #charSelect.hidden {
+            display: none;
+        }
+
+        .game-logo {
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.8);
+            color: #FFD700;
+            letter-spacing: 3px;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.5); }
+            50% { text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.8); }
+        }
+
+        .game-subtitle {
+            font-size: 20px;
+            color: #D4A574;
+            margin-bottom: 40px;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .game-description {
+            max-width: 600px;
+            text-align: center;
+            margin-bottom: 40px;
+            line-height: 1.8;
+            color: #C8956D;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            max-width: 800px;
+            margin-bottom: 40px;
+        }
+
+        .feature-item {
+            background: rgba(212, 165, 116, 0.1);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .feature-item:hover {
+            border-color: #FFD700;
+            background: rgba(255, 215, 0, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .feature-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #FFD700;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #8B6914 0%, #B8860B 50%, #DAA520 100%);
+            border: 3px solid #FFD700;
+            color: #1a0a00;
+            padding: 20px 60px;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 30px rgba(255, 215, 0, 0.5);
+        }
+
+        .start-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Game Screen */
+        #gameScreen {
+            display: none;
+            position: fixed;
+            inset: 0;
+        }
+
+        #gameScreen.active {
+            display: block;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            background: #D4B896;
+        }
+
+        /* HUD */
+        #hud {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .stat-bar {
+            background: rgba(26, 10, 0, 0.9);
+            border: 3px solid rgba(255, 215, 0, 0.5);
+            border-radius: 15px;
+            padding: 15px;
+            max-width: 400px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
+        }
+
+        .player-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .bar-container {
+            height: 24px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 8px;
+            position: relative;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .hp-bar {
+            background: linear-gradient(90deg, #DC143C, #8B0000);
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3);
+        }
+
+        .mp-bar {
+            background: linear-gradient(90deg, #4169E1, #191970);
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3);
+        }
+
+        .xp-bar {
+            background: linear-gradient(90deg, #FFD700, #B8860B);
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3);
+        }
+
+        .bar-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            line-height: 24px;
+            font-size: 13px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px black;
+            color: white;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Skills */
+        #skills {
+            position: fixed;
+            bottom: 120px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 100;
+        }
+
+        .skill-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 3px solid #FFD700;
+            background: linear-gradient(135deg, #2C1810 0%, #4A3728 100%);
+            color: #FFD700;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            pointer-events: auto;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+        }
+
+        .skill-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+        }
+
+        .skill-btn:active {
+            transform: scale(0.95);
+        }
+
+        .skill-btn.cooldown {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .skill-icon {
+            font-size: 28px;
+            margin-bottom: 2px;
+        }
+
+        .skill-name {
+            font-size: 9px;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        .skill-key {
+            font-size: 11px;
+            color: #B8860B;
+            margin-top: 2px;
+        }
+
+        /* Joystick */
+        #joystick {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 130px;
+            height: 130px;
+            pointer-events: auto;
+            z-index: 100;
+        }
+
+        .joystick-base {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: rgba(26, 10, 0, 0.6);
+            border: 4px solid rgba(255, 215, 0, 0.5);
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
+        }
+
+        .joystick-stick {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FFD700, #B8860B);
+            border: 3px solid #8B6914;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Loot Notification */
+        #lootNotif {
+            position: fixed;
+            top: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(26, 10, 0, 0.95);
+            border: 3px solid #FFD700;
+            border-radius: 15px;
+            padding: 15px 30px;
+            display: none;
+            font-size: 16px;
+            font-weight: bold;
+            color: #FFD700;
+            z-index: 200;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from {
+                top: -50px;
+                opacity: 0;
+            }
+            to {
+                top: 120px;
+                opacity: 1;
+            }
+        }
+
+        /* Controls Info */
+        .controls-info {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(26, 10, 0, 0.8);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-size: 12px;
+            color: #D4A574;
+            z-index: 100;
+            display: none;
+        }
+
+        .controls-info.show {
+            display: block;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            .game-logo {
+                font-size: 32px;
+            }
+
+            .game-subtitle {
+                font-size: 16px;
+            }
+
+            .feature-list {
+                grid-template-columns: 1fr;
+                max-width: 300px;
+            }
+
+            .start-btn {
+                padding: 15px 40px;
+                font-size: 20px;
+            }
+
+            .stat-bar {
+                max-width: 100%;
+            }
+
+            #skills {
+                bottom: 100px;
+                right: 10px;
+                gap: 8px;
+            }
+
+            .skill-btn {
+                width: 60px;
+                height: 60px;
+            }
+
+            .skill-icon {
+                font-size: 24px;
+            }
+
+            .skill-name {
+                font-size: 8px;
+            }
+
+            #joystick {
+                width: 110px;
+                height: 110px;
+            }
+
+            .joystick-base {
+                width: 110px;
+                height: 110px;
+            }
+
+            .joystick-stick {
+                width: 45px;
+                height: 45px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-logo {
+                font-size: 24px;
+            }
+
+            .game-description {
+                font-size: 14px;
+            }
+        }
+
+        /* Loading indicator */
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #FFD700;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Character Select / Start Screen -->
+    <div id="charSelect">
+        <div class="game-logo">
+            🦂 DESERT SCORPION HUNTER 🦂
+        </div>
+        <div class="game-subtitle">
+            An Epic Desert Survival RPG Adventure
+        </div>
+        <div class="game-description">
+            Venture into the harsh desert lands as a legendary scorpion hunter.
+            Face deadly creatures, master ancient combat techniques, and survive
+            the unforgiving sands. Will you become the ultimate desert warrior?
+        </div>
+        <div class="feature-list">
+            <div class="feature-item">
+                <div class="feature-icon">🎮</div>
+                <div class="feature-title">8-Directional Movement</div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">⚔️</div>
+                <div class="feature-title">Dynamic Combat System</div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">🎨</div>
+                <div class="feature-title">Professional Graphics</div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">🌍</div>
+                <div class="feature-title">Vast Desert World</div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">📱</div>
+                <div class="feature-title">Mobile Optimized</div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-title">Powerful Skills</div>
+            </div>
+        </div>
+        <button class="start-btn" onclick="startGame()">
+            Start Adventure
+        </button>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- HUD -->
+        <div id="hud">
+            <div class="stat-bar">
+                <div class="player-info">
+                    <span id="playerName">Desert Hunter</span>
+                    <span id="playerLevel">Level: 1 | Gold: 0</span>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-fill hp-bar" id="hpBar" style="width: 100%"></div>
+                    <div class="bar-text" id="hpText">HP: 100/100</div>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-fill mp-bar" id="mpBar" style="width: 100%"></div>
+                    <div class="bar-text" id="mpText">MP: 100/100</div>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-fill xp-bar" id="xpBar" style="width: 0%"></div>
+                    <div class="bar-text" id="xpText">XP: 0/100</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skills -->
+        <div id="skills"></div>
+
+        <!-- Joystick -->
+        <div id="joystick">
+            <div class="joystick-base">
+                <div class="joystick-stick" id="joystickStick"></div>
+            </div>
+        </div>
+
+        <!-- Loot Notification -->
+        <div id="lootNotif"></div>
+
+        <!-- Controls Info (for desktop) -->
+        <div class="controls-info show">
+            WASD/Arrows: Move | Q/W/E: Skills | 1-9: Use Items
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="sprite-renderer.js"></script>
+    <script src="scorpion-game.js"></script>
+
+    <script>
+        // Hide controls info on mobile
+        if (window.innerWidth <= 768) {
+            document.querySelector('.controls-info').classList.remove('show');
+        }
+
+        // Live reload support
+        if (typeof WebSocket !== 'undefined') {
+            try {
+                const ws = new WebSocket('ws://' + window.location.host);
+                ws.onmessage = function(event) {
+                    if (event.data === 'reload') {
+                        window.location.reload();
+                    }
+                };
+            } catch (e) {
+                // WebSocket not available or failed
+            }
+        }
+    </script>
+</body>
+</html>
