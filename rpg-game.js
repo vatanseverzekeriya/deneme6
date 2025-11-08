@@ -67,10 +67,183 @@ const MOB_TYPES = [
 const ITEMS = [
     { name: 'Can İksiri', icon: '❤️', type: 'potion', heal: 50 },
     { name: 'Mana İksiri', icon: '💙', type: 'potion', mana: 50 },
-    { name: 'Altın', icon: '💰', type: 'gold', value: 10 },
-    { name: 'Kılıç', icon: '⚔️', type: 'weapon', damage: 5 },
-    { name: 'Zırh', icon: '🛡️', type: 'armor', defense: 5 }
+    { name: 'Altın', icon: '💰', type: 'gold', value: 10 }
 ];
+
+// Equipment items
+const EQUIPMENT_ITEMS = [
+    { name: 'Demir Kılıç', icon: '⚔️', type: 'weapon', slot: 'weapon', damage: 8, rarity: 'common' },
+    { name: 'Çelik Kılıç', icon: '🗡️', type: 'weapon', slot: 'weapon', damage: 15, rarity: 'rare' },
+    { name: 'Ejderha Kılıcı', icon: '⚔️', type: 'weapon', slot: 'weapon', damage: 25, rarity: 'legendary' },
+
+    { name: 'Deri Zırh', icon: '🛡️', type: 'armor', slot: 'armor', defense: 6, rarity: 'common' },
+    { name: 'Çelik Zırh', icon: '🛡️', type: 'armor', slot: 'armor', defense: 12, rarity: 'rare' },
+    { name: 'Ejderha Zırhı', icon: '🛡️', type: 'armor', slot: 'armor', defense: 20, hp: 30, rarity: 'legendary' },
+
+    { name: 'Deri Miğfer', icon: '⛑️', type: 'helmet', slot: 'helmet', defense: 3, rarity: 'common' },
+    { name: 'Çelik Miğfer', icon: '⛑️', type: 'helmet', slot: 'helmet', defense: 7, hp: 15, rarity: 'rare' },
+
+    { name: 'Deri Çizmeler', icon: '👢', type: 'boots', slot: 'boots', defense: 2, speed: 0.5, rarity: 'common' },
+    { name: 'Hız Çizmeleri', icon: '👢', type: 'boots', slot: 'boots', speed: 1.5, rarity: 'rare' },
+
+    { name: 'Güç Yüzüğü', icon: '💍', type: 'ring', slot: 'ring', damage: 5, rarity: 'rare' },
+    { name: 'Koruma Yüzüğü', icon: '💍', type: 'ring', slot: 'ring', defense: 5, hp: 20, rarity: 'rare' },
+
+    { name: 'Sağlık Kolyesi', icon: '📿', type: 'necklace', slot: 'necklace', hp: 40, rarity: 'rare' },
+    { name: 'Mana Kolyesi', icon: '📿', type: 'necklace', slot: 'necklace', mp: 40, rarity: 'rare' }
+];
+
+// Rarity colors
+const RARITY_COLORS = {
+    common: '#9ca3af',
+    rare: '#3b82f6',
+    legendary: '#fbbf24'
+};
+
+// Particle class
+class Particle {
+    constructor(x, y, color, size, vx, vy, lifetime) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.size = size;
+        this.vx = vx;
+        this.vy = vy;
+        this.lifetime = lifetime;
+        this.age = 0;
+        this.gravity = 0.2;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += this.gravity;
+        this.age++;
+        return this.age < this.lifetime;
+    }
+
+    draw(ctx) {
+        const alpha = 1 - (this.age / this.lifetime);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+}
+
+// Environment class for parallax backgrounds
+class Environment {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.layers = [];
+        this.stars = [];
+        this.clouds = [];
+        this.trees = [];
+
+        this.initStars();
+        this.initClouds();
+        this.initTrees();
+    }
+
+    initStars() {
+        for (let i = 0; i < 100; i++) {
+            this.stars.push({
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height * 0.6,
+                size: Math.random() * 2,
+                brightness: Math.random()
+            });
+        }
+    }
+
+    initClouds() {
+        for (let i = 0; i < 5; i++) {
+            this.clouds.push({
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height * 0.3,
+                width: 100 + Math.random() * 100,
+                speed: 0.1 + Math.random() * 0.2
+            });
+        }
+    }
+
+    initTrees() {
+        for (let i = 0; i < 15; i++) {
+            this.trees.push({
+                x: Math.random() * this.canvas.width,
+                y: this.canvas.height - 100 - Math.random() * 50,
+                size: 30 + Math.random() * 20,
+                type: Math.random() > 0.5 ? '🌲' : '🌳'
+            });
+        }
+    }
+
+    update() {
+        // Update clouds
+        this.clouds.forEach(cloud => {
+            cloud.x += cloud.speed;
+            if (cloud.x > this.canvas.width + cloud.width) {
+                cloud.x = -cloud.width;
+            }
+        });
+    }
+
+    draw(ctx, cameraX, cameraY) {
+        // Sky gradient
+        const gradient = ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+        gradient.addColorStop(0, '#1a1a3e');
+        gradient.addColorStop(0.6, '#2d1b4e');
+        gradient.addColorStop(1, '#1a1a2e');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Stars
+        this.stars.forEach(star => {
+            ctx.globalAlpha = star.brightness * (0.5 + Math.sin(Date.now() * 0.001 + star.x) * 0.5);
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+
+        // Clouds
+        this.clouds.forEach(cloud => {
+            ctx.fillStyle = 'rgba(100, 100, 150, 0.3)';
+            ctx.beginPath();
+            ctx.ellipse(cloud.x, cloud.y, cloud.width, 30, 0, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // Ground
+        const groundGradient = ctx.createLinearGradient(0, this.canvas.height - 150, 0, this.canvas.height);
+        groundGradient.addColorStop(0, '#2a4a2a');
+        groundGradient.addColorStop(1, '#1a2a1a');
+        ctx.fillStyle = groundGradient;
+        ctx.fillRect(0, this.canvas.height - 150, this.canvas.width, 150);
+
+        // Ground pattern
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < this.canvas.width; x += 30) {
+            for (let y = this.canvas.height - 150; y < this.canvas.height; y += 30) {
+                ctx.strokeRect(x, y, 30, 30);
+            }
+        }
+
+        // Trees (background layer)
+        this.trees.forEach(tree => {
+            ctx.font = tree.size + 'px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.globalAlpha = 0.6;
+            ctx.fillText(tree.type, tree.x, tree.y);
+        });
+        ctx.globalAlpha = 1;
+    }
+}
 
 class Game {
     constructor() {
@@ -85,6 +258,13 @@ class Game {
         this.projectiles = [];
         this.drops = [];
         this.inventory = Array(5).fill(null);
+        this.particles = [];
+
+        // Environment
+        this.environment = new Environment(this.canvas);
+
+        // Equipment panel state
+        this.equipmentPanelOpen = false;
 
         this.keys = {};
         this.joystickActive = false;
@@ -119,18 +299,33 @@ class Game {
             mp: classData.baseMP,
             maxMP: classData.baseMP,
 
+            baseDamage: classData.baseDamage,
+            baseDefense: classData.baseDefense,
+            baseSpeed: 3,
+
             damage: classData.baseDamage,
             defense: classData.baseDefense,
-
             speed: 3,
+
             skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
 
             gold: 0,
-            attackCooldown: 0
+            attackCooldown: 0,
+
+            // Equipment slots
+            equipment: {
+                weapon: null,
+                armor: null,
+                helmet: null,
+                boots: null,
+                ring: null,
+                necklace: null
+            }
         };
 
         this.updateHUD();
         this.createSkillButtons();
+        this.createEquipmentPanel();
 
         document.getElementById('charSelect').classList.add('hidden');
         document.getElementById('gameScreen').classList.add('active');
@@ -156,6 +351,214 @@ class Game {
         });
     }
 
+    createEquipmentPanel() {
+        // Check if panel already exists
+        if (document.getElementById('equipmentPanel')) return;
+
+        const panel = document.createElement('div');
+        panel.id = 'equipmentPanel';
+        panel.className = 'equipment-panel';
+        panel.innerHTML = `
+            <div class="equipment-header">
+                <h3>⚔️ EKIPMAN</h3>
+                <button class="close-btn" onclick="game.toggleEquipmentPanel()">✕</button>
+            </div>
+            <div class="equipment-slots">
+                <div class="equip-slot" data-slot="weapon">
+                    <div class="slot-label">Silah</div>
+                    <div class="slot-icon">⚔️</div>
+                </div>
+                <div class="equip-slot" data-slot="armor">
+                    <div class="slot-label">Zırh</div>
+                    <div class="slot-icon">🛡️</div>
+                </div>
+                <div class="equip-slot" data-slot="helmet">
+                    <div class="slot-label">Miğfer</div>
+                    <div class="slot-icon">⛑️</div>
+                </div>
+                <div class="equip-slot" data-slot="boots">
+                    <div class="slot-label">Çizme</div>
+                    <div class="slot-icon">👢</div>
+                </div>
+                <div class="equip-slot" data-slot="ring">
+                    <div class="slot-label">Yüzük</div>
+                    <div class="slot-icon">💍</div>
+                </div>
+                <div class="equip-slot" data-slot="necklace">
+                    <div class="slot-label">Kolye</div>
+                    <div class="slot-icon">📿</div>
+                </div>
+            </div>
+            <div class="equipment-stats">
+                <div class="stat-row">
+                    <span>💪 Hasar:</span>
+                    <span id="equipDamage">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>🛡️ Savunma:</span>
+                    <span id="equipDefense">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>❤️ HP:</span>
+                    <span id="equipHP">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>💙 MP:</span>
+                    <span id="equipMP">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>⚡ Hız:</span>
+                    <span id="equipSpeed">0</span>
+                </div>
+            </div>
+        `;
+        document.getElementById('gameScreen').appendChild(panel);
+
+        // Create equipment toggle button
+        const toggleBtn = document.createElement('div');
+        toggleBtn.className = 'equipment-toggle-btn';
+        toggleBtn.innerHTML = '⚔️';
+        toggleBtn.onclick = () => this.toggleEquipmentPanel();
+        document.getElementById('gameScreen').appendChild(toggleBtn);
+    }
+
+    toggleEquipmentPanel() {
+        this.equipmentPanelOpen = !this.equipmentPanelOpen;
+        const panel = document.getElementById('equipmentPanel');
+        if (this.equipmentPanelOpen) {
+            panel.classList.add('open');
+            this.updateEquipmentDisplay();
+        } else {
+            panel.classList.remove('open');
+        }
+    }
+
+    updateEquipmentDisplay() {
+        const slots = ['weapon', 'armor', 'helmet', 'boots', 'ring', 'necklace'];
+        slots.forEach(slot => {
+            const slotDiv = document.querySelector(`.equip-slot[data-slot="${slot}"]`);
+            const item = this.player.equipment[slot];
+
+            if (item) {
+                slotDiv.classList.add('has-item');
+                slotDiv.querySelector('.slot-icon').textContent = item.icon;
+                slotDiv.style.borderColor = RARITY_COLORS[item.rarity];
+                slotDiv.title = item.name;
+                slotDiv.onclick = () => this.unequipItem(slot);
+            } else {
+                slotDiv.classList.remove('has-item');
+                const defaultIcons = {
+                    weapon: '⚔️',
+                    armor: '🛡️',
+                    helmet: '⛑️',
+                    boots: '👢',
+                    ring: '💍',
+                    necklace: '📿'
+                };
+                slotDiv.querySelector('.slot-icon').textContent = defaultIcons[slot];
+                slotDiv.style.borderColor = '';
+                slotDiv.title = '';
+                slotDiv.onclick = null;
+            }
+        });
+
+        // Update stats display
+        const stats = this.calculateEquipmentStats();
+        document.getElementById('equipDamage').textContent = `+${stats.damage}`;
+        document.getElementById('equipDefense').textContent = `+${stats.defense}`;
+        document.getElementById('equipHP').textContent = `+${stats.hp}`;
+        document.getElementById('equipMP').textContent = `+${stats.mp}`;
+        document.getElementById('equipSpeed').textContent = `+${stats.speed.toFixed(1)}`;
+    }
+
+    calculateEquipmentStats() {
+        let stats = { damage: 0, defense: 0, hp: 0, mp: 0, speed: 0 };
+
+        Object.values(this.player.equipment).forEach(item => {
+            if (item) {
+                stats.damage += item.damage || 0;
+                stats.defense += item.defense || 0;
+                stats.hp += item.hp || 0;
+                stats.mp += item.mp || 0;
+                stats.speed += item.speed || 0;
+            }
+        });
+
+        return stats;
+    }
+
+    equipItem(item, fromSlot) {
+        if (!item.slot) return;
+
+        // Unequip current item in that slot
+        if (this.player.equipment[item.slot]) {
+            this.unequipItem(item.slot);
+        }
+
+        // Equip new item
+        this.player.equipment[item.slot] = item;
+        this.inventory[fromSlot] = null;
+
+        // Update stats
+        this.updatePlayerStats();
+        this.updateInventory();
+        this.updateEquipmentDisplay();
+
+        // Show notification
+        this.showNotification(`✅ ${item.name} kuşandın!`);
+
+        // Particles
+        this.createParticles(this.player.x, this.player.y, RARITY_COLORS[item.rarity], 15);
+    }
+
+    unequipItem(slot) {
+        const item = this.player.equipment[slot];
+        if (!item) return;
+
+        // Find empty inventory slot
+        const emptySlot = this.inventory.findIndex(i => i === null);
+        if (emptySlot === -1) {
+            this.showNotification('❌ Envanter dolu!');
+            return;
+        }
+
+        // Move to inventory
+        this.inventory[emptySlot] = item;
+        this.player.equipment[slot] = null;
+
+        // Update stats
+        this.updatePlayerStats();
+        this.updateInventory();
+        this.updateEquipmentDisplay();
+
+        this.showNotification(`📦 ${item.name} çıkarıldı`);
+    }
+
+    updatePlayerStats() {
+        const equipStats = this.calculateEquipmentStats();
+
+        // Base stats
+        this.player.damage = this.player.baseDamage + equipStats.damage;
+        this.player.defense = this.player.baseDefense + equipStats.defense;
+        this.player.speed = this.player.baseSpeed + equipStats.speed;
+
+        // Update max HP/MP if equipment provides bonuses
+        const oldMaxHP = this.player.maxHP;
+        const oldMaxMP = this.player.maxMP;
+
+        this.player.maxHP = this.player.level * 20 + (this.player.class === 'warrior' ? 150 : this.player.class === 'shaman' ? 120 : this.player.class === 'sura' ? 130 : 100) + equipStats.hp;
+        this.player.maxMP = this.player.level * 10 + (this.player.class === 'shaman' ? 120 : this.player.class === 'sura' ? 100 : this.player.class === 'ninja' ? 80 : 50) + equipStats.mp;
+
+        // Maintain HP/MP ratio when max changes
+        const hpRatio = this.player.hp / oldMaxHP;
+        const mpRatio = this.player.mp / oldMaxMP;
+
+        this.player.hp = Math.min(this.player.hp, this.player.maxHP);
+        this.player.mp = Math.min(this.player.mp, this.player.maxMP);
+
+        this.updateHUD();
+    }
+
     setupControls() {
         // Keyboard
         document.addEventListener('keydown', (e) => {
@@ -169,6 +572,11 @@ class Game {
             // Use potion
             if (e.key >= '1' && e.key <= '5') {
                 this.useItem(parseInt(e.key) - 1);
+            }
+
+            // Toggle equipment panel
+            if (e.key.toLowerCase() === 'i') {
+                this.toggleEquipmentPanel();
             }
         });
 
@@ -266,6 +674,23 @@ class Game {
         this.player.mp -= skill.mpCost;
         skill.cooldownRemaining = skill.cooldown;
 
+        // Skill particles based on skill type
+        const skillColors = {
+            '⚔️': '#ff4444',
+            '🛡️': '#4444ff',
+            '💥': '#ff8800',
+            '⚡': '#ffff00',
+            '💨': '#88ffff',
+            '🗡️': '#ff4444',
+            '✨': '#ff88ff',
+            '💚': '#44ff44',
+            '🌑': '#8800ff',
+            '👻': '#aa00aa',
+            '💀': '#440044'
+        };
+        const particleColor = skillColors[skill.icon] || '#ffffff';
+        this.createParticles(this.player.x, this.player.y, particleColor, 20);
+
         // Skill effects
         if (skill.damage) {
             const nearestMob = this.findNearestMob();
@@ -273,12 +698,14 @@ class Game {
                 const distance = this.getDistance(this.player, nearestMob);
                 if (distance < 300) {
                     this.damageEnemy(nearestMob, skill.damage + this.player.damage);
+                    this.createParticles(nearestMob.x, nearestMob.y, particleColor, 15);
 
                     if (skill.lifesteal) {
                         this.player.hp = Math.min(
                             this.player.maxHP,
                             this.player.hp + skill.damage * skill.lifesteal
                         );
+                        this.createParticles(this.player.x, this.player.y, '#ff4444', 10);
                     }
                 }
             }
@@ -286,6 +713,7 @@ class Game {
 
         if (skill.heal) {
             this.player.hp = Math.min(this.player.maxHP, this.player.hp + skill.heal);
+            this.createParticles(this.player.x, this.player.y, '#44ff44', 20);
         }
 
         this.updateHUD();
@@ -349,6 +777,9 @@ class Game {
             this.mobs.splice(index, 1);
         }
 
+        // Death particles
+        this.createParticles(enemy.x, enemy.y, '#ff4444', 20);
+
         // XP
         this.player.xp += enemy.xp;
         if (this.player.xp >= this.player.xpToLevel) {
@@ -356,8 +787,19 @@ class Game {
         }
 
         // Drop
-        if (Math.random() < 0.4) {
-            const item = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+        const dropChance = Math.random();
+        if (dropChance < 0.5) {
+            let item;
+            if (dropChance < 0.15) {
+                // 15% chance for equipment (rare drops)
+                const equipIndex = Math.floor(Math.random() * EQUIPMENT_ITEMS.length);
+                item = {...EQUIPMENT_ITEMS[equipIndex]};
+            } else {
+                // 35% chance for regular items
+                const itemIndex = Math.floor(Math.random() * ITEMS.length);
+                item = {...ITEMS[itemIndex]};
+            }
+
             this.drops.push({
                 ...item,
                 x: enemy.x,
@@ -372,17 +814,35 @@ class Game {
         this.updateHUD();
     }
 
+    createParticles(x, y, color, count) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 2 + Math.random() * 4;
+            const vx = Math.cos(angle) * speed;
+            const vy = Math.sin(angle) * speed - 2;
+            const size = 2 + Math.random() * 4;
+            const lifetime = 30 + Math.random() * 20;
+
+            this.particles.push(new Particle(x, y, color, size, vx, vy, lifetime));
+        }
+    }
+
     levelUp() {
         this.player.level++;
         this.player.xp = 0;
         this.player.xpToLevel = Math.floor(this.player.xpToLevel * 1.5);
 
-        this.player.maxHP += 20;
+        this.player.baseDamage += 3;
+        this.player.baseDefense += 2;
+
+        // Level up particles
+        this.createParticles(this.player.x, this.player.y, '#ffd700', 50);
+
+        // Update stats (this will recalculate with equipment bonuses)
+        this.updatePlayerStats();
+
         this.player.hp = this.player.maxHP;
-        this.player.maxMP += 10;
         this.player.mp = this.player.maxMP;
-        this.player.damage += 3;
-        this.player.defense += 2;
 
         this.showNotification('🎉 LEVEL UP! ' + this.player.level);
         this.updateHUD();
@@ -434,14 +894,19 @@ class Game {
         if (item.type === 'potion') {
             if (item.heal) {
                 this.player.hp = Math.min(this.player.maxHP, this.player.hp + item.heal);
+                this.createParticles(this.player.x, this.player.y, '#ff4444', 10);
             }
             if (item.mana) {
                 this.player.mp = Math.min(this.player.maxMP, this.player.mp + item.mana);
+                this.createParticles(this.player.x, this.player.y, '#4444ff', 10);
             }
 
             this.inventory[slot] = null;
             this.updateInventory();
             this.updateHUD();
+        } else if (item.slot) {
+            // Equipment item - equip it
+            this.equipItem(item, slot);
         }
     }
 
@@ -451,15 +916,31 @@ class Game {
             if (item) {
                 slot.innerHTML = `${item.icon}`;
                 slot.classList.add('has-item');
+                slot.title = item.name;
+
+                // Color code by rarity for equipment
+                if (item.rarity) {
+                    slot.style.borderColor = RARITY_COLORS[item.rarity];
+                } else {
+                    slot.style.borderColor = '';
+                }
             } else {
                 slot.innerHTML = '';
                 slot.classList.remove('has-item');
+                slot.style.borderColor = '';
+                slot.title = '';
             }
         });
     }
 
     update() {
         if (!this.player) return;
+
+        // Update environment
+        this.environment.update();
+
+        // Update particles
+        this.particles = this.particles.filter(p => p.update());
 
         // Player movement
         let dx = 0, dy = 0;
@@ -537,24 +1018,8 @@ class Game {
     }
 
     draw() {
-        this.ctx.fillStyle = '#1a1a2e';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Grid
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-        this.ctx.lineWidth = 1;
-        for (let x = 0; x < this.canvas.width; x += 50) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.canvas.height);
-            this.ctx.stroke();
-        }
-        for (let y = 0; y < this.canvas.height; y += 50) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.canvas.width, y);
-            this.ctx.stroke();
-        }
+        // Draw environment (replaces plain background)
+        this.environment.draw(this.ctx, 0, 0);
 
         // Drops
         this.drops.forEach(drop => {
@@ -609,6 +1074,11 @@ class Game {
             this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
             this.ctx.shadowBlur = 0;
         }
+
+        // Draw particles
+        this.particles.forEach(particle => {
+            particle.draw(this.ctx);
+        });
     }
 
     updateHUD() {
