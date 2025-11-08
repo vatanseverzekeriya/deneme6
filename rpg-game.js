@@ -1,66 +1,66 @@
-// Character Classes
+// Dragon Classes - Professional RPG Assets
 const CLASSES = {
     warrior: {
-        name: 'Savaşçı',
-        icon: '🛡️',
+        name: 'Ateş Ejderhası',
+        icon: '🔥',
         baseHP: 150,
         baseMP: 50,
         baseDamage: 15,
         baseDefense: 10,
         skills: [
-            { name: 'Güçlü Vuruş', icon: '⚔️', damage: 30, mpCost: 15, cooldown: 3000, key: 'Q' },
-            { name: 'Kalkan', icon: '🛡️', defense: 20, mpCost: 20, cooldown: 5000, key: 'W' },
-            { name: 'Savaş Çığlığı', icon: '💥', damage: 50, mpCost: 30, cooldown: 8000, key: 'E' }
+            { name: 'Ateş Nefesi', icon: '🔥', damage: 30, mpCost: 15, cooldown: 3000, key: 'Q' },
+            { name: 'Pullu Zırh', icon: '🛡️', defense: 20, mpCost: 20, cooldown: 5000, key: 'W' },
+            { name: 'Ejder Kükremesi', icon: '💥', damage: 50, mpCost: 30, cooldown: 8000, key: 'E' }
         ]
     },
     ninja: {
-        name: 'Ninja',
-        icon: '🗡️',
+        name: 'Fırtına Ejderhası',
+        icon: '⚡',
         baseHP: 100,
         baseMP: 80,
         baseDamage: 25,
         baseDefense: 5,
         skills: [
-            { name: 'Hızlı Saldırı', icon: '⚡', damage: 20, mpCost: 10, cooldown: 2000, key: 'Q' },
-            { name: 'Gölge Adımı', icon: '💨', dodge: true, mpCost: 15, cooldown: 4000, key: 'W' },
-            { name: 'Kritik Vuruş', icon: '🗡️', damage: 60, mpCost: 25, cooldown: 6000, key: 'E' }
+            { name: 'Yıldırım Çarpması', icon: '⚡', damage: 20, mpCost: 10, cooldown: 2000, key: 'Q' },
+            { name: 'Hava Akımı', icon: '💨', dodge: true, mpCost: 15, cooldown: 4000, key: 'W' },
+            { name: 'Fırtına Öfkesi', icon: '🌪️', damage: 60, mpCost: 25, cooldown: 6000, key: 'E' }
         ]
     },
     shaman: {
-        name: 'Şaman',
-        icon: '🔮',
+        name: 'Işık Ejderhası',
+        icon: '✨',
         baseHP: 120,
         baseMP: 120,
         baseDamage: 18,
         baseDefense: 7,
         skills: [
-            { name: 'Işın', icon: '✨', damage: 25, mpCost: 12, cooldown: 2500, key: 'Q' },
-            { name: 'İyileştirme', icon: '💚', heal: 40, mpCost: 20, cooldown: 5000, key: 'W' },
-            { name: 'Yıldırım', icon: '⚡', damage: 45, mpCost: 28, cooldown: 7000, key: 'E' }
+            { name: 'Kutsal Işın', icon: '✨', damage: 25, mpCost: 12, cooldown: 2500, key: 'Q' },
+            { name: 'Canlandırma', icon: '💚', heal: 40, mpCost: 20, cooldown: 5000, key: 'W' },
+            { name: 'Işık Patlaması', icon: '🌟', damage: 45, mpCost: 28, cooldown: 7000, key: 'E' }
         ]
     },
     sura: {
-        name: 'Sura',
-        icon: '⚡',
+        name: 'Karanlık Ejderhası',
+        icon: '🌑',
         baseHP: 130,
         baseMP: 100,
         baseDamage: 20,
         baseDefense: 8,
         skills: [
-            { name: 'Karanlık Kılıç', icon: '🌑', damage: 28, mpCost: 14, cooldown: 2500, key: 'Q' },
+            { name: 'Gölge Pençesi', icon: '🌑', damage: 28, mpCost: 14, cooldown: 2500, key: 'Q' },
             { name: 'Ruh Emme', icon: '👻', damage: 20, lifesteal: 0.5, mpCost: 18, cooldown: 4500, key: 'W' },
-            { name: 'Kara Büyü', icon: '💀', damage: 55, mpCost: 32, cooldown: 8000, key: 'E' }
+            { name: 'Karanlık Vorteks', icon: '💀', damage: 55, mpCost: 32, cooldown: 8000, key: 'E' }
         ]
     }
 };
 
-// Mob types
+// Enemy Dragon Types - All are dragons now!
 const MOB_TYPES = [
-    { name: 'Kurt', icon: '🐺', hp: 50, damage: 8, xp: 25, gold: 10, speed: 1.5 },
-    { name: 'Goblin', icon: '👹', hp: 60, damage: 10, xp: 30, gold: 15, speed: 1.2 },
-    { name: 'Ork', icon: '👾', hp: 80, damage: 12, xp: 40, gold: 20, speed: 1.0 },
-    { name: 'Troll', icon: '🧟', hp: 120, damage: 15, xp: 60, gold: 30, speed: 0.8 },
-    { name: 'Ejderha', icon: '🐉', hp: 200, damage: 25, xp: 100, gold: 50, speed: 0.6 }
+    { name: 'Genç Ejderha', icon: '🐉', hp: 50, damage: 8, xp: 25, gold: 10, speed: 1.5 },
+    { name: 'Vahşi Ejderha', icon: '🐉', hp: 60, damage: 10, xp: 30, gold: 15, speed: 1.2 },
+    { name: 'Savaşçı Ejderha', icon: '🐉', hp: 80, damage: 12, xp: 40, gold: 20, speed: 1.0 },
+    { name: 'Yaşlı Ejderha', icon: '🐉', hp: 120, damage: 15, xp: 60, gold: 30, speed: 0.8 },
+    { name: 'Kadim Ejderha', icon: '🐉', hp: 200, damage: 25, xp: 100, gold: 50, speed: 0.6 }
 ];
 
 // Items
@@ -91,6 +91,13 @@ class Game {
         this.joystickAngle = 0;
         this.joystickPower = 0;
 
+        // Animation system
+        this.animationFrame = 0;
+        this.lastAnimationTime = 0;
+
+        // Dragon asset system
+        this.dragonAssets = new DragonAssetSystem();
+
         this.setupControls();
     }
 
@@ -108,7 +115,7 @@ class Game {
             icon: classData.icon,
             x: this.canvas.width / 2,
             y: this.canvas.height / 2,
-            size: 40,
+            size: 60,
 
             level: 1,
             xp: 0,
@@ -126,7 +133,13 @@ class Game {
             skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
 
             gold: 0,
-            attackCooldown: 0
+            attackCooldown: 0,
+
+            // Animation state
+            animationState: this.dragonAssets.STATES.IDLE,
+            animationFrame: 0,
+            direction: 0,
+            facingAngle: 0
         };
 
         this.updateHUD();
@@ -250,8 +263,14 @@ class Game {
             ...type,
             x, y,
             maxHP: type.hp,
-            size: 35,
-            targetCooldown: 0
+            size: 50,
+            targetCooldown: 0,
+
+            // Animation state
+            animationState: this.dragonAssets.STATES.IDLE,
+            animationFrame: 0,
+            direction: 0,
+            facingAngle: 0
         });
     }
 
@@ -266,20 +285,38 @@ class Game {
         this.player.mp -= skill.mpCost;
         skill.cooldownRemaining = skill.cooldown;
 
+        // Play attack animation
+        this.player.animationState = this.dragonAssets.STATES.ATTACK;
+        this.player.animationFrame = 0;
+
+        setTimeout(() => {
+            if (this.player.animationState === this.dragonAssets.STATES.ATTACK) {
+                this.player.animationState = this.dragonAssets.STATES.IDLE;
+            }
+        }, 600);
+
         // Skill effects
         if (skill.damage) {
             const nearestMob = this.findNearestMob();
             if (nearestMob) {
                 const distance = this.getDistance(this.player, nearestMob);
                 if (distance < 300) {
-                    this.damageEnemy(nearestMob, skill.damage + this.player.damage);
+                    // Face the target
+                    const angle = Math.atan2(nearestMob.y - this.player.y, nearestMob.x - this.player.x);
+                    this.player.direction = Math.round((angle + Math.PI) / (Math.PI / 4)) % 8;
+                    this.player.facingAngle = angle;
 
-                    if (skill.lifesteal) {
-                        this.player.hp = Math.min(
-                            this.player.maxHP,
-                            this.player.hp + skill.damage * skill.lifesteal
-                        );
-                    }
+                    // Deal damage with a slight delay for animation
+                    setTimeout(() => {
+                        this.damageEnemy(nearestMob, skill.damage + this.player.damage);
+
+                        if (skill.lifesteal) {
+                            this.player.hp = Math.min(
+                                this.player.maxHP,
+                                this.player.hp + skill.damage * skill.lifesteal
+                            );
+                        }
+                    }, 300);
                 }
             }
         }
@@ -344,10 +381,20 @@ class Game {
     }
 
     killEnemy(enemy) {
-        const index = this.mobs.indexOf(enemy);
-        if (index > -1) {
-            this.mobs.splice(index, 1);
-        }
+        // Death animation
+        enemy.animationState = this.dragonAssets.STATES.DEATH;
+        enemy.animationFrame = 0;
+
+        // Remove after death animation completes
+        setTimeout(() => {
+            const index = this.mobs.indexOf(enemy);
+            if (index > -1) {
+                this.mobs.splice(index, 1);
+            }
+
+            // Spawn new mob
+            this.spawnMob();
+        }, 1000);
 
         // XP
         this.player.xp += enemy.xp;
@@ -365,9 +412,6 @@ class Game {
                 size: 25
             });
         }
-
-        // Spawn new mob
-        setTimeout(() => this.spawnMob(), 3000);
 
         this.updateHUD();
     }
@@ -461,6 +505,13 @@ class Game {
     update() {
         if (!this.player) return;
 
+        // Update animation timing
+        const currentTime = Date.now();
+        if (currentTime - this.lastAnimationTime > 16) { // ~60fps
+            this.animationFrame++;
+            this.lastAnimationTime = currentTime;
+        }
+
         // Player movement
         let dx = 0, dy = 0;
 
@@ -475,14 +526,36 @@ class Game {
             dy = Math.sin(this.joystickAngle) * this.joystickPower;
         }
 
-        if (dx || dy) {
+        const isMoving = dx !== 0 || dy !== 0;
+
+        if (isMoving) {
             const magnitude = Math.sqrt(dx * dx + dy * dy);
             dx = (dx / magnitude) * this.player.speed;
             dy = (dy / magnitude) * this.player.speed;
 
             this.player.x = Math.max(20, Math.min(this.canvas.width - 20, this.player.x + dx));
             this.player.y = Math.max(20, Math.min(this.canvas.height - 20, this.player.y + dy));
+
+            // Update facing direction (8 directions)
+            const angle = Math.atan2(dy, dx);
+            this.player.direction = Math.round((angle + Math.PI) / (Math.PI / 4)) % 8;
+            this.player.facingAngle = angle;
+
+            // Update animation state
+            if (this.player.animationState !== this.dragonAssets.STATES.ATTACK &&
+                this.player.animationState !== this.dragonAssets.STATES.HIT) {
+                this.player.animationState = this.dragonAssets.STATES.WALK;
+            }
+        } else {
+            // Back to idle if not attacking or hit
+            if (this.player.animationState === this.dragonAssets.STATES.WALK) {
+                this.player.animationState = this.dragonAssets.STATES.IDLE;
+            }
         }
+
+        // Update player animation frame
+        const playerFrameCount = this.dragonAssets.getFrameCount(this.player.animationState);
+        this.player.animationFrame = this.animationFrame % playerFrameCount;
 
         // Update mobs
         this.mobs.forEach(mob => {
@@ -493,13 +566,28 @@ class Game {
                 mob.x += Math.cos(angle) * mob.speed;
                 mob.y += Math.sin(angle) * mob.speed;
 
+                // Update mob direction
+                mob.direction = Math.round((angle + Math.PI) / (Math.PI / 4)) % 8;
+                mob.facingAngle = angle;
+                mob.animationState = this.dragonAssets.STATES.WALK;
+
                 // Attack player
                 if (dist < 50) {
                     if (mob.targetCooldown <= 0) {
+                        mob.animationState = this.dragonAssets.STATES.ATTACK;
+
                         const damage = Math.max(1, mob.damage - this.player.defense);
                         this.player.hp -= damage;
                         this.showDamage(this.player.x, this.player.y - 40, damage);
                         mob.targetCooldown = 1000;
+
+                        // Player hit animation
+                        this.player.animationState = this.dragonAssets.STATES.HIT;
+                        setTimeout(() => {
+                            if (this.player.animationState === this.dragonAssets.STATES.HIT) {
+                                this.player.animationState = this.dragonAssets.STATES.IDLE;
+                            }
+                        }, 200);
 
                         if (this.player.hp <= 0) {
                             this.gameOver();
@@ -508,7 +596,13 @@ class Game {
                         this.updateHUD();
                     }
                 }
+            } else {
+                mob.animationState = this.dragonAssets.STATES.IDLE;
             }
+
+            // Update mob animation frame
+            const mobFrameCount = this.dragonAssets.getFrameCount(mob.animationState);
+            mob.animationFrame = this.animationFrame % mobFrameCount;
 
             if (mob.targetCooldown > 0) {
                 mob.targetCooldown -= 16;
@@ -566,47 +660,100 @@ class Game {
 
         // Mobs
         this.mobs.forEach(mob => {
-            // Shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            this.ctx.beginPath();
-            this.ctx.ellipse(mob.x, mob.y + mob.size/2, mob.size/2, mob.size/4, 0, 0, Math.PI * 2);
-            this.ctx.fill();
+            // Render dragon asset
+            const mobFrame = this.dragonAssets.getFrame(
+                mob.animationState,
+                mob.direction,
+                mob.animationFrame
+            );
 
-            // Mob icon
-            this.ctx.font = mob.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(mob.icon, mob.x, mob.y);
+            if (mobFrame) {
+                this.ctx.drawImage(
+                    mobFrame,
+                    mob.x - mob.size,
+                    mob.y - mob.size,
+                    mob.size * 2,
+                    mob.size * 2
+                );
+            }
 
             // HP bar
-            const barWidth = 40;
-            const barHeight = 4;
+            const barWidth = 60;
+            const barHeight = 6;
             const hpPercent = mob.hp / mob.maxHP;
 
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth, barHeight);
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size - 10, barWidth, barHeight);
 
-            this.ctx.fillStyle = hpPercent > 0.5 ? '#4ade80' : hpPercent > 0.25 ? '#fbbf24' : '#ef4444';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth * hpPercent, barHeight);
+            const hpGradient = this.ctx.createLinearGradient(
+                mob.x - barWidth/2, 0,
+                mob.x + barWidth/2, 0
+            );
+
+            if (hpPercent > 0.5) {
+                hpGradient.addColorStop(0, '#4ade80');
+                hpGradient.addColorStop(1, '#22c55e');
+            } else if (hpPercent > 0.25) {
+                hpGradient.addColorStop(0, '#fbbf24');
+                hpGradient.addColorStop(1, '#f59e0b');
+            } else {
+                hpGradient.addColorStop(0, '#ef4444');
+                hpGradient.addColorStop(1, '#dc2626');
+            }
+
+            this.ctx.fillStyle = hpGradient;
+            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size - 10, barWidth * hpPercent, barHeight);
+
+            // HP bar border
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(mob.x - barWidth/2, mob.y - mob.size - 10, barWidth, barHeight);
+
+            // Mob name
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = 'bold 12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'bottom';
+            this.ctx.shadowBlur = 3;
+            this.ctx.shadowColor = 'black';
+            this.ctx.fillText(mob.name, mob.x, mob.y - mob.size - 15);
+            this.ctx.shadowBlur = 0;
         });
 
         // Player
         if (this.player) {
-            // Shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            this.ctx.beginPath();
-            this.ctx.ellipse(this.player.x, this.player.y + this.player.size/2, this.player.size/2, this.player.size/4, 0, 0, Math.PI * 2);
-            this.ctx.fill();
+            // Render player dragon asset
+            const playerFrame = this.dragonAssets.getFrame(
+                this.player.animationState,
+                this.player.direction,
+                this.player.animationFrame
+            );
 
-            // Player icon
-            this.ctx.font = this.player.size + 'px Arial';
+            if (playerFrame) {
+                // Player glow effect
+                this.ctx.save();
+                this.ctx.shadowBlur = 20;
+                this.ctx.shadowColor = '#ffd700';
+
+                this.ctx.drawImage(
+                    playerFrame,
+                    this.player.x - this.player.size,
+                    this.player.y - this.player.size,
+                    this.player.size * 2,
+                    this.player.size * 2
+                );
+
+                this.ctx.restore();
+            }
+
+            // Player name tag
+            this.ctx.fillStyle = '#ffd700';
+            this.ctx.font = 'bold 14px Arial';
             this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-
-            // Glow effect
-            this.ctx.shadowBlur = 10;
-            this.ctx.shadowColor = '#ffd700';
-            this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
+            this.ctx.textBaseline = 'bottom';
+            this.ctx.shadowBlur = 4;
+            this.ctx.shadowColor = 'black';
+            this.ctx.fillText(this.player.name, this.player.x, this.player.y - this.player.size - 10);
             this.ctx.shadowBlur = 0;
         }
     }
