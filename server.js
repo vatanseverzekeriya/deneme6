@@ -4,15 +4,34 @@ const WebSocket = require('ws');
 const chokidar = require('chokidar');
 const path = require('path');
 const os = require('os');
+const connectDB = require('./config/database');
+const { router: authRouter, authenticateToken } = require('./routes/auth');
+const guildRouter = require('./routes/guild');
+const pvpRouter = require('./routes/pvp');
+const GameServer = require('./websocket/gameServer');
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
 
 const PORT = process.env.PORT || 3000;
 
+// Connect to MongoDB
+connectDB();
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 // Serve static files
 app.use(express.static(__dirname));
+
+// API Routes
+app.use('/api/auth', authRouter);
+app.use('/api/guild', authenticateToken, guildRouter);
+app.use('/api/pvp', authenticateToken, pvpRouter);
+
+// Initialize Game Server for multiplayer
+const gameServer = new GameServer(server);
 
 // Get local IP address
 function getLocalIP() {
@@ -29,20 +48,35 @@ function getLocalIP() {
 
 const localIP = getLocalIP();
 
-// WebSocket connections
+// WebSocket connections for live reload
 const clients = new Set();
+const wss = new WebSocket.Server({ noServer: true });
+
+server.on('upgrade', (request, socket, head) => {
+    const pathname = new URL(request.url, 'ws://localhost').pathname;
+
+    if (pathname === '/live-reload') {
+        // Live reload WebSocket
+        wss.handleUpgrade(request, socket, head, (ws) => {
+            wss.emit('connection', ws, request);
+        });
+    } else {
+        // Game server WebSocket handled by GameServer class
+        // Already initialized above
+    }
+});
 
 wss.on('connection', (ws) => {
-    console.log('✅ Yeni bağlantı kuruldu');
+    console.log('✅ Live reload client connected');
     clients.add(ws);
 
     ws.on('close', () => {
-        console.log('❌ Bağlantı kapatıldı');
+        console.log('❌ Live reload client disconnected');
         clients.delete(ws);
     });
 
     ws.on('error', (error) => {
-        console.error('WebSocket hatası:', error);
+        console.error('WebSocket error:', error);
         clients.delete(ws);
     });
 });
@@ -451,11 +485,11 @@ app.get('/dashboard', (req, res) => {
             window.open(url.replace('http://${localIP}:${PORT}', ''), '_blank');
         }
 
-        // WebSocket connection counter
-        const ws = new WebSocket('ws://' + window.location.host);
+        // WebSocket connection for live reload
+        const ws = new WebSocket('ws://' + window.location.host + '/live-reload');
 
         ws.onopen = () => {
-            console.log('Dashboard bağlandı');
+            console.log('Dashboard live reload connected');
         };
 
         ws.onmessage = (event) => {
@@ -478,22 +512,54 @@ app.get('/dashboard', (req, res) => {
     `);
 });
 
-// API endpoint for connection count
+// API endpoint for connection count (live reload clients)
 app.get('/api/connections', (req, res) => {
     res.json({ count: clients.size });
+});
+
+// API endpoint for online players
+app.get('/api/online-players', (req, res) => {
+    res.json({
+        count: gameServer.getOnlineCount(),
+        players: gameServer.getOnlineUsers()
+    });
+});
+
+// Health check
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        onlinePlayers: gameServer.getOnlineCount()
+    });
 });
 
 // Start server
 server.listen(PORT, () => {
     console.log('\n' + '='.repeat(60));
-    console.log('🎮 MOBİL OYUN ÖNİZLEME SUNUCUSU BAŞLATILDI');
+    console.log('🎮 METIN2-STYLE MMORPG SERVER STARTED');
     console.log('='.repeat(60));
     console.log(`\n📱 Dashboard: http://localhost:${PORT}/dashboard`);
-    console.log(`🎯 Oyun URL: http://localhost:${PORT}/game.html`);
-    console.log(`\n🌐 Ağ Adresi: http://${localIP}:${PORT}`);
-    console.log(`📱 Mobil için: http://${localIP}:${PORT}/game.html`);
-    console.log('\n💡 Dashboard\'u açmak için tarayıcınızda yukarıdaki adresi kullanın');
-    console.log('📝 Dosyalarınızı düzenleyin, değişiklikler otomatik yansıyacak!\n');
+    console.log(`🎯 Game URL: http://localhost:${PORT}/metin2-style.html`);
+    console.log(`\n🌐 Network Address: http://${localIP}:${PORT}`);
+    console.log(`📱 Mobile: http://${localIP}:${PORT}/metin2-style.html`);
+    console.log(`\n🔌 API Endpoints:`);
+    console.log(`   - POST /api/auth/register - Register new account`);
+    console.log(`   - POST /api/auth/login - Login`);
+    console.log(`   - GET  /api/auth/profile - Get user profile`);
+    console.log(`   - POST /api/guild/create - Create guild`);
+    console.log(`   - GET  /api/guild/my/guild - Get your guild`);
+    console.log(`   - POST /api/pvp/queue/join - Join PvP matchmaking`);
+    console.log(`   - GET  /api/pvp/leaderboard - Get PvP leaderboard`);
+    console.log(`\n🎮 Features:`);
+    console.log(`   ✅ User Authentication (JWT)`);
+    console.log(`   ✅ Guild System (Create, Manage, Chat, Warehouse)`);
+    console.log(`   ✅ PvP Arena (1v1, 3v3)`);
+    console.log(`   ✅ Matchmaking & Ranking`);
+    console.log(`   ✅ Real-time Multiplayer (WebSocket)`);
+    console.log(`   ✅ Live Reload Development`);
+    console.log('\n💡 Open dashboard in your browser to get started');
+    console.log('📝 Edit files and changes will auto-reload!\n');
     console.log('='.repeat(60) + '\n');
 });
 
