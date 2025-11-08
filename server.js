@@ -4,6 +4,7 @@ const WebSocket = require('ws');
 const chokidar = require('chokidar');
 const path = require('path');
 const os = require('os');
+const { exec } = require('child_process');
 
 const app = express();
 const server = http.createServer(app);
@@ -28,6 +29,29 @@ function getLocalIP() {
 }
 
 const localIP = getLocalIP();
+
+// Function to open browser automatically
+function openBrowser(url) {
+    const platform = process.platform;
+    let command;
+
+    if (platform === 'win32') {
+        command = `start ${url}`;
+    } else if (platform === 'darwin') {
+        command = `open ${url}`;
+    } else {
+        // Linux and other Unix-like systems
+        command = `xdg-open ${url}`;
+    }
+
+    exec(command, (error) => {
+        if (error) {
+            console.log('⚠️  Tarayıcı otomatik açılamadı. Lütfen manuel olarak açın:', url);
+        } else {
+            console.log('🌐 Tarayıcı otomatik açıldı!');
+        }
+    });
+}
 
 // WebSocket connections
 const clients = new Set();
@@ -495,6 +519,11 @@ server.listen(PORT, () => {
     console.log('\n💡 Dashboard\'u açmak için tarayıcınızda yukarıdaki adresi kullanın');
     console.log('📝 Dosyalarınızı düzenleyin, değişiklikler otomatik yansıyacak!\n');
     console.log('='.repeat(60) + '\n');
+
+    // Auto-open browser after a short delay
+    setTimeout(() => {
+        openBrowser(`http://localhost:${PORT}/dashboard`);
+    }, 1000);
 });
 
 // Graceful shutdown
