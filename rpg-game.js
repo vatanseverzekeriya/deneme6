@@ -91,6 +91,9 @@ class Game {
         this.joystickAngle = 0;
         this.joystickPower = 0;
 
+        // Initialize narrative system
+        this.narrative = new NarrativeSystem(this);
+
         this.setupControls();
     }
 
@@ -126,7 +129,13 @@ class Game {
             skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
 
             gold: 0,
-            attackCooldown: 0
+            attackCooldown: 0,
+
+            // Story tracking
+            killCount: 0,
+            bossKills: 0,
+            itemsCollected: 0,
+            title: 'Acemi Maceracı'
         };
 
         this.updateHUD();
@@ -134,6 +143,9 @@ class Game {
 
         document.getElementById('charSelect').classList.add('hidden');
         document.getElementById('gameScreen').classList.add('active');
+
+        // Initialize narrative system
+        this.narrative.initialize();
 
         this.spawnMobs();
         this.gameLoop();
@@ -169,6 +181,11 @@ class Game {
             // Use potion
             if (e.key >= '1' && e.key <= '5') {
                 this.useItem(parseInt(e.key) - 1);
+            }
+
+            // Interact with NPC
+            if (e.key.toLowerCase() === 'f') {
+                if (this.narrative) this.narrative.handleInteraction();
             }
         });
 
@@ -349,6 +366,20 @@ class Game {
             this.mobs.splice(index, 1);
         }
 
+        // Track kills
+        this.player.killCount++;
+        if (enemy.isBoss) {
+            this.player.bossKills++;
+        }
+
+        // Update quest progress
+        if (this.narrative) {
+            this.narrative.updateQuestProgress('kill', enemy.name, 1);
+            if (enemy.isBoss) {
+                this.narrative.updateQuestProgress('boss', enemy.name, 1);
+            }
+        }
+
         // XP
         this.player.xp += enemy.xp;
         if (this.player.xp >= this.player.xpToLevel) {
@@ -416,15 +447,30 @@ class Game {
             this.drops.splice(index, 1);
         }
 
+        // Track items
+        this.player.itemsCollected++;
+
+        // Update quest progress
+        if (this.narrative) {
+            this.narrative.updateQuestProgress('collect', drop.name, 1);
+        }
+
         // Add to inventory
+        this.addItemToInventory(drop);
+    }
+
+    addItemToInventory(item) {
+        // Find item or empty slot
         for (let i = 0; i < this.inventory.length; i++) {
             if (!this.inventory[i]) {
-                this.inventory[i] = drop;
+                this.inventory[i] = typeof item === 'string' ? { name: item, icon: '🎁' } : item;
                 this.updateInventory();
-                this.showNotification(`+1 ${drop.name} ${drop.icon}`);
-                break;
+                this.showNotification(`+1 ${typeof item === 'string' ? item : item.name} ${typeof item === 'string' ? '' : item.icon}`);
+                return true;
             }
         }
+        this.showNotification('Envanter dolu!');
+        return false;
     }
 
     useItem(slot) {
@@ -460,6 +506,11 @@ class Game {
 
     update() {
         if (!this.player) return;
+
+        // Update narrative system
+        if (this.narrative) {
+            this.narrative.update();
+        }
 
         // Player movement
         let dx = 0, dy = 0;
@@ -540,6 +591,11 @@ class Game {
         this.ctx.fillStyle = '#1a1a2e';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
+        // Draw narrative elements (NPCs)
+        if (this.narrative) {
+            this.narrative.draw(this.ctx);
+        }
+
         // Grid
         this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
         this.ctx.lineWidth = 1;
@@ -614,8 +670,9 @@ class Game {
     updateHUD() {
         if (!this.player) return;
 
-        document.getElementById('playerName').textContent = this.player.name;
-        document.getElementById('playerLevel').textContent = `Seviye: ${this.player.level}`;
+        const playerTitle = this.player.title ? `${this.player.title}` : this.player.name;
+        document.getElementById('playerName').textContent = playerTitle;
+        document.getElementById('playerLevel').textContent = `Seviye: ${this.player.level} | 💰 ${this.player.gold}`;
 
         const hpPercent = (this.player.hp / this.player.maxHP) * 100;
         const mpPercent = (this.player.mp / this.player.maxMP) * 100;

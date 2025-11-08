@@ -346,6 +346,250 @@
             font-weight: bold;
             z-index: 1000;
         }
+
+        /* Quest Log */
+        #questLog {
+            position: fixed;
+            top: 140px;
+            right: 10px;
+            width: 280px;
+            max-height: 400px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+            overflow-y: auto;
+            pointer-events: auto;
+            font-size: 12px;
+        }
+
+        .quest-header {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 2px solid #ffd700;
+            padding-bottom: 5px;
+        }
+
+        .quest-section {
+            font-size: 13px;
+            font-weight: bold;
+            color: #60a5fa;
+            margin: 10px 0 5px 0;
+        }
+
+        .quest-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            padding: 8px;
+            margin-bottom: 8px;
+        }
+
+        .quest-item.complete {
+            border-color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+        }
+
+        .quest-title {
+            font-weight: bold;
+            color: #fbbf24;
+            margin-bottom: 4px;
+        }
+
+        .quest-desc {
+            font-size: 11px;
+            color: #aaa;
+            margin-bottom: 6px;
+        }
+
+        .quest-objective {
+            font-size: 11px;
+            padding: 2px 0;
+            color: #ccc;
+        }
+
+        .quest-objective.completed {
+            color: #4ade80;
+            text-decoration: line-through;
+        }
+
+        .quest-complete-btn {
+            width: 100%;
+            padding: 5px;
+            margin-top: 5px;
+            background: #4ade80;
+            border: none;
+            border-radius: 5px;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .quest-complete-btn:active {
+            transform: scale(0.95);
+        }
+
+        .no-quests {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+
+        /* Dialogue Box */
+        #dialogueBox {
+            position: fixed;
+            bottom: 200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 500px;
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #ffd700;
+            border-radius: 15px;
+            padding: 15px;
+            display: none;
+            pointer-events: auto;
+        }
+
+        .dialogue-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 10px;
+        }
+
+        .dialogue-npc-icon {
+            font-size: 32px;
+        }
+
+        .dialogue-npc-name {
+            flex: 1;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .dialogue-close {
+            background: rgba(255, 0, 0, 0.7);
+            border: none;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .dialogue-text {
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+            min-height: 60px;
+        }
+
+        .dialogue-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .dialogue-option {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .dialogue-option:hover, .dialogue-option:active {
+            background: rgba(255, 215, 0, 0.3);
+            border-color: #ffd700;
+            transform: translateX(5px);
+        }
+
+        /* Story Notification */
+        #storyNotif {
+            position: fixed;
+            top: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #60a5fa;
+            border-radius: 10px;
+            padding: 12px 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: slideDown 0.3s;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 1001;
+        }
+
+        /* Lore Panel */
+        #lorePanel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #a78bfa;
+            border-radius: 15px;
+            padding: 20px;
+            display: none;
+            overflow-y: auto;
+            pointer-events: auto;
+            z-index: 1002;
+        }
+
+        .lore-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .lore-content {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #ddd;
+        }
+
+        .lore-section {
+            margin-bottom: 15px;
+        }
+
+        .lore-section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #60a5fa;
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 768px) {
+            #questLog {
+                width: 240px;
+                max-height: 300px;
+                font-size: 11px;
+            }
+
+            #dialogueBox {
+                width: 95%;
+                bottom: 150px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -425,8 +669,22 @@
 
         <!-- Loot Notification -->
         <div id="lootNotif"></div>
+
+        <!-- Quest Log -->
+        <div id="questLog"></div>
+
+        <!-- Dialogue Box -->
+        <div id="dialogueBox"></div>
+
+        <!-- Story Notification -->
+        <div id="storyNotif"></div>
+
+        <!-- Lore Panel -->
+        <div id="lorePanel"></div>
     </div>
 
+    <script src="story-data.js"></script>
+    <script src="narrative-system.js"></script>
     <script src="rpg-game.js"></script>
 
     <script>
