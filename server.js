@@ -73,6 +73,7 @@ app.get('/', (req, res) => {
 app.get('/dashboard', (req, res) => {
     const gameUrl = `http://${localIP}:${PORT}/game.html`;
     const rpgUrl = `http://${localIP}:${PORT}/metin2-style.html`;
+    const worldRpgUrl = `http://${localIP}:${PORT}/world-rpg.html`;
 
     res.send(`
 <!DOCTYPE html>
@@ -342,7 +343,7 @@ app.get('/dashboard', (req, res) => {
         <div class="content">
             <div class="card">
                 <h2>🎮 Oyun Seç</h2>
-                <div class="game-selector">
+                <div class="game-selector" style="grid-template-columns: repeat(3, 1fr);">
                     <div class="game-option active" onclick="selectGame('game')">
                         <div class="game-icon">🎯</div>
                         <div class="game-title">Basit Oyun</div>
@@ -352,6 +353,11 @@ app.get('/dashboard', (req, res) => {
                         <div class="game-icon">⚔️</div>
                         <div class="game-title">RPG Oyunu</div>
                         <div class="game-desc">Metin2-style RPG</div>
+                    </div>
+                    <div class="game-option" onclick="selectGame('worldRpg')">
+                        <div class="game-icon">🗺️</div>
+                        <div class="game-title">World RPG</div>
+                        <div class="game-desc">5 Maps + Bosses</div>
                     </div>
                 </div>
 
@@ -399,7 +405,8 @@ app.get('/dashboard', (req, res) => {
         // Game URLs
         const games = {
             game: '${gameUrl}',
-            rpg: '${rpgUrl}'
+            rpg: '${rpgUrl}',
+            worldRpg: '${worldRpgUrl}'
         };
 
         let currentGame = 'game';
