@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Metin2 tarzı mobil RPG oyunu - Tarayıcında oyna, karakter seç, canavar avla, level kazan!">
+    <meta name="keywords" content="RPG, mobil oyun, Metin2, browser game, MMORPG">
+    <meta property="og:title" content="RPG Mobile - Metin2 Style Browser Game">
+    <meta property="og:description" content="Tarayıcıdan erişilebilen, mobil uyumlu RPG macerası!">
+    <meta property="og:image" content="/assets/og-image.jpg">
+    <title>RPG Mobile - Tarayıcı Tabanlı Mobil RPG</title>
+
+    <!-- Google Analytics Placeholder -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'GA_MEASUREMENT_ID');
+    </script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #16213e 100%);
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255,215,0,0.5);
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 20px rgba(255,215,0,0.5); }
+            50% { text-shadow: 0 0 40px rgba(255,215,0,0.8); }
+        }
+
+        .tagline {
+            font-size: 1.5rem;
+            margin-bottom: 40px;
+            color: #aaa;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #ffd700, #ffed4e);
+            color: #000;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(255,215,0,0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255,215,0,0.6);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 2px solid #ffd700;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,215,0,0.2);
+            transform: translateY(-3px);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 100px 20px;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 60px;
+            color: #ffd700;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,215,0,0.3);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: #ffd700;
+            box-shadow: 0 10px 30px rgba(255,215,0,0.3);
+        }
+
+        .feature-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #ffd700;
+        }
+
+        .feature-desc {
+            color: #bbb;
+            line-height: 1.6;
+        }
+
+        /* Screenshots Section */
+        .screenshots {
+            padding: 100px 20px;
+        }
+
+        .screenshot-gallery {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            padding: 20px 0;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .screenshot {
+            flex: 0 0 400px;
+            height: 300px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            scroll-snap-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .screenshot:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(255,215,0,0.5);
+        }
+
+        /* Beta Signup Section */
+        .beta-signup {
+            padding: 100px 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+
+        .signup-form {
+            max-width: 600px;
+            margin: 40px auto 0;
+            background: rgba(255,255,255,0.05);
+            padding: 40px;
+            border-radius: 20px;
+            border: 2px solid rgba(255,215,0,0.3);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid rgba(255,215,0,0.3);
+            border-radius: 10px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(90deg, #ffd700, #ffed4e);
+            color: #000;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255,215,0,0.6);
+        }
+
+        /* Stats Section */
+        .stats {
+            padding: 80px 20px;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            color: #ffd700;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 1.2rem;
+            color: #aaa;
+        }
+
+        /* Footer */
+        footer {
+            padding: 40px 20px;
+            text-align: center;
+            background: #0a0e27;
+            border-top: 2px solid rgba(255,215,0,0.3);
+        }
+
+        .social-links {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .social-link {
+            font-size: 2rem;
+            color: #ffd700;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .social-link:hover {
+            transform: scale(1.2);
+            filter: brightness(1.5);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .tagline { font-size: 1.2rem; }
+            .cta-buttons { flex-direction: column; }
+            .section-title { font-size: 2rem; }
+        }
+
+        /* Success Message */
+        .success-message {
+            display: none;
+            background: rgba(0,255,0,0.2);
+            border: 2px solid #0f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .success-message.show {
+            display: block;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>⚔️ RPG MOBILE ⚔️</h1>
+            <p class="tagline">Tarayıcıdan Erişilebilen Metin2 Tarzı Mobil RPG</p>
+            <div class="cta-buttons">
+                <a href="/metin2-style.html" class="btn btn-primary">ŞİMDİ OYNA</a>
+                <a href="#beta" class="btn btn-secondary">BETA'YA KATIL</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <h2 class="section-title">🎮 ÖZELLIKLER</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <h3 class="feature-title">4 Karakter Sınıfı</h3>
+                <p class="feature-desc">Savaşçı, Ninja, Şaman ve Sura - Her biri benzersiz yeteneklere sahip</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3 class="feature-title">Tam Mobil Destek</h3>
+                <p class="feature-desc">Joystick kontrolü, dokunmatik arayüz, tüm cihazlarda sorunsuz oynanış</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3 class="feature-title">Optimize Edilmiş</h3>
+                <p class="feature-desc">60 FPS hedefi, viewport culling, object pooling - En iyi performans</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🐉</div>
+                <h3 class="feature-title">5+ Farklı Düşman</h3>
+                <p class="feature-desc">Kurt, Goblin, Ork, Troll ve Ejderha - Zorluk seviyene göre spawn</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💎</div>
+                <h3 class="feature-title">İtem & Loot Sistemi</h3>
+                <p class="feature-desc">İksirler, silahlar, zırhlar - Düşmanlardan eşya topla</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h3 class="feature-title">Tarayıcı Tabanlı</h3>
+                <p class="feature-desc">İndirme yok! Direkt tarayıcıdan oyna, her yerden erişilebilir</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screenshots Section -->
+    <section class="screenshots">
+        <h2 class="section-title">📸 EKRAN GÖRÜNTÜLERİ</h2>
+        <div class="screenshot-gallery">
+            <div class="screenshot">🛡️ Karakter Seçimi</div>
+            <div class="screenshot">⚔️ Savaş Sahnesin</div>
+            <div class="screenshot">📊 HUD & UI</div>
+            <div class="screenshot">💫 Yetenekler</div>
+            <div class="screenshot">🎒 Envanter</div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number" id="playerCount">1,234</div>
+                <div class="stat-label">Aktif Oyuncu</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">60 FPS</div>
+                <div class="stat-label">Performans Hedefi</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">8+</div>
+                <div class="stat-label">Desteklenen Cihaz</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">99.9%</div>
+                <div class="stat-label">Uptime</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Beta Signup Section -->
+    <section class="beta-signup" id="beta">
+        <h2 class="section-title">🚀 BETA TEST'E KATIL</h2>
+        <div class="signup-form">
+            <form id="betaForm">
+                <div class="form-group">
+                    <label for="name">İsim *</label>
+                    <input type="text" id="name" name="name" required placeholder="Adınız Soyadınız">
+                </div>
+                <div class="form-group">
+                    <label for="email">E-posta *</label>
+                    <input type="email" id="email" name="email" required placeholder="ornek@email.com">
+                </div>
+                <div class="form-group">
+                    <label for="device">Cihaz Tipi *</label>
+                    <select id="device" name="device" required>
+                        <option value="">Seçiniz...</option>
+                        <option value="iphone">iPhone</option>
+                        <option value="android">Android</option>
+                        <option value="ipad">iPad</option>
+                        <option value="desktop">Desktop/Laptop</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="experience">RPG Deneyimi</label>
+                    <select id="experience" name="experience">
+                        <option value="beginner">Yeni Başlayan</option>
+                        <option value="intermediate">Orta Seviye</option>
+                        <option value="advanced">İleri Seviye</option>
+                        <option value="expert">Uzman</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="feedback">Beklentileriniz</label>
+                    <textarea id="feedback" name="feedback" rows="4" placeholder="Oyundan beklentilerinizi paylaşın..."></textarea>
+                </div>
+                <button type="submit" class="submit-btn">BETA'YA KATIL</button>
+            </form>
+            <div class="success-message" id="successMessage">
+                ✅ Başvurunuz alındı! E-posta adresinize onay mesajı gönderilecek.
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="social-links">
+            <a href="#" class="social-link" title="Discord">💬</a>
+            <a href="#" class="social-link" title="Twitter">🐦</a>
+            <a href="#" class="social-link" title="Reddit">🤖</a>
+            <a href="#" class="social-link" title="GitHub">💻</a>
+        </div>
+        <p>&copy; 2025 RPG Mobile. Tüm hakları saklıdır.</p>
+        <p style="margin-top: 10px; color: #666;">
+            <a href="/test-suite.html" style="color: #ffd700;">Test Suite</a> |
+            <a href="/metin2-style.html?test=true" style="color: #ffd700;">Performance Test</a>
+        </p>
+    </footer>
+
+    <script src="analytics.js"></script>
+    <script>
+        // Beta Form Submission
+        document.getElementById('betaForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                device: document.getElementById('device').value,
+                experience: document.getElementById('experience').value,
+                feedback: document.getElementById('feedback').value,
+                timestamp: new Date().toISOString()
+            };
+
+            // Track with analytics
+            if (typeof trackEvent !== 'undefined') {
+                trackEvent('beta_signup', formData);
+            }
+
+            // Store in localStorage (in production, send to server)
+            const signups = JSON.parse(localStorage.getItem('beta_signups') || '[]');
+            signups.push(formData);
+            localStorage.setItem('beta_signups', JSON.stringify(signups));
+
+            // Show success message
+            document.getElementById('successMessage').classList.add('show');
+            document.getElementById('betaForm').reset();
+
+            // Hide success message after 5 seconds
+            setTimeout(() => {
+                document.getElementById('successMessage').classList.remove('show');
+            }, 5000);
+
+            console.log('Beta Signup:', formData);
+        });
+
+        // Animated player count
+        function animateCount() {
+            const counter = document.getElementById('playerCount');
+            let count = 1000;
+            const interval = setInterval(() => {
+                count += Math.floor(Math.random() * 10);
+                counter.textContent = count.toLocaleString();
+                if (count > 1500) clearInterval(interval);
+            }, 100);
+        }
+
+        animateCount();
+    </script>
+</body>
+</html>

@@ -91,12 +91,81 @@ class Game {
         this.joystickAngle = 0;
         this.joystickPower = 0;
 
+        // Performance optimization
+        this.perfMonitor = new PerformanceMonitor({ targetFPS: 60, maxFPS: 60 });
+        this.lastFrameTime = performance.now();
+        this.deltaTime = 0;
+
+        // Object pooling for performance
+        this.mobPool = [];
+        this.dropPool = [];
+
+        // Cached rendering (grid background)
+        this.gridCanvas = null;
+        this.gridCached = false;
+
+        // Font caching
+        this.fontCache = {};
+
         this.setupControls();
+        this.initializeOptimizations();
     }
 
     resizeCanvas() {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
+        this.gridCached = false; // Invalidate grid cache on resize
+    }
+
+    initializeOptimizations() {
+        // Initialize object pools
+        for (let i = 0; i < 50; i++) {
+            this.mobPool.push({ active: false });
+            this.dropPool.push({ active: false });
+        }
+
+        // Cache grid background
+        this.cacheGridBackground();
+
+        // Cache common font strings
+        this.fontCache = {
+            small: '25px Arial',
+            medium: '35px Arial',
+            large: '40px Arial'
+        };
+    }
+
+    cacheGridBackground() {
+        // Create offscreen canvas for grid
+        this.gridCanvas = document.createElement('canvas');
+        this.gridCanvas.width = this.canvas.width;
+        this.gridCanvas.height = this.canvas.height;
+        const gridCtx = this.gridCanvas.getContext('2d');
+
+        // Draw grid once
+        gridCtx.fillStyle = '#1a1a2e';
+        gridCtx.fillRect(0, 0, this.gridCanvas.width, this.gridCanvas.height);
+
+        gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        gridCtx.lineWidth = 1;
+
+        // Vertical lines
+        for (let x = 0; x < this.gridCanvas.width; x += 50) {
+            gridCtx.beginPath();
+            gridCtx.moveTo(x, 0);
+            gridCtx.lineTo(x, this.gridCanvas.height);
+            gridCtx.stroke();
+        }
+
+        // Horizontal lines
+        for (let y = 0; y < this.gridCanvas.height; y += 50) {
+            gridCtx.beginPath();
+            gridCtx.moveTo(0, y);
+            gridCtx.lineTo(this.gridCanvas.width, y);
+            gridCtx.stroke();
+        }
+
+        this.gridCached = true;
     }
 
     selectCharacter(className) {
@@ -246,13 +315,33 @@ class Game {
             ? Math.random() * margin
             : this.canvas.height - Math.random() * margin;
 
-        this.mobs.push({
-            ...type,
-            x, y,
-            maxHP: type.hp,
-            size: 35,
-            targetCooldown: 0
-        });
+        // Object pooling: Try to reuse inactive mob from pool
+        let mob = this.mobPool.find(m => !m.active);
+
+        if (mob) {
+            // Reuse existing mob object
+            Object.assign(mob, {
+                ...type,
+                x, y,
+                maxHP: type.hp,
+                size: 35,
+                targetCooldown: 0,
+                active: true
+            });
+        } else {
+            // Create new mob if pool is exhausted
+            mob = {
+                ...type,
+                x, y,
+                maxHP: type.hp,
+                size: 35,
+                targetCooldown: 0,
+                active: true
+            };
+            this.mobPool.push(mob);
+        }
+
+        this.mobs.push(mob);
     }
 
     useSkill(index) {
@@ -349,21 +438,44 @@ class Game {
             this.mobs.splice(index, 1);
         }
 
+        // Mark mob as inactive for pooling
+        enemy.active = false;
+
         // XP
         this.player.xp += enemy.xp;
         if (this.player.xp >= this.player.xpToLevel) {
             this.levelUp();
         }
 
-        // Drop
+        // Drop with object pooling
         if (Math.random() < 0.4) {
             const item = ITEMS[Math.floor(Math.random() * ITEMS.length)];
-            this.drops.push({
-                ...item,
-                x: enemy.x,
-                y: enemy.y,
-                size: 25
-            });
+
+            // Try to reuse inactive drop from pool
+            let drop = this.dropPool.find(d => !d.active);
+
+            if (drop) {
+                // Reuse existing drop
+                Object.assign(drop, {
+                    ...item,
+                    x: enemy.x,
+                    y: enemy.y,
+                    size: 25,
+                    active: true
+                });
+            } else {
+                // Create new drop if pool is exhausted
+                drop = {
+                    ...item,
+                    x: enemy.x,
+                    y: enemy.y,
+                    size: 25,
+                    active: true
+                };
+                this.dropPool.push(drop);
+            }
+
+            this.drops.push(drop);
         }
 
         // Spawn new mob
@@ -415,6 +527,9 @@ class Game {
         if (index > -1) {
             this.drops.splice(index, 1);
         }
+
+        // Mark drop as inactive for pooling
+        drop.active = false;
 
         // Add to inventory
         for (let i = 0; i < this.inventory.length; i++) {
@@ -537,46 +652,58 @@ class Game {
     }
 
     draw() {
-        this.ctx.fillStyle = '#1a1a2e';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Grid
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-        this.ctx.lineWidth = 1;
-        for (let x = 0; x < this.canvas.width; x += 50) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.canvas.height);
-            this.ctx.stroke();
-        }
-        for (let y = 0; y < this.canvas.height; y += 50) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.canvas.width, y);
-            this.ctx.stroke();
+        // Use cached grid background (major performance improvement)
+        if (this.gridCached && this.gridCanvas) {
+            this.ctx.drawImage(this.gridCanvas, 0, 0);
+            this.perfMonitor.trackDrawCall();
+        } else {
+            // Fallback to traditional rendering
+            this.ctx.fillStyle = '#1a1a2e';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.cacheGridBackground();
         }
 
-        // Drops
+        // Set common rendering properties once
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+
+        // Viewport culling bounds
+        const viewportPadding = 100;
+        const minX = -viewportPadding;
+        const maxX = this.canvas.width + viewportPadding;
+        const minY = -viewportPadding;
+        const maxY = this.canvas.height + viewportPadding;
+
+        // Batch render drops (with culling)
+        this.ctx.font = this.fontCache.small;
         this.drops.forEach(drop => {
-            this.ctx.font = drop.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
+            // Viewport culling - don't render off-screen objects
+            if (drop.x < minX || drop.x > maxX || drop.y < minY || drop.y > maxY) {
+                return;
+            }
+
             this.ctx.fillText(drop.icon, drop.x, drop.y);
+            this.perfMonitor.trackDrawCall();
         });
 
-        // Mobs
+        // Batch render mobs (with culling and optimized shadows)
         this.mobs.forEach(mob => {
-            // Shadow
+            // Viewport culling
+            if (mob.x < minX || mob.x > maxX || mob.y < minY || mob.y > maxY) {
+                return;
+            }
+
+            // Simplified shadow (no blur for performance)
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
             this.ctx.beginPath();
             this.ctx.ellipse(mob.x, mob.y + mob.size/2, mob.size/2, mob.size/4, 0, 0, Math.PI * 2);
             this.ctx.fill();
+            this.perfMonitor.trackDrawCall();
 
-            // Mob icon
-            this.ctx.font = mob.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
+            // Mob icon (using cached font)
+            this.ctx.font = this.fontCache.medium;
             this.ctx.fillText(mob.icon, mob.x, mob.y);
+            this.perfMonitor.trackDrawCall();
 
             // HP bar
             const barWidth = 40;
@@ -588,26 +715,27 @@ class Game {
 
             this.ctx.fillStyle = hpPercent > 0.5 ? '#4ade80' : hpPercent > 0.25 ? '#fbbf24' : '#ef4444';
             this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth * hpPercent, barHeight);
+            this.perfMonitor.trackDrawCall();
         });
 
-        // Player
+        // Player (always render, with optimized glow)
         if (this.player) {
-            // Shadow
+            // Simplified shadow
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
             this.ctx.beginPath();
             this.ctx.ellipse(this.player.x, this.player.y + this.player.size/2, this.player.size/2, this.player.size/4, 0, 0, Math.PI * 2);
             this.ctx.fill();
+            this.perfMonitor.trackDrawCall();
 
-            // Player icon
-            this.ctx.font = this.player.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
+            // Player icon with optimized glow
+            this.ctx.font = this.fontCache.large;
 
-            // Glow effect
-            this.ctx.shadowBlur = 10;
+            // Reduced glow for better performance
+            this.ctx.shadowBlur = 5;
             this.ctx.shadowColor = '#ffd700';
             this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
             this.ctx.shadowBlur = 0;
+            this.perfMonitor.trackDrawCall();
         }
     }
 
@@ -639,8 +767,31 @@ class Game {
     }
 
     gameLoop() {
+        // Start performance measurement
+        this.perfMonitor.startFrame();
+
+        // Calculate delta time for frame-rate independent movement
+        const currentTime = performance.now();
+        this.deltaTime = (currentTime - this.lastFrameTime) / 16.67; // Normalized to 60 FPS
+        this.lastFrameTime = currentTime;
+
+        // Cap delta time to prevent spiral of death
+        if (this.deltaTime > 3) {
+            this.deltaTime = 1;
+        }
+
+        // Update game logic
         this.update();
+
+        // Render
         this.draw();
+
+        // Update performance metrics
+        const entityCount = this.mobs.length + this.drops.length + 1; // +1 for player
+        this.perfMonitor.setEntityCount(entityCount);
+        this.perfMonitor.endFrame();
+
+        // Continue game loop with FPS throttling (60 FPS target)
         requestAnimationFrame(() => this.gameLoop());
     }
 }
