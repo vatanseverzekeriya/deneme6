@@ -346,6 +346,259 @@
             font-weight: bold;
             z-index: 1000;
         }
+
+        /* Menu Buttons */
+        #menuButtons {
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: auto;
+            z-index: 100;
+        }
+
+        .menu-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            pointer-events: auto;
+        }
+
+        .menu-btn:hover, .menu-btn:active {
+            background: rgba(255, 215, 0, 0.3);
+            border-color: #ffd700;
+            transform: scale(1.1);
+        }
+
+        /* Game Panels */
+        .game-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #ffd700;
+            border-radius: 15px;
+            padding: 20px;
+            min-width: 400px;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            z-index: 200;
+            pointer-events: auto;
+        }
+
+        .game-panel.hidden {
+            display: none;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ffd700;
+            padding-bottom: 10px;
+        }
+
+        .panel-header h3 {
+            margin: 0;
+            color: #ffd700;
+        }
+
+        .panel-header button {
+            background: #ef4444;
+            border: none;
+            color: white;
+            font-size: 20px;
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .panel-content {
+            color: white;
+        }
+
+        /* Inventory Grid */
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+        }
+
+        .inventory-slot {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .inventory-slot:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .inventory-slot.has-item {
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .inventory-slot .item-icon {
+            font-size: 24px;
+        }
+
+        .inventory-slot .item-name {
+            font-size: 8px;
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        /* Equipment Grid */
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .eq-slot {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            padding: 5px;
+        }
+
+        .eq-slot:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .eq-slot.has-item {
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .eq-slot .eq-label {
+            font-size: 10px;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .eq-slot .item-icon {
+            font-size: 28px;
+        }
+
+        .eq-slot .item-name {
+            font-size: 9px;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        /* Stats Panel */
+        .stat-section {
+            margin-bottom: 20px;
+        }
+
+        .stat-section h4 {
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin-bottom: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+        }
+
+        .stat-row button {
+            background: #22c55e;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .stat-row button:hover {
+            background: #16a34a;
+        }
+
+        .stat-points {
+            text-align: center;
+            color: #ffd700;
+            font-weight: bold;
+            margin-top: 10px;
+            font-size: 18px;
+        }
+
+        /* Load Game Button */
+        .load-game-btn {
+            position: absolute;
+            bottom: 20px;
+            background: #3b82f6;
+            color: white;
+            border: 2px solid #60a5fa;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .load-game-btn:hover {
+            background: #2563eb;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .inventory-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+
+            .inventory-slot {
+                width: 50px;
+                height: 50px;
+            }
+
+            .equipment-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .game-panel {
+                min-width: 95vw;
+            }
+        }
     </style>
 </head>
 <body>
@@ -407,6 +660,9 @@
         <!-- Skills -->
         <div id="skills"></div>
 
+        <!-- Menu Buttons -->
+        <div id="menuButtons"></div>
+
         <!-- Joystick -->
         <div id="joystick">
             <div class="joystick-base">
@@ -414,7 +670,7 @@
             </div>
         </div>
 
-        <!-- Inventory -->
+        <!-- Inventory Quick Slots (showing first 5 items) -->
         <div id="inventory">
             <div class="inv-slot" id="slot0"></div>
             <div class="inv-slot" id="slot1"></div>

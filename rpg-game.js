@@ -63,13 +63,50 @@ const MOB_TYPES = [
     { name: 'Ejderha', icon: '🐉', hp: 200, damage: 25, xp: 100, gold: 50, speed: 0.6 }
 ];
 
-// Items
+// Item Rarity System
+const RARITY = {
+    common: { name: 'Sıradan', color: '#9ca3af', chance: 0.50, statMultiplier: 1.0 },
+    uncommon: { name: 'Nadir', color: '#22c55e', chance: 0.30, statMultiplier: 1.3 },
+    rare: { name: 'Ender', color: '#3b82f6', chance: 0.12, statMultiplier: 1.6 },
+    epic: { name: 'Epik', color: '#a855f7', chance: 0.06, statMultiplier: 2.0 },
+    legendary: { name: 'Efsanevi', color: '#f59e0b', chance: 0.015, statMultiplier: 2.5 },
+    mythic: { name: 'Mitolojik', color: '#ef4444', chance: 0.005, statMultiplier: 3.0 }
+};
+
+// Items with enhanced properties
 const ITEMS = [
     { name: 'Can İksiri', icon: '❤️', type: 'potion', heal: 50 },
     { name: 'Mana İksiri', icon: '💙', type: 'potion', mana: 50 },
+    { name: 'Büyük Can İksiri', icon: '💖', type: 'potion', heal: 150 },
     { name: 'Altın', icon: '💰', type: 'gold', value: 10 },
-    { name: 'Kılıç', icon: '⚔️', type: 'weapon', damage: 5 },
-    { name: 'Zırh', icon: '🛡️', type: 'armor', defense: 5 }
+
+    // Weapons
+    { name: 'Kılıç', icon: '⚔️', type: 'weapon', slot: 'weapon', damage: 5, reqLevel: 1 },
+    { name: 'Balta', icon: '🪓', type: 'weapon', slot: 'weapon', damage: 8, reqLevel: 3 },
+    { name: 'Mızrak', icon: '🔱', type: 'weapon', slot: 'weapon', damage: 12, reqLevel: 5 },
+    { name: 'Büyülü Asa', icon: '🔮', type: 'weapon', slot: 'weapon', damage: 10, int: 5, reqLevel: 4 },
+
+    // Armor
+    { name: 'Deri Zırh', icon: '🛡️', type: 'armor', slot: 'armor', defense: 5, reqLevel: 1 },
+    { name: 'Zincir Zırh', icon: '⚔️', type: 'armor', slot: 'armor', defense: 8, reqLevel: 3 },
+    { name: 'Plaka Zırh', icon: '🛡️', type: 'armor', slot: 'armor', defense: 15, vit: 5, reqLevel: 6 },
+
+    // Helmets
+    { name: 'Deri Başlık', icon: '🎩', type: 'helmet', slot: 'helmet', defense: 3, reqLevel: 2 },
+    { name: 'Zırh Miğfer', icon: '⛑️', type: 'helmet', slot: 'helmet', defense: 7, str: 3, reqLevel: 5 },
+
+    // Gloves
+    { name: 'Eldiven', icon: '🧤', type: 'gloves', slot: 'gloves', defense: 2, dex: 2, reqLevel: 2 },
+    { name: 'Zırh Eldiven', icon: '🥊', type: 'gloves', slot: 'gloves', defense: 5, str: 4, reqLevel: 5 },
+
+    // Boots
+    { name: 'Çizme', icon: '👢', type: 'boots', slot: 'boots', defense: 2, dex: 3, reqLevel: 2 },
+    { name: 'Ağır Çizme', icon: '🥾', type: 'boots', slot: 'boots', defense: 6, vit: 4, reqLevel: 5 },
+
+    // Accessories
+    { name: 'Kolye', icon: '📿', type: 'necklace', slot: 'necklace', int: 5, reqLevel: 3 },
+    { name: 'Küpe', icon: '💍', type: 'earring', slot: 'earring', dex: 4, reqLevel: 3 },
+    { name: 'Yüzük', icon: '💎', type: 'ring', slot: 'ring', str: 3, reqLevel: 2 }
 ];
 
 class Game {
@@ -84,14 +121,224 @@ class Game {
         this.mobs = [];
         this.projectiles = [];
         this.drops = [];
-        this.inventory = Array(5).fill(null);
+        this.inventory = Array(30).fill(null); // Expanded to 30 slots
 
         this.keys = {};
         this.joystickActive = false;
         this.joystickAngle = 0;
         this.joystickPower = 0;
 
+        this.saveSlot = 1;
+        this.autoSaveInterval = null;
+
         this.setupControls();
+        this.setupUI();
+    }
+
+    setupUI() {
+        // Create inventory UI
+        this.createInventoryUI();
+        // Create equipment UI
+        this.createEquipmentUI();
+        // Create stat distribution UI
+        this.createStatUI();
+        // Create menu buttons
+        this.createMenuButtons();
+    }
+
+    createMenuButtons() {
+        const menuDiv = document.getElementById('menuButtons');
+        if (!menuDiv) return;
+
+        menuDiv.innerHTML = `
+            <button class="menu-btn" onclick="game.toggleInventory()">💼</button>
+            <button class="menu-btn" onclick="game.toggleEquipment()">⚔️</button>
+            <button class="menu-btn" onclick="game.toggleStats()">📊</button>
+            <button class="menu-btn" onclick="game.saveGame()">💾</button>
+        `;
+    }
+
+    createInventoryUI() {
+        let invPanel = document.getElementById('inventoryPanel');
+        if (!invPanel) {
+            invPanel = document.createElement('div');
+            invPanel.id = 'inventoryPanel';
+            invPanel.className = 'game-panel hidden';
+            invPanel.innerHTML = `
+                <div class="panel-header">
+                    <h3>💼 ENVANTER (30 Slot)</h3>
+                    <button onclick="game.toggleInventory()">✕</button>
+                </div>
+                <div class="panel-content">
+                    <div id="inventoryGrid" class="inventory-grid"></div>
+                </div>
+            `;
+            document.body.appendChild(invPanel);
+        }
+
+        const grid = document.getElementById('inventoryGrid');
+        grid.innerHTML = '';
+        for (let i = 0; i < 30; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'inventory-slot';
+            slot.id = `invSlot${i}`;
+            slot.onclick = () => this.handleInventoryClick(i);
+            grid.appendChild(slot);
+        }
+    }
+
+    createEquipmentUI() {
+        let eqPanel = document.getElementById('equipmentPanel');
+        if (!eqPanel) {
+            eqPanel = document.createElement('div');
+            eqPanel.id = 'equipmentPanel';
+            eqPanel.className = 'game-panel hidden';
+            eqPanel.innerHTML = `
+                <div class="panel-header">
+                    <h3>⚔️ EKİPMAN</h3>
+                    <button onclick="game.toggleEquipment()">✕</button>
+                </div>
+                <div class="panel-content">
+                    <div class="equipment-grid">
+                        <div class="eq-slot" id="eqWeapon" onclick="game.handleEquipmentClick('weapon')">
+                            <div class="eq-label">Silah</div>
+                        </div>
+                        <div class="eq-slot" id="eqHelmet" onclick="game.handleEquipmentClick('helmet')">
+                            <div class="eq-label">Başlık</div>
+                        </div>
+                        <div class="eq-slot" id="eqArmor" onclick="game.handleEquipmentClick('armor')">
+                            <div class="eq-label">Zırh</div>
+                        </div>
+                        <div class="eq-slot" id="eqGloves" onclick="game.handleEquipmentClick('gloves')">
+                            <div class="eq-label">Eldiven</div>
+                        </div>
+                        <div class="eq-slot" id="eqBoots" onclick="game.handleEquipmentClick('boots')">
+                            <div class="eq-label">Ayakkabı</div>
+                        </div>
+                        <div class="eq-slot" id="eqNecklace" onclick="game.handleEquipmentClick('necklace')">
+                            <div class="eq-label">Kolye</div>
+                        </div>
+                        <div class="eq-slot" id="eqEarring" onclick="game.handleEquipmentClick('earring')">
+                            <div class="eq-label">Küpe</div>
+                        </div>
+                        <div class="eq-slot" id="eqRing" onclick="game.handleEquipmentClick('ring')">
+                            <div class="eq-label">Yüzük</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(eqPanel);
+        }
+    }
+
+    createStatUI() {
+        let statPanel = document.getElementById('statPanel');
+        if (!statPanel) {
+            statPanel = document.createElement('div');
+            statPanel.id = 'statPanel';
+            statPanel.className = 'game-panel hidden';
+            statPanel.innerHTML = `
+                <div class="panel-header">
+                    <h3>📊 İSTATİSTİKLER</h3>
+                    <button onclick="game.toggleStats()">✕</button>
+                </div>
+                <div class="panel-content">
+                    <div id="statContent"></div>
+                </div>
+            `;
+            document.body.appendChild(statPanel);
+        }
+    }
+
+    toggleInventory() {
+        const panel = document.getElementById('inventoryPanel');
+        panel.classList.toggle('hidden');
+        if (!panel.classList.contains('hidden')) {
+            this.updateInventoryUI();
+        }
+    }
+
+    toggleEquipment() {
+        const panel = document.getElementById('equipmentPanel');
+        panel.classList.toggle('hidden');
+        if (!panel.classList.contains('hidden')) {
+            this.updateEquipmentUI();
+        }
+    }
+
+    toggleStats() {
+        const panel = document.getElementById('statPanel');
+        panel.classList.toggle('hidden');
+        if (!panel.classList.contains('hidden')) {
+            this.updateStatUI();
+        }
+    }
+
+    // Generate random rarity based on chances
+    generateRarity() {
+        const roll = Math.random();
+        let cumulative = 0;
+
+        for (const [key, data] of Object.entries(RARITY).reverse()) {
+            cumulative += data.chance;
+            if (roll <= cumulative) {
+                return key;
+            }
+        }
+        return 'common';
+    }
+
+    // Create item drop with rarity and enhancement
+    createItemDrop(baseItem) {
+        if (baseItem.type === 'potion' || baseItem.type === 'gold') {
+            return {...baseItem};
+        }
+
+        const rarity = this.generateRarity();
+        const rarityData = RARITY[rarity];
+        const enhancement = Math.random() < 0.3 ? Math.floor(Math.random() * 6) : 0; // 30% chance for +0 to +5
+
+        const item = {...baseItem};
+        item.rarity = rarity;
+        item.enhancement = enhancement;
+        item.id = Date.now() + Math.random(); // Unique ID
+
+        // Apply rarity multipliers
+        if (item.damage) item.damage = Math.floor(item.damage * rarityData.statMultiplier);
+        if (item.defense) item.defense = Math.floor(item.defense * rarityData.statMultiplier);
+        if (item.str) item.str = Math.floor(item.str * rarityData.statMultiplier);
+        if (item.int) item.int = Math.floor(item.int * rarityData.statMultiplier);
+        if (item.dex) item.dex = Math.floor(item.dex * rarityData.statMultiplier);
+        if (item.vit) item.vit = Math.floor(item.vit * rarityData.statMultiplier);
+
+        // Apply enhancement bonuses (10% per level)
+        if (enhancement > 0) {
+            const enhMult = 1 + (enhancement * 0.1);
+            if (item.damage) item.damage = Math.floor(item.damage * enhMult);
+            if (item.defense) item.defense = Math.floor(item.defense * enhMult);
+            if (item.str) item.str = Math.floor(item.str * enhMult);
+            if (item.int) item.int = Math.floor(item.int * enhMult);
+            if (item.dex) item.dex = Math.floor(item.dex * enhMult);
+            if (item.vit) item.vit = Math.floor(item.vit * enhMult);
+        }
+
+        return item;
+    }
+
+    // Get item display name with enhancement
+    getItemDisplayName(item) {
+        if (!item) return '';
+        let name = item.name;
+        if (item.enhancement > 0) {
+            name = `+${item.enhancement} ${name}`;
+        }
+        return name;
+    }
+
+    // Get item color based on rarity
+    getItemColor(item) {
+        if (!item || !item.rarity) return '#9ca3af';
+        return RARITY[item.rarity].color;
     }
 
     resizeCanvas() {
@@ -110,17 +357,43 @@ class Game {
             y: this.canvas.height / 2,
             size: 40,
 
+            // Progression
             level: 1,
             xp: 0,
             xpToLevel: 100,
+            statPoints: 0, // Points to distribute
 
-            hp: classData.baseHP,
-            maxHP: classData.baseHP,
-            mp: classData.baseMP,
-            maxMP: classData.baseMP,
+            // Core Stats (NEW)
+            str: 10, // Strength: +1 damage per point
+            int: 10, // Intelligence: +0.5 damage, +5 MP per point
+            dex: 10, // Dexterity: +0.3% crit chance per point
+            vit: 10, // Vitality: +10 HP per point
 
-            damage: classData.baseDamage,
-            defense: classData.baseDefense,
+            // Base stats from class
+            baseHP: classData.baseHP,
+            baseMP: classData.baseMP,
+            baseDamage: classData.baseDamage,
+            baseDefense: classData.baseDefense,
+
+            // Current stats (calculated)
+            hp: 0,
+            maxHP: 0,
+            mp: 0,
+            maxMP: 0,
+            damage: 0,
+            defense: 0,
+
+            // Equipment
+            equipment: {
+                weapon: null,
+                helmet: null,
+                armor: null,
+                gloves: null,
+                boots: null,
+                necklace: null,
+                earring: null,
+                ring: null
+            },
 
             speed: 3,
             skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
@@ -129,6 +402,9 @@ class Game {
             attackCooldown: 0
         };
 
+        // Calculate initial stats
+        this.recalculateStats();
+
         this.updateHUD();
         this.createSkillButtons();
 
@@ -136,7 +412,238 @@ class Game {
         document.getElementById('gameScreen').classList.add('active');
 
         this.spawnMobs();
+        this.startAutoSave();
         this.gameLoop();
+    }
+
+    // Recalculate all derived stats from base stats + equipment
+    recalculateStats() {
+        if (!this.player) return;
+
+        const p = this.player;
+
+        // Calculate max HP: baseHP + (vit * 10) + equipment bonuses
+        p.maxHP = p.baseHP + (p.vit * 10);
+
+        // Calculate max MP: baseMP + (int * 5) + equipment bonuses
+        p.maxMP = p.baseMP + (p.int * 5);
+
+        // Calculate damage: baseDamage + str + (int * 0.5) + equipment bonuses
+        p.damage = p.baseDamage + p.str + Math.floor(p.int * 0.5);
+
+        // Calculate defense: baseDefense + equipment bonuses
+        p.defense = p.baseDefense;
+
+        // Add equipment bonuses
+        for (const slot in p.equipment) {
+            const item = p.equipment[slot];
+            if (item) {
+                if (item.damage) p.damage += item.damage;
+                if (item.defense) p.defense += item.defense;
+                if (item.str) p.str += item.str;
+                if (item.int) p.int += item.int;
+                if (item.dex) p.dex += item.dex;
+                if (item.vit) {
+                    p.maxHP += item.vit * 10;
+                }
+            }
+        }
+
+        // Ensure HP/MP don't exceed max
+        if (p.hp > p.maxHP) p.hp = p.maxHP;
+        if (p.mp > p.maxMP) p.mp = p.maxMP;
+
+        // If this is initial setup, set to full
+        if (p.hp === 0) p.hp = p.maxHP;
+        if (p.mp === 0) p.mp = p.maxMP;
+    }
+
+    // Handle inventory click
+    handleInventoryClick(slot) {
+        const item = this.inventory[slot];
+        if (!item) return;
+
+        if (item.type === 'potion') {
+            this.useItem(slot);
+        } else if (item.type === 'gold') {
+            this.player.gold += item.value || 10;
+            this.inventory[slot] = null;
+            this.updateInventoryUI();
+            this.showNotification(`+${item.value || 10} Altın!`);
+        } else if (item.slot) {
+            // It's equipment, try to equip it
+            this.equipItem(slot);
+        }
+    }
+
+    // Equip item from inventory
+    equipItem(invSlot) {
+        const item = this.inventory[invSlot];
+        if (!item || !item.slot) return;
+
+        // Check level requirement
+        if (item.reqLevel && this.player.level < item.reqLevel) {
+            this.showNotification(`Seviye ${item.reqLevel} gerekli!`);
+            return;
+        }
+
+        // Unequip current item in that slot if any
+        const currentItem = this.player.equipment[item.slot];
+        if (currentItem) {
+            // Find empty inventory slot
+            for (let i = 0; i < this.inventory.length; i++) {
+                if (!this.inventory[i]) {
+                    this.inventory[i] = currentItem;
+                    break;
+                }
+            }
+        }
+
+        // Equip new item
+        this.player.equipment[item.slot] = item;
+        this.inventory[invSlot] = null;
+
+        this.recalculateStats();
+        this.updateInventoryUI();
+        this.updateEquipmentUI();
+        this.updateHUD();
+        this.showNotification(`✅ ${this.getItemDisplayName(item)} kuşanıldı!`);
+    }
+
+    // Handle equipment slot click (unequip)
+    handleEquipmentClick(slot) {
+        const item = this.player.equipment[slot];
+        if (!item) return;
+
+        // Find empty inventory slot
+        for (let i = 0; i < this.inventory.length; i++) {
+            if (!this.inventory[i]) {
+                this.inventory[i] = item;
+                this.player.equipment[slot] = null;
+                this.recalculateStats();
+                this.updateInventoryUI();
+                this.updateEquipmentUI();
+                this.updateHUD();
+                this.showNotification(`${this.getItemDisplayName(item)} çıkarıldı!`);
+                return;
+            }
+        }
+
+        this.showNotification('Envanter dolu!');
+    }
+
+    // Update inventory UI
+    updateInventoryUI() {
+        for (let i = 0; i < 30; i++) {
+            const slotDiv = document.getElementById(`invSlot${i}`);
+            if (!slotDiv) continue;
+
+            const item = this.inventory[i];
+            if (item) {
+                const color = this.getItemColor(item);
+                const displayName = this.getItemDisplayName(item);
+                slotDiv.innerHTML = `
+                    <div class="item-icon">${item.icon}</div>
+                    <div class="item-name" style="color: ${color}">${displayName}</div>
+                `;
+                slotDiv.style.borderColor = color;
+                slotDiv.classList.add('has-item');
+            } else {
+                slotDiv.innerHTML = '';
+                slotDiv.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                slotDiv.classList.remove('has-item');
+            }
+        }
+    }
+
+    // Update equipment UI
+    updateEquipmentUI() {
+        for (const slot in this.player.equipment) {
+            const slotDiv = document.getElementById(`eq${slot.charAt(0).toUpperCase() + slot.slice(1)}`);
+            if (!slotDiv) continue;
+
+            const item = this.player.equipment[slot];
+            const label = slotDiv.querySelector('.eq-label');
+
+            if (item) {
+                const color = this.getItemColor(item);
+                const displayName = this.getItemDisplayName(item);
+                slotDiv.querySelector('.item-icon')?.remove();
+                slotDiv.querySelector('.item-name')?.remove();
+
+                const iconDiv = document.createElement('div');
+                iconDiv.className = 'item-icon';
+                iconDiv.textContent = item.icon;
+                slotDiv.appendChild(iconDiv);
+
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'item-name';
+                nameDiv.style.color = color;
+                nameDiv.textContent = displayName;
+                slotDiv.appendChild(nameDiv);
+
+                slotDiv.style.borderColor = color;
+                slotDiv.classList.add('has-item');
+            } else {
+                slotDiv.querySelector('.item-icon')?.remove();
+                slotDiv.querySelector('.item-name')?.remove();
+                slotDiv.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                slotDiv.classList.remove('has-item');
+            }
+        }
+    }
+
+    // Update stat UI
+    updateStatUI() {
+        const content = document.getElementById('statContent');
+        if (!content || !this.player) return;
+
+        content.innerHTML = `
+            <div class="stat-section">
+                <h4>Temel İstatistikler</h4>
+                <div class="stat-row">
+                    <span>Güç (STR):</span>
+                    <span>${this.player.str}</span>
+                    ${this.player.statPoints > 0 ? '<button onclick="game.addStat(\'str\')">+</button>' : ''}
+                </div>
+                <div class="stat-row">
+                    <span>Zeka (INT):</span>
+                    <span>${this.player.int}</span>
+                    ${this.player.statPoints > 0 ? '<button onclick="game.addStat(\'int\')">+</button>' : ''}
+                </div>
+                <div class="stat-row">
+                    <span>Çeviklik (DEX):</span>
+                    <span>${this.player.dex}</span>
+                    ${this.player.statPoints > 0 ? '<button onclick="game.addStat(\'dex\')">+</button>' : ''}
+                </div>
+                <div class="stat-row">
+                    <span>Dayanıklılık (VIT):</span>
+                    <span>${this.player.vit}</span>
+                    ${this.player.statPoints > 0 ? '<button onclick="game.addStat(\'vit\')">+</button>' : ''}
+                </div>
+                ${this.player.statPoints > 0 ? `<p class="stat-points">Kalan Puan: ${this.player.statPoints}</p>` : ''}
+            </div>
+            <div class="stat-section">
+                <h4>Hesaplanmış İstatistikler</h4>
+                <div class="stat-row"><span>HP:</span><span>${this.player.maxHP}</span></div>
+                <div class="stat-row"><span>MP:</span><span>${this.player.maxMP}</span></div>
+                <div class="stat-row"><span>Hasar:</span><span>${this.player.damage}</span></div>
+                <div class="stat-row"><span>Savunma:</span><span>${this.player.defense}</span></div>
+                <div class="stat-row"><span>Altın:</span><span>${this.player.gold} 💰</span></div>
+            </div>
+        `;
+    }
+
+    // Add stat point
+    addStat(stat) {
+        if (this.player.statPoints <= 0) return;
+
+        this.player[stat]++;
+        this.player.statPoints--;
+
+        this.recalculateStats();
+        this.updateStatUI();
+        this.updateHUD();
     }
 
     createSkillButtons() {
@@ -351,13 +858,18 @@ class Game {
 
         // XP
         this.player.xp += enemy.xp;
+
+        // Gold
+        this.player.gold += enemy.gold;
+
         if (this.player.xp >= this.player.xpToLevel) {
             this.levelUp();
         }
 
         // Drop
-        if (Math.random() < 0.4) {
-            const item = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+        if (Math.random() < 0.5) { // 50% drop chance
+            const baseItem = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+            const item = this.createItemDrop(baseItem);
             this.drops.push({
                 ...item,
                 x: enemy.x,
@@ -377,15 +889,28 @@ class Game {
         this.player.xp = 0;
         this.player.xpToLevel = Math.floor(this.player.xpToLevel * 1.5);
 
-        this.player.maxHP += 20;
-        this.player.hp = this.player.maxHP;
-        this.player.maxMP += 10;
-        this.player.mp = this.player.maxMP;
-        this.player.damage += 3;
-        this.player.defense += 2;
+        // Give stat points (5 points per level)
+        this.player.statPoints += 5;
 
-        this.showNotification('🎉 LEVEL UP! ' + this.player.level);
+        // Small base stat increases
+        this.player.baseHP += 10;
+        this.player.baseMP += 5;
+        this.player.baseDamage += 1;
+        this.player.baseDefense += 1;
+
+        // Recalculate and heal to full
+        this.recalculateStats();
+        this.player.hp = this.player.maxHP;
+        this.player.mp = this.player.maxMP;
+
+        this.showNotification(`🎉 LEVEL ${this.player.level}! +5 Stat Puanı!`);
         this.updateHUD();
+
+        // Auto-open stats panel to show stat points
+        if (this.player.statPoints > 0) {
+            document.getElementById('statPanel').classList.remove('hidden');
+            this.updateStatUI();
+        }
     }
 
     showDamage(x, y, damage) {
@@ -421,10 +946,15 @@ class Game {
             if (!this.inventory[i]) {
                 this.inventory[i] = drop;
                 this.updateInventory();
-                this.showNotification(`+1 ${drop.name} ${drop.icon}`);
-                break;
+                const displayName = this.getItemDisplayName(drop);
+                const rarityText = drop.rarity ? RARITY[drop.rarity].name : '';
+                this.showNotification(`${rarityText} ${displayName} ${drop.icon}`);
+                return;
             }
         }
+
+        // Inventory full
+        this.showNotification('⚠️ Envanter dolu!');
     }
 
     useItem(slot) {
@@ -446,16 +976,23 @@ class Game {
     }
 
     updateInventory() {
-        this.inventory.forEach((item, i) => {
+        // Update quick slots (first 5 items)
+        for (let i = 0; i < 5; i++) {
             const slot = document.getElementById(`slot${i}`);
+            if (!slot) continue;
+
+            const item = this.inventory[i];
             if (item) {
                 slot.innerHTML = `${item.icon}`;
+                const color = this.getItemColor(item);
+                slot.style.borderColor = color;
                 slot.classList.add('has-item');
             } else {
                 slot.innerHTML = '';
+                slot.style.borderColor = 'rgba(255, 255, 255, 0.3)';
                 slot.classList.remove('has-item');
             }
-        });
+        }
     }
 
     update() {
@@ -634,8 +1171,173 @@ class Game {
     }
 
     gameOver() {
-        alert('😵 Öldün!\n\nSeviye: ' + this.player.level + '\nXP: ' + this.player.xp);
-        window.location.reload();
+        // Stop auto-save
+        this.stopAutoSave();
+
+        const choice = confirm('😵 Öldün!\n\nSeviye: ' + this.player.level + '\nAltın: ' + this.player.gold + '\n\nKayıtlı oyunu yüklemek ister misin?');
+        if (choice) {
+            this.loadGame();
+        } else {
+            localStorage.removeItem('rpg_save_' + this.saveSlot);
+            window.location.reload();
+        }
+    }
+
+    // Save/Load System
+    saveGame() {
+        if (!this.player) {
+            this.showNotification('❌ Oyun başlatılmamış!');
+            return;
+        }
+
+        const saveData = {
+            version: '2.0',
+            timestamp: Date.now(),
+            player: {
+                // Character
+                class: this.player.class,
+                name: this.player.name,
+                icon: this.player.icon,
+                x: this.player.x,
+                y: this.player.y,
+
+                // Progression
+                level: this.player.level,
+                xp: this.player.xp,
+                xpToLevel: this.player.xpToLevel,
+                statPoints: this.player.statPoints,
+
+                // Stats
+                str: this.player.str,
+                int: this.player.int,
+                dex: this.player.dex,
+                vit: this.player.vit,
+
+                baseHP: this.player.baseHP,
+                baseMP: this.player.baseMP,
+                baseDamage: this.player.baseDamage,
+                baseDefense: this.player.baseDefense,
+
+                hp: this.player.hp,
+                maxHP: this.player.maxHP,
+                mp: this.player.mp,
+                maxMP: this.player.maxMP,
+
+                // Equipment
+                equipment: this.player.equipment,
+
+                // Inventory
+                gold: this.player.gold,
+
+                // Skills
+                skills: this.player.skills
+            },
+            inventory: this.inventory
+        };
+
+        try {
+            localStorage.setItem('rpg_save_' + this.saveSlot, JSON.stringify(saveData));
+            this.showNotification('💾 Oyun kaydedildi!');
+        } catch (e) {
+            this.showNotification('❌ Kayıt hatası!');
+            console.error('Save error:', e);
+        }
+    }
+
+    loadGame(slot = 1) {
+        this.saveSlot = slot;
+        const saved = localStorage.getItem('rpg_save_' + slot);
+
+        if (!saved) {
+            this.showNotification('❌ Kayıt bulunamadı!');
+            return false;
+        }
+
+        try {
+            const data = JSON.parse(saved);
+
+            // Hide char select, show game
+            document.getElementById('charSelect').classList.add('hidden');
+            document.getElementById('gameScreen').classList.add('active');
+
+            // Restore player
+            const classData = CLASSES[data.player.class];
+            this.player = {
+                ...data.player,
+                size: 40,
+                speed: 3,
+                attackCooldown: 0
+            };
+
+            // Ensure equipment object exists
+            if (!this.player.equipment) {
+                this.player.equipment = {
+                    weapon: null,
+                    helmet: null,
+                    armor: null,
+                    gloves: null,
+                    boots: null,
+                    necklace: null,
+                    earring: null,
+                    ring: null
+                };
+            }
+
+            // Restore inventory
+            this.inventory = data.inventory || Array(30).fill(null);
+
+            // Recalculate stats
+            this.recalculateStats();
+
+            this.updateHUD();
+            this.createSkillButtons();
+            this.spawnMobs();
+            this.startAutoSave();
+
+            if (!this.gameRunning) {
+                this.gameRunning = true;
+                this.gameLoop();
+            }
+
+            this.showNotification('✅ Oyun yüklendi!');
+            return true;
+        } catch (e) {
+            this.showNotification('❌ Kayıt bozuk!');
+            console.error('Load error:', e);
+            return false;
+        }
+    }
+
+    startAutoSave() {
+        // Auto-save every 60 seconds
+        this.stopAutoSave();
+        this.autoSaveInterval = setInterval(() => {
+            if (this.player) {
+                this.saveGame();
+            }
+        }, 60000);
+    }
+
+    stopAutoSave() {
+        if (this.autoSaveInterval) {
+            clearInterval(this.autoSaveInterval);
+            this.autoSaveInterval = null;
+        }
+    }
+
+    // Check for saved game on start
+    checkSavedGame() {
+        const saved = localStorage.getItem('rpg_save_1');
+        if (saved) {
+            const loadBtn = document.createElement('button');
+            loadBtn.className = 'load-game-btn';
+            loadBtn.textContent = '💾 Kayıtlı Oyunu Yükle';
+            loadBtn.onclick = () => {
+                this.loadGame(1);
+                loadBtn.remove();
+            };
+            document.getElementById('charSelect').appendChild(loadBtn);
+        }
     }
 
     gameLoop() {
@@ -647,6 +1349,11 @@ class Game {
 
 // Initialize game
 const game = new Game();
+
+// Check for saved game
+window.addEventListener('load', () => {
+    game.checkSavedGame();
+});
 
 function selectCharacter(className) {
     game.selectCharacter(className);
