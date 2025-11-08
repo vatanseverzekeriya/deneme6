@@ -91,6 +91,9 @@ class Game {
         this.joystickAngle = 0;
         this.joystickPower = 0;
 
+        // Initialize audio system
+        this.audioManager = new AudioManager();
+
         this.setupControls();
     }
 
@@ -100,6 +103,9 @@ class Game {
     }
 
     selectCharacter(className) {
+        // Play button click sound
+        this.audioManager.playButtonClick();
+
         const classData = CLASSES[className];
 
         this.player = {
@@ -134,6 +140,10 @@ class Game {
 
         document.getElementById('charSelect').classList.add('hidden');
         document.getElementById('gameScreen').classList.add('active');
+
+        // Start combat music and ambient sounds
+        this.audioManager.playCombatMusic();
+        this.audioManager.startAmbientSound();
 
         this.spawnMobs();
         this.gameLoop();
@@ -266,6 +276,9 @@ class Game {
         this.player.mp -= skill.mpCost;
         skill.cooldownRemaining = skill.cooldown;
 
+        // Play skill sound
+        this.audioManager.playSkillSound(skill.name, this.player.class);
+
         // Skill effects
         if (skill.damage) {
             const nearestMob = this.findNearestMob();
@@ -338,6 +351,9 @@ class Game {
         enemy.hp -= damage;
         this.showDamage(enemy.x, enemy.y, damage);
 
+        // Play hit sound
+        this.audioManager.playHitSound();
+
         if (enemy.hp <= 0) {
             this.killEnemy(enemy);
         }
@@ -348,6 +364,9 @@ class Game {
         if (index > -1) {
             this.mobs.splice(index, 1);
         }
+
+        // Play enemy death sound
+        this.audioManager.playEnemyDeathSound();
 
         // XP
         this.player.xp += enemy.xp;
@@ -384,6 +403,9 @@ class Game {
         this.player.damage += 3;
         this.player.defense += 2;
 
+        // Play level up sound
+        this.audioManager.playLevelUp();
+
         this.showNotification('🎉 LEVEL UP! ' + this.player.level);
         this.updateHUD();
     }
@@ -416,6 +438,9 @@ class Game {
             this.drops.splice(index, 1);
         }
 
+        // Play item pickup sound
+        this.audioManager.playItemPickup();
+
         // Add to inventory
         for (let i = 0; i < this.inventory.length; i++) {
             if (!this.inventory[i]) {
@@ -438,6 +463,9 @@ class Game {
             if (item.mana) {
                 this.player.mp = Math.min(this.player.maxMP, this.player.mp + item.mana);
             }
+
+            // Play item use sound
+            this.audioManager.playItemUse();
 
             this.inventory[slot] = null;
             this.updateInventory();
@@ -500,6 +528,9 @@ class Game {
                         this.player.hp -= damage;
                         this.showDamage(this.player.x, this.player.y - 40, damage);
                         mob.targetCooldown = 1000;
+
+                        // Play player damage sound
+                        this.audioManager.playPlayerDamageSound();
 
                         if (this.player.hp <= 0) {
                             this.gameOver();
@@ -634,8 +665,17 @@ class Game {
     }
 
     gameOver() {
-        alert('😵 Öldün!\n\nSeviye: ' + this.player.level + '\nXP: ' + this.player.xp);
-        window.location.reload();
+        // Stop all music and ambient sounds
+        this.audioManager.stopMusic();
+        this.audioManager.stopAmbientSound();
+
+        // Play game over sound
+        this.audioManager.playGameOverSound();
+
+        setTimeout(() => {
+            alert('😵 Öldün!\n\nSeviye: ' + this.player.level + '\nXP: ' + this.player.xp);
+            window.location.reload();
+        }, 1000);
     }
 
     gameLoop() {

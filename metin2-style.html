@@ -346,10 +346,158 @@
             font-weight: bold;
             z-index: 1000;
         }
+
+        /* Audio Controls */
+        #audioControls {
+            position: fixed;
+            top: 45px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            min-width: 200px;
+            z-index: 999;
+            pointer-events: auto;
+        }
+
+        #audioControls.hidden {
+            display: none;
+        }
+
+        .audio-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .audio-section {
+            margin-bottom: 12px;
+        }
+
+        .audio-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+
+        .audio-slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .audio-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #ffd700;
+            cursor: pointer;
+        }
+
+        .audio-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #ffd700;
+            cursor: pointer;
+            border: none;
+        }
+
+        .audio-btn {
+            width: 100%;
+            padding: 8px;
+            background: rgba(100, 50, 150, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .audio-btn:hover {
+            background: rgba(100, 50, 150, 1);
+            border-color: #ffd700;
+        }
+
+        .audio-btn.muted {
+            background: rgba(200, 50, 50, 0.8);
+        }
+
+        #audioToggle {
+            position: fixed;
+            top: 10px;
+            right: 100px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(100, 50, 150, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            pointer-events: auto;
+            transition: all 0.3s;
+        }
+
+        #audioToggle:hover {
+            transform: scale(1.1);
+            border-color: #ffd700;
+        }
     </style>
 </head>
 <body>
     <div class="live-indicator">🔴 CANLI</div>
+
+    <!-- Audio Toggle Button -->
+    <button id="audioToggle">🎵</button>
+
+    <!-- Audio Controls Panel -->
+    <div id="audioControls" class="hidden">
+        <div class="audio-header">
+            <span>🎵 Ses Ayarları</span>
+            <span style="cursor: pointer;" onclick="toggleAudioPanel()">✖</span>
+        </div>
+        <div class="audio-section">
+            <div class="audio-label">
+                <span>Ana Ses</span>
+                <span id="masterValue">30%</span>
+            </div>
+            <input type="range" class="audio-slider" id="masterVolume" min="0" max="100" value="30">
+        </div>
+        <div class="audio-section">
+            <div class="audio-label">
+                <span>Müzik</span>
+                <span id="musicValue">40%</span>
+            </div>
+            <input type="range" class="audio-slider" id="musicVolume" min="0" max="100" value="40">
+        </div>
+        <div class="audio-section">
+            <div class="audio-label">
+                <span>Ses Efektleri</span>
+                <span id="sfxValue">50%</span>
+            </div>
+            <input type="range" class="audio-slider" id="sfxVolume" min="0" max="100" value="50">
+        </div>
+        <button class="audio-btn" id="muteBtn" onclick="toggleMute()">🔊 Sesi Kapat/Aç</button>
+    </div>
 
     <!-- Character Selection -->
     <div id="charSelect">
@@ -427,9 +575,51 @@
         <div id="lootNotif"></div>
     </div>
 
+    <script src="audio-system.js"></script>
     <script src="rpg-game.js"></script>
 
     <script>
+        // Audio controls functionality
+        function toggleAudioPanel() {
+            const panel = document.getElementById('audioControls');
+            panel.classList.toggle('hidden');
+        }
+
+        // Toggle audio panel when clicking the audio button
+        document.getElementById('audioToggle').addEventListener('click', toggleAudioPanel);
+
+        // Volume sliders
+        document.getElementById('masterVolume').addEventListener('input', function(e) {
+            const value = e.target.value / 100;
+            game.audioManager.setMasterVolume(value);
+            document.getElementById('masterValue').textContent = e.target.value + '%';
+        });
+
+        document.getElementById('musicVolume').addEventListener('input', function(e) {
+            const value = e.target.value / 100;
+            game.audioManager.setMusicVolume(value);
+            document.getElementById('musicValue').textContent = e.target.value + '%';
+        });
+
+        document.getElementById('sfxVolume').addEventListener('input', function(e) {
+            const value = e.target.value / 100;
+            game.audioManager.setSFXVolume(value);
+            document.getElementById('sfxValue').textContent = e.target.value + '%';
+        });
+
+        // Mute toggle
+        function toggleMute() {
+            const enabled = game.audioManager.toggleMute();
+            const btn = document.getElementById('muteBtn');
+            if (enabled) {
+                btn.classList.remove('muted');
+                btn.textContent = '🔊 Sesi Kapat';
+            } else {
+                btn.classList.add('muted');
+                btn.textContent = '🔇 Sesi Aç';
+            }
+        }
+
         // Live reload
         if (typeof WebSocket !== 'undefined') {
             const ws = new WebSocket('ws://' + window.location.host);
