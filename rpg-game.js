@@ -2,65 +2,65 @@
 const CLASSES = {
     warrior: {
         name: 'Savaşçı',
-        icon: '🛡️',
+        type: 'warrior',
         baseHP: 150,
         baseMP: 50,
         baseDamage: 15,
         baseDefense: 10,
         skills: [
-            { name: 'Güçlü Vuruş', icon: '⚔️', damage: 30, mpCost: 15, cooldown: 3000, key: 'Q' },
-            { name: 'Kalkan', icon: '🛡️', defense: 20, mpCost: 20, cooldown: 5000, key: 'W' },
-            { name: 'Savaş Çığlığı', icon: '💥', damage: 50, mpCost: 30, cooldown: 8000, key: 'E' }
+            { name: 'Güçlü Vuruş', icon: '⚔️', damage: 30, mpCost: 15, cooldown: 3000, key: 'Q', type: 'slash' },
+            { name: 'Kalkan', icon: '🛡️', defense: 20, mpCost: 20, cooldown: 5000, key: 'W', type: 'buff' },
+            { name: 'Savaş Çığlığı', icon: '💥', damage: 50, mpCost: 30, cooldown: 8000, key: 'E', type: 'explosion' }
         ]
     },
     ninja: {
         name: 'Ninja',
-        icon: '🗡️',
+        type: 'ninja',
         baseHP: 100,
         baseMP: 80,
         baseDamage: 25,
         baseDefense: 5,
         skills: [
-            { name: 'Hızlı Saldırı', icon: '⚡', damage: 20, mpCost: 10, cooldown: 2000, key: 'Q' },
-            { name: 'Gölge Adımı', icon: '💨', dodge: true, mpCost: 15, cooldown: 4000, key: 'W' },
-            { name: 'Kritik Vuruş', icon: '🗡️', damage: 60, mpCost: 25, cooldown: 6000, key: 'E' }
+            { name: 'Hızlı Saldırı', icon: '⚡', damage: 20, mpCost: 10, cooldown: 2000, key: 'Q', type: 'slash' },
+            { name: 'Gölge Adımı', icon: '💨', dodge: true, mpCost: 15, cooldown: 4000, key: 'W', type: 'buff' },
+            { name: 'Kritik Vuruş', icon: '🗡️', damage: 60, mpCost: 25, cooldown: 6000, key: 'E', type: 'slash' }
         ]
     },
     shaman: {
         name: 'Şaman',
-        icon: '🔮',
+        type: 'shaman',
         baseHP: 120,
         baseMP: 120,
         baseDamage: 18,
         baseDefense: 7,
         skills: [
-            { name: 'Işın', icon: '✨', damage: 25, mpCost: 12, cooldown: 2500, key: 'Q' },
-            { name: 'İyileştirme', icon: '💚', heal: 40, mpCost: 20, cooldown: 5000, key: 'W' },
-            { name: 'Yıldırım', icon: '⚡', damage: 45, mpCost: 28, cooldown: 7000, key: 'E' }
+            { name: 'Işın', icon: '✨', damage: 25, mpCost: 12, cooldown: 2500, key: 'Q', type: 'fireball' },
+            { name: 'İyileştirme', icon: '💚', heal: 40, mpCost: 20, cooldown: 5000, key: 'W', type: 'heal' },
+            { name: 'Yıldırım', icon: '⚡', damage: 45, mpCost: 28, cooldown: 7000, key: 'E', type: 'lightning' }
         ]
     },
     sura: {
         name: 'Sura',
-        icon: '⚡',
+        type: 'sura',
         baseHP: 130,
         baseMP: 100,
         baseDamage: 20,
         baseDefense: 8,
         skills: [
-            { name: 'Karanlık Kılıç', icon: '🌑', damage: 28, mpCost: 14, cooldown: 2500, key: 'Q' },
-            { name: 'Ruh Emme', icon: '👻', damage: 20, lifesteal: 0.5, mpCost: 18, cooldown: 4500, key: 'W' },
-            { name: 'Kara Büyü', icon: '💀', damage: 55, mpCost: 32, cooldown: 8000, key: 'E' }
+            { name: 'Karanlık Kılıç', icon: '🌑', damage: 28, mpCost: 14, cooldown: 2500, key: 'Q', type: 'slash' },
+            { name: 'Ruh Emme', icon: '👻', damage: 20, lifesteal: 0.5, mpCost: 18, cooldown: 4500, key: 'W', type: 'fireball' },
+            { name: 'Kara Büyü', icon: '💀', damage: 55, mpCost: 32, cooldown: 8000, key: 'E', type: 'explosion' }
         ]
     }
 };
 
 // Mob types
 const MOB_TYPES = [
-    { name: 'Kurt', icon: '🐺', hp: 50, damage: 8, xp: 25, gold: 10, speed: 1.5 },
-    { name: 'Goblin', icon: '👹', hp: 60, damage: 10, xp: 30, gold: 15, speed: 1.2 },
-    { name: 'Ork', icon: '👾', hp: 80, damage: 12, xp: 40, gold: 20, speed: 1.0 },
-    { name: 'Troll', icon: '🧟', hp: 120, damage: 15, xp: 60, gold: 30, speed: 0.8 },
-    { name: 'Ejderha', icon: '🐉', hp: 200, damage: 25, xp: 100, gold: 50, speed: 0.6 }
+    { name: 'Kurt', type: 'wolf', hp: 50, damage: 8, xp: 25, gold: 10, speed: 1.5 },
+    { name: 'Goblin', type: 'goblin', hp: 60, damage: 10, xp: 30, gold: 15, speed: 1.2 },
+    { name: 'Ork', type: 'orc', hp: 80, damage: 12, xp: 40, gold: 20, speed: 1.0 },
+    { name: 'Troll', type: 'troll', hp: 120, damage: 15, xp: 60, gold: 30, speed: 0.8 },
+    { name: 'Ejderha', type: 'dragon', hp: 200, damage: 25, xp: 100, gold: 50, speed: 0.6 }
 ];
 
 // Items
@@ -81,10 +81,14 @@ class Game {
         window.addEventListener('resize', () => this.resizeCanvas());
 
         this.player = null;
+        this.playerSprite = null;
         this.mobs = [];
         this.projectiles = [];
         this.drops = [];
         this.inventory = Array(5).fill(null);
+
+        // Visual effects system
+        this.vfx = new VisualEffectsSystem();
 
         this.keys = {};
         this.joystickActive = false;
@@ -105,7 +109,7 @@ class Game {
         this.player = {
             class: className,
             name: classData.name,
-            icon: classData.icon,
+            type: classData.type,
             x: this.canvas.width / 2,
             y: this.canvas.height / 2,
             size: 40,
@@ -126,8 +130,13 @@ class Game {
             skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
 
             gold: 0,
-            attackCooldown: 0
+            attackCooldown: 0,
+            isMoving: false,
+            facingDirection: 1
         };
+
+        // Create character sprite
+        this.playerSprite = new CharacterSprite(classData.type);
 
         this.updateHUD();
         this.createSkillButtons();
@@ -246,13 +255,19 @@ class Game {
             ? Math.random() * margin
             : this.canvas.height - Math.random() * margin;
 
-        this.mobs.push({
+        const mob = {
             ...type,
             x, y,
             maxHP: type.hp,
             size: 35,
-            targetCooldown: 0
-        });
+            targetCooldown: 0,
+            facingDirection: 1
+        };
+
+        // Create mob sprite
+        mob.sprite = new MobSprite(type.type);
+
+        this.mobs.push(mob);
     }
 
     useSkill(index) {
@@ -266,12 +281,53 @@ class Game {
         this.player.mp -= skill.mpCost;
         skill.cooldownRemaining = skill.cooldown;
 
+        // Set player animation
+        this.playerSprite.setAnimation('skill');
+
         // Skill effects
         if (skill.damage) {
             const nearestMob = this.findNearestMob();
             if (nearestMob) {
                 const distance = this.getDistance(this.player, nearestMob);
                 if (distance < 300) {
+                    // Visual effects based on skill type
+                    switch(skill.type) {
+                        case 'slash':
+                            this.vfx.createSlashEffect(
+                                nearestMob.x,
+                                nearestMob.y,
+                                this.player.facingDirection,
+                                '#ff0000'
+                            );
+                            nearestMob.sprite.setAnimation('hit');
+                            break;
+                        case 'fireball':
+                            this.vfx.createFireballEffect(
+                                this.player.x,
+                                this.player.y - 20,
+                                nearestMob.x,
+                                nearestMob.y
+                            );
+                            break;
+                        case 'lightning':
+                            this.vfx.createLightningEffect(
+                                this.player.x,
+                                this.player.y - 40,
+                                nearestMob.x,
+                                nearestMob.y - 20
+                            );
+                            nearestMob.sprite.setAnimation('hit');
+                            break;
+                        case 'explosion':
+                            this.vfx.createExplosionEffect(
+                                nearestMob.x,
+                                nearestMob.y,
+                                '#ff4500'
+                            );
+                            nearestMob.sprite.setAnimation('hit');
+                            break;
+                    }
+
                     this.damageEnemy(nearestMob, skill.damage + this.player.damage);
 
                     if (skill.lifesteal) {
@@ -286,6 +342,11 @@ class Game {
 
         if (skill.heal) {
             this.player.hp = Math.min(this.player.maxHP, this.player.hp + skill.heal);
+            this.vfx.createHealEffect(this.player.x, this.player.y);
+        }
+
+        if (skill.type === 'buff') {
+            this.vfx.createBuffEffect(this.player.x, this.player.y, '#ffd700');
         }
 
         this.updateHUD();
@@ -338,16 +399,34 @@ class Game {
         enemy.hp -= damage;
         this.showDamage(enemy.x, enemy.y, damage);
 
+        // Visual impact
+        this.vfx.createImpactEffect(enemy.x, enemy.y, '#ffff00');
+        this.vfx.createBloodSplatter(enemy.x, enemy.y);
+
+        if (enemy.sprite) {
+            enemy.sprite.setAnimation('hit');
+        }
+
         if (enemy.hp <= 0) {
             this.killEnemy(enemy);
         }
     }
 
     killEnemy(enemy) {
-        const index = this.mobs.indexOf(enemy);
-        if (index > -1) {
-            this.mobs.splice(index, 1);
+        // Death animation
+        if (enemy.sprite) {
+            enemy.sprite.setAnimation('death');
         }
+
+        // Death effects
+        this.vfx.createExplosionEffect(enemy.x, enemy.y, '#8b0000');
+
+        setTimeout(() => {
+            const index = this.mobs.indexOf(enemy);
+            if (index > -1) {
+                this.mobs.splice(index, 1);
+            }
+        }, 500);
 
         // XP
         this.player.xp += enemy.xp;
@@ -383,6 +462,9 @@ class Game {
         this.player.mp = this.player.maxMP;
         this.player.damage += 3;
         this.player.defense += 2;
+
+        // Level up visual effect
+        this.vfx.createLevelUpEffect(this.player.x, this.player.y);
 
         this.showNotification('🎉 LEVEL UP! ' + this.player.level);
         this.updateHUD();
@@ -482,6 +564,29 @@ class Game {
 
             this.player.x = Math.max(20, Math.min(this.canvas.width - 20, this.player.x + dx));
             this.player.y = Math.max(20, Math.min(this.canvas.height - 20, this.player.y + dy));
+
+            // Update player animation and direction
+            this.player.isMoving = true;
+            if (dx !== 0) {
+                this.player.facingDirection = dx > 0 ? 1 : -1;
+            }
+
+            if (this.playerSprite.currentAnimation !== 'skill' &&
+                this.playerSprite.currentAnimation !== 'attack' &&
+                this.playerSprite.currentAnimation !== 'hit') {
+                this.playerSprite.setAnimation('walk');
+            }
+        } else {
+            this.player.isMoving = false;
+            if (this.playerSprite.currentAnimation === 'walk') {
+                this.playerSprite.setAnimation('idle');
+            }
+        }
+
+        // Update player sprite
+        if (this.playerSprite) {
+            this.playerSprite.direction = this.player.facingDirection;
+            this.playerSprite.update();
         }
 
         // Update mobs
@@ -493,12 +598,35 @@ class Game {
                 mob.x += Math.cos(angle) * mob.speed;
                 mob.y += Math.sin(angle) * mob.speed;
 
+                // Update mob direction and animation
+                mob.facingDirection = mob.x < this.player.x ? 1 : -1;
+
+                if (mob.sprite) {
+                    mob.sprite.direction = mob.facingDirection;
+                    if (mob.sprite.currentAnimation !== 'hit' &&
+                        mob.sprite.currentAnimation !== 'death' &&
+                        mob.sprite.currentAnimation !== 'attack') {
+                        mob.sprite.setAnimation('walk');
+                    }
+                }
+
                 // Attack player
                 if (dist < 50) {
                     if (mob.targetCooldown <= 0) {
+                        if (mob.sprite) {
+                            mob.sprite.setAnimation('attack');
+                        }
+
                         const damage = Math.max(1, mob.damage - this.player.defense);
                         this.player.hp -= damage;
                         this.showDamage(this.player.x, this.player.y - 40, damage);
+
+                        // Player hit effect
+                        if (this.playerSprite) {
+                            this.playerSprite.setAnimation('hit');
+                        }
+                        this.vfx.createImpactEffect(this.player.x, this.player.y, '#ff0000');
+
                         mob.targetCooldown = 1000;
 
                         if (this.player.hp <= 0) {
@@ -508,10 +636,20 @@ class Game {
                         this.updateHUD();
                     }
                 }
+            } else {
+                // Idle when player is far
+                if (mob.sprite && mob.sprite.currentAnimation === 'walk') {
+                    mob.sprite.setAnimation('idle');
+                }
             }
 
             if (mob.targetCooldown > 0) {
                 mob.targetCooldown -= 16;
+            }
+
+            // Update mob sprite
+            if (mob.sprite) {
+                mob.sprite.update();
             }
         });
 
@@ -534,9 +672,19 @@ class Game {
             this.player.mp = Math.min(this.player.maxMP, this.player.mp + 0.1);
             if (Math.random() < 0.1) this.updateHUD();
         }
+
+        // Update visual effects
+        this.vfx.update();
     }
 
     draw() {
+        this.ctx.save();
+
+        // Apply screen shake
+        const shake = this.vfx.getScreenShakeOffset();
+        this.ctx.translate(shake.x, shake.y);
+
+        // Background
         this.ctx.fillStyle = '#1a1a2e';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -558,57 +706,58 @@ class Game {
 
         // Drops
         this.drops.forEach(drop => {
+            // Floating animation
+            const float = Math.sin(Date.now() * 0.005) * 5;
+
+            this.ctx.save();
+            this.ctx.globalAlpha = 0.8;
+
+            // Glow
+            this.ctx.shadowBlur = 10;
+            this.ctx.shadowColor = '#ffd700';
+
             this.ctx.font = drop.size + 'px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(drop.icon, drop.x, drop.y);
+            this.ctx.fillText(drop.icon, drop.x, drop.y + float);
+
+            this.ctx.restore();
         });
 
-        // Mobs
+        // Draw mobs with sprites
         this.mobs.forEach(mob => {
-            // Shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            this.ctx.beginPath();
-            this.ctx.ellipse(mob.x, mob.y + mob.size/2, mob.size/2, mob.size/4, 0, 0, Math.PI * 2);
-            this.ctx.fill();
-
-            // Mob icon
-            this.ctx.font = mob.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(mob.icon, mob.x, mob.y);
+            if (mob.sprite) {
+                mob.sprite.draw(this.ctx, mob.x, mob.y, 1);
+            }
 
             // HP bar
-            const barWidth = 40;
-            const barHeight = 4;
+            const barWidth = 50;
+            const barHeight = 5;
             const hpPercent = mob.hp / mob.maxHP;
 
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth, barHeight);
+            // Bar background
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            this.ctx.fillRect(mob.x - barWidth/2, mob.y - 40, barWidth, barHeight);
 
+            // Bar fill
             this.ctx.fillStyle = hpPercent > 0.5 ? '#4ade80' : hpPercent > 0.25 ? '#fbbf24' : '#ef4444';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth * hpPercent, barHeight);
+            this.ctx.fillRect(mob.x - barWidth/2, mob.y - 40, barWidth * hpPercent, barHeight);
+
+            // Bar border
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(mob.x - barWidth/2, mob.y - 40, barWidth, barHeight);
         });
 
-        // Player
-        if (this.player) {
-            // Shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            this.ctx.beginPath();
-            this.ctx.ellipse(this.player.x, this.player.y + this.player.size/2, this.player.size/2, this.player.size/4, 0, 0, Math.PI * 2);
-            this.ctx.fill();
-
-            // Player icon
-            this.ctx.font = this.player.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-
-            // Glow effect
-            this.ctx.shadowBlur = 10;
-            this.ctx.shadowColor = '#ffd700';
-            this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
-            this.ctx.shadowBlur = 0;
+        // Draw player with sprite
+        if (this.player && this.playerSprite) {
+            this.playerSprite.draw(this.ctx, this.player.x, this.player.y, 1.2);
         }
+
+        // Draw visual effects
+        this.vfx.draw(this.ctx);
+
+        this.ctx.restore();
     }
 
     updateHUD() {
