@@ -77,8 +77,15 @@ class Game {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
 
+        // Disable image smoothing for crisp pixel art
+        this.ctx.imageSmoothingEnabled = false;
+
         this.resizeCanvas();
         window.addEventListener('resize', () => this.resizeCanvas());
+
+        // Initialize sprite system
+        this.spriteSystem = new SpriteSystem();
+        this.goblinGenerator = null;
 
         this.player = null;
         this.mobs = [];
@@ -91,7 +98,17 @@ class Game {
         this.joystickAngle = 0;
         this.joystickPower = 0;
 
+        this.lastFrameTime = Date.now();
+
         this.setupControls();
+
+        // Initialize sprites
+        this.initializeSprites();
+    }
+
+    initializeSprites() {
+        // Generate all goblin sprites
+        this.goblinGenerator = initializeGoblinSprites(this.spriteSystem);
     }
 
     resizeCanvas() {
@@ -108,7 +125,7 @@ class Game {
             icon: classData.icon,
             x: this.canvas.width / 2,
             y: this.canvas.height / 2,
-            size: 40,
+            size: 64,
 
             level: 1,
             xp: 0,
@@ -126,7 +143,12 @@ class Game {
             skills: classData.skills.map(s => ({...s, cooldownRemaining: 0})),
 
             gold: 0,
-            attackCooldown: 0
+            attackCooldown: 0,
+
+            // Sprite properties
+            sprite: new CharacterSprite(this.spriteSystem, 'goblin'),
+            direction: 'S',
+            state: 'idle'
         };
 
         this.updateHUD();
@@ -246,12 +268,49 @@ class Game {
             ? Math.random() * margin
             : this.canvas.height - Math.random() * margin;
 
+        // Determine goblin variant based on level and rarity
+        let variant = 'normal';
+        let hpMultiplier = 1;
+        let damageMultiplier = 1;
+        let xpMultiplier = 1;
+        let goldMultiplier = 1;
+
+        const roll = Math.random();
+
+        if (this.player.level >= 5 && roll < 0.1) {
+            // 10% chance for boss (after level 5)
+            variant = 'boss';
+            hpMultiplier = 3;
+            damageMultiplier = 2;
+            xpMultiplier = 5;
+            goldMultiplier = 5;
+        } else if (this.player.level >= 3 && roll < 0.25) {
+            // 15% chance for elite (after level 3)
+            variant = 'elite';
+            hpMultiplier = 1.5;
+            damageMultiplier = 1.3;
+            xpMultiplier = 2;
+            goldMultiplier = 2;
+        }
+
+        const spriteType = variant === 'normal' ? 'goblin' : `goblin_${variant}`;
+
         this.mobs.push({
             ...type,
             x, y,
-            maxHP: type.hp,
-            size: 35,
-            targetCooldown: 0
+            hp: Math.floor(type.hp * hpMultiplier),
+            maxHP: Math.floor(type.hp * hpMultiplier),
+            damage: Math.floor(type.damage * damageMultiplier),
+            xp: Math.floor(type.xp * xpMultiplier),
+            gold: Math.floor(type.gold * goldMultiplier),
+            size: 64,
+            targetCooldown: 0,
+            variant: variant,
+
+            // Sprite properties
+            sprite: new CharacterSprite(this.spriteSystem, spriteType),
+            direction: 'S',
+            state: 'idle'
         });
     }
 
@@ -273,6 +332,11 @@ class Game {
                 const distance = this.getDistance(this.player, nearestMob);
                 if (distance < 300) {
                     this.damageEnemy(nearestMob, skill.damage + this.player.damage);
+
+                    // Player attack animation
+                    if (this.player.sprite) {
+                        this.player.sprite.attack();
+                    }
 
                     if (skill.lifesteal) {
                         this.player.hp = Math.min(
@@ -461,6 +525,11 @@ class Game {
     update() {
         if (!this.player) return;
 
+        // Calculate delta time for smooth animations
+        const now = Date.now();
+        const deltaTime = now - this.lastFrameTime;
+        this.lastFrameTime = now;
+
         // Player movement
         let dx = 0, dy = 0;
 
@@ -480,18 +549,28 @@ class Game {
             dx = (dx / magnitude) * this.player.speed;
             dy = (dy / magnitude) * this.player.speed;
 
-            this.player.x = Math.max(20, Math.min(this.canvas.width - 20, this.player.x + dx));
-            this.player.y = Math.max(20, Math.min(this.canvas.height - 20, this.player.y + dy));
+            this.player.x = Math.max(32, Math.min(this.canvas.width - 32, this.player.x + dx));
+            this.player.y = Math.max(32, Math.min(this.canvas.height - 32, this.player.y + dy));
+        }
+
+        // Update player sprite
+        if (this.player.sprite) {
+            this.player.sprite.update(deltaTime, dx, dy);
         }
 
         // Update mobs
         this.mobs.forEach(mob => {
             const dist = this.getDistance(this.player, mob);
 
+            let mobDx = 0, mobDy = 0;
+
             if (dist < 400) {
                 const angle = Math.atan2(this.player.y - mob.y, this.player.x - mob.x);
-                mob.x += Math.cos(angle) * mob.speed;
-                mob.y += Math.sin(angle) * mob.speed;
+                mobDx = Math.cos(angle) * mob.speed;
+                mobDy = Math.sin(angle) * mob.speed;
+
+                mob.x += mobDx;
+                mob.y += mobDy;
 
                 // Attack player
                 if (dist < 50) {
@@ -500,6 +579,11 @@ class Game {
                         this.player.hp -= damage;
                         this.showDamage(this.player.x, this.player.y - 40, damage);
                         mob.targetCooldown = 1000;
+
+                        // Mob attack animation
+                        if (mob.sprite) {
+                            mob.sprite.attack();
+                        }
 
                         if (this.player.hp <= 0) {
                             this.gameOver();
@@ -510,8 +594,13 @@ class Game {
                 }
             }
 
+            // Update mob sprite
+            if (mob.sprite) {
+                mob.sprite.update(deltaTime, mobDx, mobDy);
+            }
+
             if (mob.targetCooldown > 0) {
-                mob.targetCooldown -= 16;
+                mob.targetCooldown -= deltaTime;
             }
         });
 
@@ -569,45 +658,73 @@ class Game {
             // Shadow
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
             this.ctx.beginPath();
-            this.ctx.ellipse(mob.x, mob.y + mob.size/2, mob.size/2, mob.size/4, 0, 0, Math.PI * 2);
+            this.ctx.ellipse(mob.x, mob.y + 20, mob.size/2.5, mob.size/6, 0, 0, Math.PI * 2);
             this.ctx.fill();
 
-            // Mob icon
-            this.ctx.font = mob.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(mob.icon, mob.x, mob.y);
+            // Draw mob sprite
+            if (mob.sprite) {
+                mob.sprite.draw(this.ctx, mob.x, mob.y);
+            } else {
+                // Fallback to icon if sprite not loaded
+                this.ctx.font = '35px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(mob.icon, mob.x, mob.y);
+            }
 
-            // HP bar
-            const barWidth = 40;
-            const barHeight = 4;
+            // HP bar - colored by variant
+            const barWidth = 50;
+            const barHeight = 5;
             const hpPercent = mob.hp / mob.maxHP;
 
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth, barHeight);
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            this.ctx.fillRect(mob.x - barWidth/2, mob.y - 40, barWidth, barHeight);
 
-            this.ctx.fillStyle = hpPercent > 0.5 ? '#4ade80' : hpPercent > 0.25 ? '#fbbf24' : '#ef4444';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth * hpPercent, barHeight);
+            // Color based on variant and HP
+            let barColor;
+            if (mob.variant === 'boss') {
+                barColor = hpPercent > 0.5 ? '#ffd700' : hpPercent > 0.25 ? '#ff8800' : '#ff4444';
+            } else if (mob.variant === 'elite') {
+                barColor = hpPercent > 0.5 ? '#b37ae6' : hpPercent > 0.25 ? '#8b42c5' : '#6b2c9a';
+            } else {
+                barColor = hpPercent > 0.5 ? '#4ade80' : hpPercent > 0.25 ? '#fbbf24' : '#ef4444';
+            }
+
+            this.ctx.fillStyle = barColor;
+            this.ctx.fillRect(mob.x - barWidth/2, mob.y - 40, barWidth * hpPercent, barHeight);
+
+            // HP bar border - colored by variant
+            const borderColor = mob.variant === 'boss' ? '#ffd700' : mob.variant === 'elite' ? '#b37ae6' : 'rgba(255, 255, 255, 0.5)';
+            this.ctx.strokeStyle = borderColor;
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(mob.x - barWidth/2, mob.y - 40, barWidth, barHeight);
         });
 
         // Player
         if (this.player) {
             // Shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
             this.ctx.beginPath();
-            this.ctx.ellipse(this.player.x, this.player.y + this.player.size/2, this.player.size/2, this.player.size/4, 0, 0, Math.PI * 2);
+            this.ctx.ellipse(this.player.x, this.player.y + 22, this.player.size/2.5, this.player.size/6, 0, 0, Math.PI * 2);
             this.ctx.fill();
 
-            // Player icon
-            this.ctx.font = this.player.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-
-            // Glow effect
-            this.ctx.shadowBlur = 10;
-            this.ctx.shadowColor = '#ffd700';
-            this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
-            this.ctx.shadowBlur = 0;
+            // Draw player sprite
+            if (this.player.sprite) {
+                // Golden glow effect for player
+                this.ctx.shadowBlur = 15;
+                this.ctx.shadowColor = '#ffd700';
+                this.player.sprite.draw(this.ctx, this.player.x, this.player.y);
+                this.ctx.shadowBlur = 0;
+            } else {
+                // Fallback to icon if sprite not loaded
+                this.ctx.font = '40px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.shadowBlur = 10;
+                this.ctx.shadowColor = '#ffd700';
+                this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
+                this.ctx.shadowBlur = 0;
+            }
         }
     }
 
