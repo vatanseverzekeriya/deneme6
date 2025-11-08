@@ -72,6 +72,315 @@ const ITEMS = [
     { name: 'Zırh', icon: '🛡️', type: 'armor', defense: 5 }
 ];
 
+// Particle System Engine
+class Particle {
+    constructor(x, y, config) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * (config.speedX || 4);
+        this.vy = (Math.random() - 0.5) * (config.speedY || 4);
+        this.life = config.life || 60;
+        this.maxLife = this.life;
+        this.size = config.size || 5;
+        this.color = config.color || '#fff';
+        this.gravity = config.gravity || 0;
+        this.friction = config.friction || 0.98;
+        this.glow = config.glow || false;
+        this.shape = config.shape || 'circle'; // circle, square, star
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += this.gravity;
+        this.vx *= this.friction;
+        this.vy *= this.friction;
+        this.life--;
+        return this.life > 0;
+    }
+
+    draw(ctx) {
+        const alpha = this.life / this.maxLife;
+        ctx.globalAlpha = alpha;
+
+        if (this.glow) {
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = this.color;
+        }
+
+        ctx.fillStyle = this.color;
+
+        if (this.shape === 'circle') {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (this.shape === 'square') {
+            ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+        } else if (this.shape === 'star') {
+            this.drawStar(ctx, this.x, this.y, 5, this.size, this.size/2);
+        }
+
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+    }
+
+    drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+        let rot = Math.PI / 2 * 3;
+        let x = cx;
+        let y = cy;
+        const step = Math.PI / spikes;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - outerRadius);
+
+        for (let i = 0; i < spikes; i++) {
+            x = cx + Math.cos(rot) * outerRadius;
+            y = cy + Math.sin(rot) * outerRadius;
+            ctx.lineTo(x, y);
+            rot += step;
+
+            x = cx + Math.cos(rot) * innerRadius;
+            y = cy + Math.sin(rot) * innerRadius;
+            ctx.lineTo(x, y);
+            rot += step;
+        }
+
+        ctx.lineTo(cx, cy - outerRadius);
+        ctx.closePath();
+        ctx.fill();
+    }
+}
+
+class ParticleSystem {
+    constructor() {
+        this.particles = [];
+    }
+
+    emit(x, y, count, config) {
+        for (let i = 0; i < count; i++) {
+            this.particles.push(new Particle(x, y, config));
+        }
+    }
+
+    // Preset effects
+    bloodSplatter(x, y) {
+        this.emit(x, y, 15, {
+            speedX: 8,
+            speedY: 8,
+            life: 40,
+            size: 4,
+            color: '#ff0000',
+            gravity: 0.3,
+            friction: 0.95
+        });
+    }
+
+    goldSparkle(x, y) {
+        this.emit(x, y, 20, {
+            speedX: 6,
+            speedY: 6,
+            life: 50,
+            size: 3,
+            color: '#ffd700',
+            gravity: -0.1,
+            friction: 0.97,
+            glow: true,
+            shape: 'star'
+        });
+    }
+
+    levelUpEffect(x, y) {
+        this.emit(x, y, 50, {
+            speedX: 8,
+            speedY: 8,
+            life: 80,
+            size: 5,
+            color: '#00ffff',
+            gravity: -0.15,
+            friction: 0.96,
+            glow: true,
+            shape: 'star'
+        });
+    }
+
+    skillEffect(x, y, color, count = 30) {
+        this.emit(x, y, count, {
+            speedX: 10,
+            speedY: 10,
+            life: 60,
+            size: 6,
+            color: color,
+            gravity: 0.05,
+            friction: 0.94,
+            glow: true
+        });
+    }
+
+    healEffect(x, y) {
+        this.emit(x, y, 25, {
+            speedX: 4,
+            speedY: 6,
+            life: 70,
+            size: 4,
+            color: '#00ff00',
+            gravity: -0.2,
+            friction: 0.98,
+            glow: true,
+            shape: 'circle'
+        });
+    }
+
+    explosionEffect(x, y, color) {
+        this.emit(x, y, 40, {
+            speedX: 12,
+            speedY: 12,
+            life: 50,
+            size: 8,
+            color: color,
+            gravity: 0.2,
+            friction: 0.92,
+            glow: true
+        });
+    }
+
+    update() {
+        this.particles = this.particles.filter(p => p.update());
+    }
+
+    draw(ctx) {
+        this.particles.forEach(p => p.draw(ctx));
+    }
+}
+
+// Sound System
+class SoundSystem {
+    constructor() {
+        this.audioContext = null;
+        this.sounds = {};
+        this.musicGain = null;
+        this.sfxGain = null;
+        this.enabled = true;
+        this.init();
+    }
+
+    init() {
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Create gain nodes for volume control
+            this.musicGain = this.audioContext.createGain();
+            this.musicGain.gain.value = 0.3;
+            this.musicGain.connect(this.audioContext.destination);
+
+            this.sfxGain = this.audioContext.createGain();
+            this.sfxGain.gain.value = 0.5;
+            this.sfxGain.connect(this.audioContext.destination);
+        } catch (e) {
+            console.warn('Web Audio API not supported');
+            this.enabled = false;
+        }
+    }
+
+    // Generate sound effects using oscillators
+    playHit() {
+        if (!this.enabled) return;
+        const osc = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        osc.connect(gainNode);
+        gainNode.connect(this.sfxGain);
+
+        osc.frequency.value = 200;
+        osc.type = 'square';
+
+        gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+
+        osc.start(this.audioContext.currentTime);
+        osc.stop(this.audioContext.currentTime + 0.1);
+    }
+
+    playSkill() {
+        if (!this.enabled) return;
+        const osc = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        osc.connect(gainNode);
+        gainNode.connect(this.sfxGain);
+
+        osc.frequency.setValueAtTime(400, this.audioContext.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, this.audioContext.currentTime + 0.2);
+        osc.type = 'sine';
+
+        gainNode.gain.setValueAtTime(0.4, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
+
+        osc.start(this.audioContext.currentTime);
+        osc.stop(this.audioContext.currentTime + 0.2);
+    }
+
+    playLevelUp() {
+        if (!this.enabled) return;
+        const times = [0, 0.1, 0.2];
+        const freqs = [523, 659, 784];
+
+        times.forEach((time, i) => {
+            const osc = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+
+            osc.connect(gainNode);
+            gainNode.connect(this.sfxGain);
+
+            osc.frequency.value = freqs[i];
+            osc.type = 'sine';
+
+            gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime + time);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + time + 0.3);
+
+            osc.start(this.audioContext.currentTime + time);
+            osc.stop(this.audioContext.currentTime + time + 0.3);
+        });
+    }
+
+    playLoot() {
+        if (!this.enabled) return;
+        const osc = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        osc.connect(gainNode);
+        gainNode.connect(this.sfxGain);
+
+        osc.frequency.setValueAtTime(800, this.audioContext.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, this.audioContext.currentTime + 0.1);
+        osc.type = 'sine';
+
+        gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.15);
+
+        osc.start(this.audioContext.currentTime);
+        osc.stop(this.audioContext.currentTime + 0.15);
+    }
+
+    playDeath() {
+        if (!this.enabled) return;
+        const osc = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        osc.connect(gainNode);
+        gainNode.connect(this.sfxGain);
+
+        osc.frequency.setValueAtTime(400, this.audioContext.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(50, this.audioContext.currentTime + 0.5);
+        osc.type = 'sawtooth';
+
+        gainNode.gain.setValueAtTime(0.4, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
+
+        osc.start(this.audioContext.currentTime);
+        osc.stop(this.audioContext.currentTime + 0.5);
+    }
+}
+
 class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
@@ -90,6 +399,14 @@ class Game {
         this.joystickActive = false;
         this.joystickAngle = 0;
         this.joystickPower = 0;
+
+        // Graphics systems
+        this.particleSystem = new ParticleSystem();
+        this.soundSystem = new SoundSystem();
+
+        // Animation
+        this.animationFrame = 0;
+        this.backgroundOffset = 0;
 
         this.setupControls();
     }
@@ -266,12 +583,36 @@ class Game {
         this.player.mp -= skill.mpCost;
         skill.cooldownRemaining = skill.cooldown;
 
+        // Visual and audio feedback
+        this.soundSystem.playSkill();
+
+        // Determine skill color based on type
+        const skillColors = {
+            '⚔️': '#ff4444',
+            '🛡️': '#4444ff',
+            '💥': '#ff8800',
+            '⚡': '#ffff00',
+            '💨': '#aaaaaa',
+            '🗡️': '#ff0000',
+            '✨': '#ff00ff',
+            '💚': '#00ff00',
+            '🌑': '#6600ff',
+            '👻': '#8800ff',
+            '💀': '#ff00ff'
+        };
+
+        const skillColor = skillColors[skill.icon] || '#ffffff';
+
         // Skill effects
         if (skill.damage) {
             const nearestMob = this.findNearestMob();
             if (nearestMob) {
                 const distance = this.getDistance(this.player, nearestMob);
                 if (distance < 300) {
+                    // Visual effect at target
+                    this.particleSystem.skillEffect(nearestMob.x, nearestMob.y, skillColor, 30);
+                    this.particleSystem.explosionEffect(nearestMob.x, nearestMob.y, skillColor);
+
                     this.damageEnemy(nearestMob, skill.damage + this.player.damage);
 
                     if (skill.lifesteal) {
@@ -279,13 +620,18 @@ class Game {
                             this.player.maxHP,
                             this.player.hp + skill.damage * skill.lifesteal
                         );
+                        this.particleSystem.healEffect(this.player.x, this.player.y);
                     }
                 }
             }
+            // Effect at player position
+            this.particleSystem.skillEffect(this.player.x, this.player.y, skillColor, 15);
         }
 
         if (skill.heal) {
             this.player.hp = Math.min(this.player.maxHP, this.player.hp + skill.heal);
+            this.particleSystem.healEffect(this.player.x, this.player.y);
+            this.particleSystem.healEffect(this.player.x, this.player.y - 20);
         }
 
         this.updateHUD();
@@ -338,6 +684,10 @@ class Game {
         enemy.hp -= damage;
         this.showDamage(enemy.x, enemy.y, damage);
 
+        // Blood splatter effect
+        this.particleSystem.bloodSplatter(enemy.x, enemy.y);
+        this.soundSystem.playHit();
+
         if (enemy.hp <= 0) {
             this.killEnemy(enemy);
         }
@@ -348,6 +698,10 @@ class Game {
         if (index > -1) {
             this.mobs.splice(index, 1);
         }
+
+        // Death effects
+        this.particleSystem.explosionEffect(enemy.x, enemy.y, '#ff0000');
+        this.soundSystem.playDeath();
 
         // XP
         this.player.xp += enemy.xp;
@@ -364,6 +718,11 @@ class Game {
                 y: enemy.y,
                 size: 25
             });
+
+            // Gold sparkle effect
+            if (item.type === 'gold') {
+                this.particleSystem.goldSparkle(enemy.x, enemy.y);
+            }
         }
 
         // Spawn new mob
@@ -383,6 +742,14 @@ class Game {
         this.player.mp = this.player.maxMP;
         this.player.damage += 3;
         this.player.defense += 2;
+
+        // Epic level up effects
+        this.particleSystem.levelUpEffect(this.player.x, this.player.y);
+        this.soundSystem.playLevelUp();
+
+        // Multiple rings of particles
+        setTimeout(() => this.particleSystem.levelUpEffect(this.player.x, this.player.y), 200);
+        setTimeout(() => this.particleSystem.levelUpEffect(this.player.x, this.player.y), 400);
 
         this.showNotification('🎉 LEVEL UP! ' + this.player.level);
         this.updateHUD();
@@ -414,6 +781,14 @@ class Game {
         const index = this.drops.indexOf(drop);
         if (index > -1) {
             this.drops.splice(index, 1);
+        }
+
+        // Pickup effects
+        this.soundSystem.playLoot();
+        if (drop.type === 'gold') {
+            this.particleSystem.goldSparkle(drop.x, drop.y);
+        } else {
+            this.particleSystem.skillEffect(drop.x, drop.y, '#00ff00', 20);
         }
 
         // Add to inventory
@@ -461,6 +836,13 @@ class Game {
     update() {
         if (!this.player) return;
 
+        // Update animation frame
+        this.animationFrame++;
+        this.backgroundOffset += 0.5;
+
+        // Update particle system
+        this.particleSystem.update();
+
         // Player movement
         let dx = 0, dy = 0;
 
@@ -499,6 +881,8 @@ class Game {
                         const damage = Math.max(1, mob.damage - this.player.defense);
                         this.player.hp -= damage;
                         this.showDamage(this.player.x, this.player.y - 40, damage);
+                        this.particleSystem.bloodSplatter(this.player.x, this.player.y);
+                        this.soundSystem.playHit();
                         mob.targetCooldown = 1000;
 
                         if (this.player.hp <= 0) {
@@ -537,78 +921,163 @@ class Game {
     }
 
     draw() {
-        this.ctx.fillStyle = '#1a1a2e';
+        // Background gradient
+        const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+        gradient.addColorStop(0, '#0a0e27');
+        gradient.addColorStop(0.5, '#1a1a2e');
+        gradient.addColorStop(1, '#16213e');
+        this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Grid
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        // Parallax stars (layer 1 - far)
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        for (let i = 0; i < 50; i++) {
+            const x = (i * 137.5 + this.backgroundOffset * 0.2) % this.canvas.width;
+            const y = (i * 113.7) % this.canvas.height;
+            this.ctx.fillRect(x, y, 2, 2);
+        }
+
+        // Parallax stars (layer 2 - middle)
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        for (let i = 0; i < 30; i++) {
+            const x = (i * 173.2 + this.backgroundOffset * 0.5) % this.canvas.width;
+            const y = (i * 157.3) % this.canvas.height;
+            this.ctx.fillRect(x, y, 3, 3);
+        }
+
+        // Grid with parallax
+        this.ctx.strokeStyle = 'rgba(100, 150, 255, 0.08)';
         this.ctx.lineWidth = 1;
-        for (let x = 0; x < this.canvas.width; x += 50) {
+        const gridOffset = this.backgroundOffset % 50;
+        for (let x = -gridOffset; x < this.canvas.width; x += 50) {
             this.ctx.beginPath();
             this.ctx.moveTo(x, 0);
             this.ctx.lineTo(x, this.canvas.height);
             this.ctx.stroke();
         }
-        for (let y = 0; y < this.canvas.height; y += 50) {
+        for (let y = -gridOffset; y < this.canvas.height; y += 50) {
             this.ctx.beginPath();
             this.ctx.moveTo(0, y);
             this.ctx.lineTo(this.canvas.width, y);
             this.ctx.stroke();
         }
 
-        // Drops
+        // Drops with glow
         this.drops.forEach(drop => {
+            // Glow effect
+            this.ctx.shadowBlur = 20;
+            this.ctx.shadowColor = drop.type === 'gold' ? '#ffd700' : '#00ff00';
+
             this.ctx.font = drop.size + 'px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(drop.icon, drop.x, drop.y);
+
+            // Bobbing animation
+            const bob = Math.sin(this.animationFrame * 0.05 + drop.x) * 3;
+            this.ctx.fillText(drop.icon, drop.x, drop.y + bob);
+
+            this.ctx.shadowBlur = 0;
         });
 
-        // Mobs
+        // Mobs with enhanced rendering
         this.mobs.forEach(mob => {
             // Shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
             this.ctx.beginPath();
             this.ctx.ellipse(mob.x, mob.y + mob.size/2, mob.size/2, mob.size/4, 0, 0, Math.PI * 2);
             this.ctx.fill();
 
+            // Breathing animation
+            const breathe = Math.sin(this.animationFrame * 0.05) * 2;
+
+            // Mob glow based on type
+            this.ctx.shadowBlur = 8;
+            this.ctx.shadowColor = '#ff0000';
+
             // Mob icon
-            this.ctx.font = mob.size + 'px Arial';
+            this.ctx.font = (mob.size + breathe) + 'px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
             this.ctx.fillText(mob.icon, mob.x, mob.y);
 
-            // HP bar
-            const barWidth = 40;
-            const barHeight = 4;
+            this.ctx.shadowBlur = 0;
+
+            // Enhanced HP bar
+            const barWidth = 50;
+            const barHeight = 6;
             const hpPercent = mob.hp / mob.maxHP;
 
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth, barHeight);
+            // Bar background
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            this.ctx.fillRect(mob.x - barWidth/2 - 1, mob.y - mob.size - 8, barWidth + 2, barHeight + 2);
 
-            this.ctx.fillStyle = hpPercent > 0.5 ? '#4ade80' : hpPercent > 0.25 ? '#fbbf24' : '#ef4444';
-            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size, barWidth * hpPercent, barHeight);
+            // Bar fill with gradient
+            const hpGradient = this.ctx.createLinearGradient(
+                mob.x - barWidth/2, 0,
+                mob.x + barWidth/2, 0
+            );
+            if (hpPercent > 0.5) {
+                hpGradient.addColorStop(0, '#4ade80');
+                hpGradient.addColorStop(1, '#22c55e');
+            } else if (hpPercent > 0.25) {
+                hpGradient.addColorStop(0, '#fbbf24');
+                hpGradient.addColorStop(1, '#f59e0b');
+            } else {
+                hpGradient.addColorStop(0, '#ef4444');
+                hpGradient.addColorStop(1, '#dc2626');
+            }
+
+            this.ctx.fillStyle = hpGradient;
+            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size - 7, barWidth * hpPercent, barHeight);
+
+            // Bar shine
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            this.ctx.fillRect(mob.x - barWidth/2, mob.y - mob.size - 7, barWidth * hpPercent, 2);
         });
 
-        // Player
+        // Player with enhanced rendering
         if (this.player) {
             // Shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
             this.ctx.beginPath();
             this.ctx.ellipse(this.player.x, this.player.y + this.player.size/2, this.player.size/2, this.player.size/4, 0, 0, Math.PI * 2);
             this.ctx.fill();
 
-            // Player icon
+            // Aura/ring around player
+            const auraRadius = this.player.size/2 + 5 + Math.sin(this.animationFrame * 0.1) * 3;
+            this.ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.arc(this.player.x, this.player.y, auraRadius, 0, Math.PI * 2);
+            this.ctx.stroke();
+
+            // Player icon with enhanced glow
             this.ctx.font = this.player.size + 'px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
 
-            // Glow effect
-            this.ctx.shadowBlur = 10;
+            // Multi-layer glow effect
+            this.ctx.shadowBlur = 20;
             this.ctx.shadowColor = '#ffd700';
             this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
+
+            this.ctx.shadowBlur = 10;
+            this.ctx.shadowColor = '#ffff00';
+            this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
+
             this.ctx.shadowBlur = 0;
+
+            // Level indicator
+            this.ctx.font = '12px Arial';
+            this.ctx.fillStyle = '#ffd700';
+            this.ctx.strokeStyle = '#000';
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeText('Lv.' + this.player.level, this.player.x, this.player.y - this.player.size);
+            this.ctx.fillText('Lv.' + this.player.level, this.player.x, this.player.y - this.player.size);
         }
+
+        // Draw particle effects
+        this.particleSystem.draw(this.ctx);
     }
 
     updateHUD() {
