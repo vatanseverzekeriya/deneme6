@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Oyunları - Professional Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 50px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .game-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg);
+            transition: all 0.6s;
+        }
+
+        .game-card:hover::before {
+            left: 100%;
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: #ffd700;
+            box-shadow: 0 20px 40px rgba(255, 215, 0, 0.3);
+        }
+
+        .game-card.premium {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1));
+            border-color: #ffd700;
+        }
+
+        .game-icon {
+            font-size: 64px;
+            text-align: center;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3));
+        }
+
+        .game-title {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .game-card.premium .game-title {
+            color: #ffd700;
+        }
+
+        .game-description {
+            color: rgba(255,255,255,0.8);
+            font-size: 14px;
+            text-align: center;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .game-features {
+            list-style: none;
+            margin: 15px 0;
+            padding: 0;
+        }
+
+        .game-features li {
+            color: rgba(255,255,255,0.9);
+            font-size: 13px;
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .game-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #4ade80;
+            font-weight: bold;
+        }
+
+        .game-card.premium .game-features li::before {
+            color: #ffd700;
+        }
+
+        .play-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-align: center;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .game-card.premium .play-button {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #000;
+        }
+
+        .play-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #4ade80;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .badge.premium {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #000;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 32px;
+            }
+
+            .subtitle {
+                font-size: 16px;
+            }
+
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 RPG Oyunları</h1>
+        <p class="subtitle">Profesyonel pixel art assets ile geliştirilmiş RPG oyun koleksiyonu</p>
+
+        <div class="games-grid">
+            <!-- Professional RPG with Premium Assets -->
+            <div class="game-card premium" onclick="window.location.href='pro-rpg.html'">
+                <div class="badge premium">✨ PREMIUM</div>
+                <div class="game-icon">🐉</div>
+                <h2 class="game-title">Professional RPG</h2>
+                <p class="game-description">
+                    Emoji'lerden profesyonel pixel art'a dönüştürülmüş premium RPG deneyimi
+                </p>
+                <ul class="game-features">
+                    <li>8-yönlü karakter hareketi</li>
+                    <li>Detaylı sprite animasyonları</li>
+                    <li>Profesyonel particle efektler</li>
+                    <li>Özel tasarım ejderha boss</li>
+                    <li>4 farklı karakter sınıfı</li>
+                    <li>5 farklı düşman türü</li>
+                </ul>
+                <a href="pro-rpg.html" class="play-button">🎮 Oyna - Premium Edition</a>
+            </div>
+
+            <!-- Metin2 Style RPG -->
+            <div class="game-card" onclick="window.location.href='metin2-style.html'">
+                <div class="badge">⚔️ ACTION</div>
+                <div class="game-icon">⚔️</div>
+                <h2 class="game-title">Metin2 Style RPG</h2>
+                <p class="game-description">
+                    Klasik MMORPG tarzında mobil uyumlu RPG oyunu
+                </p>
+                <ul class="game-features">
+                    <li>4 farklı karakter sınıfı</li>
+                    <li>Beceri sistemi (Q, W, E)</li>
+                    <li>Mobil joystick kontrol</li>
+                    <li>Level ve XP sistemi</li>
+                    <li>Envanter yönetimi</li>
+                </ul>
+                <a href="metin2-style.html" class="play-button">🎮 Oyna</a>
+            </div>
+
+            <!-- Simple Dodge Game -->
+            <div class="game-card" onclick="window.location.href='game.html'">
+                <div class="badge">🎯 CASUAL</div>
+                <div class="game-icon">🎯</div>
+                <h2 class="game-title">Dodge Master</h2>
+                <p class="game-description">
+                    Basit ama bağımlılık yapan kaçış oyunu
+                </p>
+                <ul class="game-features">
+                    <li>Kolay öğren, zor ustalas</li>
+                    <li>Mobil dokunmatik kontrol</li>
+                    <li>Skor sistemi</li>
+                    <li>Rastgele engeller</li>
+                </ul>
+                <a href="game.html" class="play-button">🎮 Oyna</a>
+            </div>
+        </div>
+
+        <div style="text-align: center; color: rgba(255,255,255,0.7); font-size: 14px;">
+            <p>💡 Tüm oyunlar mobil ve masaüstü uyumludur</p>
+            <p style="margin-top: 10px;">🎨 Professional RPG: Emoji → Premium Pixel Art Asset Dönüşümü</p>
+        </div>
+    </div>
+
+    <script>
+        // Live reload
+        if (typeof WebSocket !== 'undefined') {
+            const ws = new WebSocket('ws://' + window.location.host);
+            ws.onmessage = function(event) {
+                if (event.data === 'reload') {
+                    window.location.reload();
+                }
+            };
+        }
+    </script>
+</body>
+</html>
