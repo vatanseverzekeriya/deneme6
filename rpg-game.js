@@ -1,75 +1,222 @@
+// Graphics helper functions
+const Graphics = {
+    drawShield(ctx, x, y, size, color = '#4a90e2') {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(x, y - size/2);
+        ctx.lineTo(x + size/3, y - size/3);
+        ctx.lineTo(x + size/3, y + size/6);
+        ctx.lineTo(x, y + size/2);
+        ctx.lineTo(x - size/3, y + size/6);
+        ctx.lineTo(x - size/3, y - size/3);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#2d5a8a';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    },
+
+    drawSword(ctx, x, y, size, color = '#c0c0c0') {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = size/8;
+        ctx.beginPath();
+        ctx.moveTo(x - size/3, y + size/3);
+        ctx.lineTo(x + size/3, y - size/3);
+        ctx.stroke();
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(x - size/2.5, y + size/3, size/5, size/6);
+    },
+
+    drawOrb(ctx, x, y, size, color = '#b19cd9') {
+        const gradient = ctx.createRadialGradient(x, y, size/6, x, y, size/2);
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(1, '#7b68ee');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, size/2, 0, Math.PI * 2);
+        ctx.fill();
+    },
+
+    drawLightning(ctx, x, y, size, color = '#ffd700') {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(x + size/6, y - size/2);
+        ctx.lineTo(x - size/8, y);
+        ctx.lineTo(x, y);
+        ctx.lineTo(x - size/4, y + size/2);
+        ctx.lineTo(x + size/8, y - size/8);
+        ctx.lineTo(x, y - size/8);
+        ctx.closePath();
+        ctx.fill();
+    },
+
+    drawWolf(ctx, x, y, size) {
+        ctx.fillStyle = '#666';
+        ctx.beginPath();
+        ctx.arc(x, y, size/2, 0, Math.PI * 2);
+        ctx.fill();
+        // Ears
+        ctx.beginPath();
+        ctx.moveTo(x - size/3, y - size/3);
+        ctx.lineTo(x - size/4, y - size/2);
+        ctx.lineTo(x - size/6, y - size/3);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x + size/3, y - size/3);
+        ctx.lineTo(x + size/4, y - size/2);
+        ctx.lineTo(x + size/6, y - size/3);
+        ctx.fill();
+    },
+
+    drawGoblin(ctx, x, y, size) {
+        ctx.fillStyle = '#4a8f44';
+        ctx.beginPath();
+        ctx.arc(x, y, size/2, 0, Math.PI * 2);
+        ctx.fill();
+        // Eyes
+        ctx.fillStyle = '#ff0000';
+        ctx.beginPath();
+        ctx.arc(x - size/6, y - size/8, size/10, 0, Math.PI * 2);
+        ctx.arc(x + size/6, y - size/8, size/10, 0, Math.PI * 2);
+        ctx.fill();
+    },
+
+    drawOrc(ctx, x, y, size) {
+        ctx.fillStyle = '#7a5c4f';
+        ctx.fillRect(x - size/2, y - size/2, size, size);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(x - size/8, y - size/6, size/4, size/8);
+    },
+
+    drawTroll(ctx, x, y, size) {
+        ctx.fillStyle = '#8b7355';
+        ctx.beginPath();
+        ctx.ellipse(x, y, size/2, size/1.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#654321';
+        ctx.fillRect(x - size/6, y, size/3, size/2);
+    },
+
+    drawDragon(ctx, x, y, size) {
+        ctx.fillStyle = '#8b0000';
+        ctx.beginPath();
+        ctx.arc(x, y, size/2, 0, Math.PI * 2);
+        ctx.fill();
+        // Wings
+        ctx.beginPath();
+        ctx.moveTo(x - size/2, y);
+        ctx.lineTo(x - size, y - size/4);
+        ctx.lineTo(x - size/2, y + size/4);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x + size/2, y);
+        ctx.lineTo(x + size, y - size/4);
+        ctx.lineTo(x + size/2, y + size/4);
+        ctx.fill();
+    },
+
+    drawPotion(ctx, x, y, size, color) {
+        // Bottle
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.roundRect(x - size/3, y - size/4, size * 0.66, size/2, size/8);
+        ctx.fill();
+        // Cap
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(x - size/4, y - size/2.5, size/2, size/6);
+    },
+
+    drawCoin(ctx, x, y, size) {
+        ctx.fillStyle = '#ffd700';
+        ctx.beginPath();
+        ctx.arc(x, y, size/2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#b8860b';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    },
+
+    drawWeapon(ctx, x, y, size) {
+        this.drawSword(ctx, x, y, size, '#e0e0e0');
+    },
+
+    drawArmor(ctx, x, y, size) {
+        this.drawShield(ctx, x, y, size, '#666');
+    }
+};
+
 // Character Classes
 const CLASSES = {
     warrior: {
         name: 'Savaşçı',
-        icon: '🛡️',
+        color: '#4a90e2',
         baseHP: 150,
         baseMP: 50,
         baseDamage: 15,
         baseDefense: 10,
         skills: [
-            { name: 'Güçlü Vuruş', icon: '⚔️', damage: 30, mpCost: 15, cooldown: 3000, key: 'Q' },
-            { name: 'Kalkan', icon: '🛡️', defense: 20, mpCost: 20, cooldown: 5000, key: 'W' },
-            { name: 'Savaş Çığlığı', icon: '💥', damage: 50, mpCost: 30, cooldown: 8000, key: 'E' }
+            { name: 'Güçlü Vuruş', type: 'sword', damage: 30, mpCost: 15, cooldown: 3000, key: 'Q' },
+            { name: 'Kalkan', type: 'shield', defense: 20, mpCost: 20, cooldown: 5000, key: 'W' },
+            { name: 'Savaş Çığlığı', type: 'orb', damage: 50, mpCost: 30, cooldown: 8000, key: 'E' }
         ]
     },
     ninja: {
         name: 'Ninja',
-        icon: '🗡️',
+        color: '#c0c0c0',
         baseHP: 100,
         baseMP: 80,
         baseDamage: 25,
         baseDefense: 5,
         skills: [
-            { name: 'Hızlı Saldırı', icon: '⚡', damage: 20, mpCost: 10, cooldown: 2000, key: 'Q' },
-            { name: 'Gölge Adımı', icon: '💨', dodge: true, mpCost: 15, cooldown: 4000, key: 'W' },
-            { name: 'Kritik Vuruş', icon: '🗡️', damage: 60, mpCost: 25, cooldown: 6000, key: 'E' }
+            { name: 'Hızlı Saldırı', type: 'lightning', damage: 20, mpCost: 10, cooldown: 2000, key: 'Q' },
+            { name: 'Gölge Adımı', type: 'orb', dodge: true, mpCost: 15, cooldown: 4000, key: 'W' },
+            { name: 'Kritik Vuruş', type: 'sword', damage: 60, mpCost: 25, cooldown: 6000, key: 'E' }
         ]
     },
     shaman: {
         name: 'Şaman',
-        icon: '🔮',
+        color: '#b19cd9',
         baseHP: 120,
         baseMP: 120,
         baseDamage: 18,
         baseDefense: 7,
         skills: [
-            { name: 'Işın', icon: '✨', damage: 25, mpCost: 12, cooldown: 2500, key: 'Q' },
-            { name: 'İyileştirme', icon: '💚', heal: 40, mpCost: 20, cooldown: 5000, key: 'W' },
-            { name: 'Yıldırım', icon: '⚡', damage: 45, mpCost: 28, cooldown: 7000, key: 'E' }
+            { name: 'Işın', type: 'orb', damage: 25, mpCost: 12, cooldown: 2500, key: 'Q' },
+            { name: 'İyileştirme', type: 'orb', heal: 40, mpCost: 20, cooldown: 5000, key: 'W' },
+            { name: 'Yıldırım', type: 'lightning', damage: 45, mpCost: 28, cooldown: 7000, key: 'E' }
         ]
     },
     sura: {
         name: 'Sura',
-        icon: '⚡',
+        color: '#ffd700',
         baseHP: 130,
         baseMP: 100,
         baseDamage: 20,
         baseDefense: 8,
         skills: [
-            { name: 'Karanlık Kılıç', icon: '🌑', damage: 28, mpCost: 14, cooldown: 2500, key: 'Q' },
-            { name: 'Ruh Emme', icon: '👻', damage: 20, lifesteal: 0.5, mpCost: 18, cooldown: 4500, key: 'W' },
-            { name: 'Kara Büyü', icon: '💀', damage: 55, mpCost: 32, cooldown: 8000, key: 'E' }
+            { name: 'Karanlık Kılıç', type: 'sword', damage: 28, mpCost: 14, cooldown: 2500, key: 'Q' },
+            { name: 'Ruh Emme', type: 'orb', damage: 20, lifesteal: 0.5, mpCost: 18, cooldown: 4500, key: 'W' },
+            { name: 'Kara Büyü', type: 'lightning', damage: 55, mpCost: 32, cooldown: 8000, key: 'E' }
         ]
     }
 };
 
 // Mob types
 const MOB_TYPES = [
-    { name: 'Kurt', icon: '🐺', hp: 50, damage: 8, xp: 25, gold: 10, speed: 1.5 },
-    { name: 'Goblin', icon: '👹', hp: 60, damage: 10, xp: 30, gold: 15, speed: 1.2 },
-    { name: 'Ork', icon: '👾', hp: 80, damage: 12, xp: 40, gold: 20, speed: 1.0 },
-    { name: 'Troll', icon: '🧟', hp: 120, damage: 15, xp: 60, gold: 30, speed: 0.8 },
-    { name: 'Ejderha', icon: '🐉', hp: 200, damage: 25, xp: 100, gold: 50, speed: 0.6 }
+    { name: 'Kurt', type: 'wolf', hp: 50, damage: 8, xp: 25, gold: 10, speed: 1.5, color: '#666' },
+    { name: 'Goblin', type: 'goblin', hp: 60, damage: 10, xp: 30, gold: 15, speed: 1.2, color: '#4a8f44' },
+    { name: 'Ork', type: 'orc', hp: 80, damage: 12, xp: 40, gold: 20, speed: 1.0, color: '#7a5c4f' },
+    { name: 'Troll', type: 'troll', hp: 120, damage: 15, xp: 60, gold: 30, speed: 0.8, color: '#8b7355' },
+    { name: 'Ejderha', type: 'dragon', hp: 200, damage: 25, xp: 100, gold: 50, speed: 0.6, color: '#8b0000' }
 ];
 
 // Items
 const ITEMS = [
-    { name: 'Can İksiri', icon: '❤️', type: 'potion', heal: 50 },
-    { name: 'Mana İksiri', icon: '💙', type: 'potion', mana: 50 },
-    { name: 'Altın', icon: '💰', type: 'gold', value: 10 },
-    { name: 'Kılıç', icon: '⚔️', type: 'weapon', damage: 5 },
-    { name: 'Zırh', icon: '🛡️', type: 'armor', defense: 5 }
+    { name: 'Can İksiri', type: 'potion', subtype: 'health', heal: 50, color: '#ff4444' },
+    { name: 'Mana İksiri', type: 'potion', subtype: 'mana', mana: 50, color: '#4444ff' },
+    { name: 'Altın', type: 'gold', value: 10 },
+    { name: 'Kılıç', type: 'weapon', damage: 5 },
+    { name: 'Zırh', type: 'armor', defense: 5 }
 ];
 
 class Game {
@@ -105,7 +252,7 @@ class Game {
         this.player = {
             class: className,
             name: classData.name,
-            icon: classData.icon,
+            color: classData.color,
             x: this.canvas.width / 2,
             y: this.canvas.height / 2,
             size: 40,
@@ -147,13 +294,34 @@ class Game {
             const btn = document.createElement('div');
             btn.className = 'skill-btn';
             btn.id = `skill${index}`;
-            btn.innerHTML = `
-                <div class="skill-icon">${skill.icon}</div>
-                <div class="skill-key">${skill.key}</div>
-            `;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 40;
+            canvas.height = 40;
+            canvas.className = 'skill-icon';
+
+            const ctx = canvas.getContext('2d');
+            this.drawSkillIcon(ctx, skill.type, 20, 20, 16);
+
+            btn.appendChild(canvas);
+
+            const keyDiv = document.createElement('div');
+            keyDiv.className = 'skill-key';
+            keyDiv.textContent = skill.key;
+            btn.appendChild(keyDiv);
+
             btn.onclick = () => this.useSkill(index);
             skillsDiv.appendChild(btn);
         });
+    }
+
+    drawSkillIcon(ctx, type, x, y, size) {
+        switch(type) {
+            case 'sword': Graphics.drawSword(ctx, x, y, size); break;
+            case 'shield': Graphics.drawShield(ctx, x, y, size); break;
+            case 'orb': Graphics.drawOrb(ctx, x, y, size); break;
+            case 'lightning': Graphics.drawLightning(ctx, x, y, size); break;
+        }
     }
 
     setupControls() {
@@ -384,7 +552,7 @@ class Game {
         this.player.damage += 3;
         this.player.defense += 2;
 
-        this.showNotification('🎉 LEVEL UP! ' + this.player.level);
+        this.showNotification('LEVEL UP! ' + this.player.level);
         this.updateHUD();
     }
 
@@ -421,7 +589,7 @@ class Game {
             if (!this.inventory[i]) {
                 this.inventory[i] = drop;
                 this.updateInventory();
-                this.showNotification(`+1 ${drop.name} ${drop.icon}`);
+                this.showNotification(`+1 ${drop.name}`);
                 break;
             }
         }
@@ -448,14 +616,39 @@ class Game {
     updateInventory() {
         this.inventory.forEach((item, i) => {
             const slot = document.getElementById(`slot${i}`);
+            slot.innerHTML = '';
+
             if (item) {
-                slot.innerHTML = `${item.icon}`;
+                const canvas = document.createElement('canvas');
+                canvas.width = 40;
+                canvas.height = 40;
+                const ctx = canvas.getContext('2d');
+
+                this.drawItem(ctx, item, 20, 20, 18);
+
+                slot.appendChild(canvas);
                 slot.classList.add('has-item');
             } else {
-                slot.innerHTML = '';
                 slot.classList.remove('has-item');
             }
         });
+    }
+
+    drawItem(ctx, item, x, y, size) {
+        switch(item.type) {
+            case 'potion':
+                Graphics.drawPotion(ctx, x, y, size, item.color);
+                break;
+            case 'gold':
+                Graphics.drawCoin(ctx, x, y, size);
+                break;
+            case 'weapon':
+                Graphics.drawWeapon(ctx, x, y, size);
+                break;
+            case 'armor':
+                Graphics.drawArmor(ctx, x, y, size);
+                break;
+        }
     }
 
     update() {
@@ -558,10 +751,7 @@ class Game {
 
         // Drops
         this.drops.forEach(drop => {
-            this.ctx.font = drop.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(drop.icon, drop.x, drop.y);
+            this.drawItem(this.ctx, drop, drop.x, drop.y, drop.size);
         });
 
         // Mobs
@@ -572,11 +762,16 @@ class Game {
             this.ctx.ellipse(mob.x, mob.y + mob.size/2, mob.size/2, mob.size/4, 0, 0, Math.PI * 2);
             this.ctx.fill();
 
-            // Mob icon
-            this.ctx.font = mob.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(mob.icon, mob.x, mob.y);
+            // Mob graphic
+            this.ctx.save();
+            switch(mob.type) {
+                case 'wolf': Graphics.drawWolf(this.ctx, mob.x, mob.y, mob.size); break;
+                case 'goblin': Graphics.drawGoblin(this.ctx, mob.x, mob.y, mob.size); break;
+                case 'orc': Graphics.drawOrc(this.ctx, mob.x, mob.y, mob.size); break;
+                case 'troll': Graphics.drawTroll(this.ctx, mob.x, mob.y, mob.size); break;
+                case 'dragon': Graphics.drawDragon(this.ctx, mob.x, mob.y, mob.size); break;
+            }
+            this.ctx.restore();
 
             // HP bar
             const barWidth = 40;
@@ -598,16 +793,21 @@ class Game {
             this.ctx.ellipse(this.player.x, this.player.y + this.player.size/2, this.player.size/2, this.player.size/4, 0, 0, Math.PI * 2);
             this.ctx.fill();
 
-            // Player icon
-            this.ctx.font = this.player.size + 'px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
+            // Player character
+            this.ctx.save();
+            this.ctx.shadowBlur = 15;
+            this.ctx.shadowColor = this.player.color;
 
-            // Glow effect
-            this.ctx.shadowBlur = 10;
-            this.ctx.shadowColor = '#ffd700';
-            this.ctx.fillText(this.player.icon, this.player.x, this.player.y);
-            this.ctx.shadowBlur = 0;
+            this.ctx.fillStyle = this.player.color;
+            this.ctx.beginPath();
+            this.ctx.arc(this.player.x, this.player.y, this.player.size/2, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+
+            this.ctx.restore();
         }
     }
 
@@ -634,7 +834,7 @@ class Game {
     }
 
     gameOver() {
-        alert('😵 Öldün!\n\nSeviye: ' + this.player.level + '\nXP: ' + this.player.xp);
+        alert('Game Over!\n\nSeviye: ' + this.player.level + '\nXP: ' + this.player.xp);
         window.location.reload();
     }
 
